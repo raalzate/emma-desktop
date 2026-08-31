@@ -15,6 +15,14 @@ Dos etapas a propósito: la matriz solo empaqueta y sube artefactos; un único
 job `release` los baja y crea el borrador (publicar desde la matriz sería una
 carrera de tres jobs contra el mismo tag).
 
+Antes de empaquetar, cada job de la matriz corre el **smoke de producción**
+(`pnpm smoke` → `scripts/package-smoke.mjs`): lanza Electron por el camino
+empaquetado (`electron-serve` + `app://-`) y exige que el renderer cargue con
+contenido. Existe porque v0.1.0 compiló verde y salió con ventana en blanco
+(gotcha 2026-08-31 en `docs/gotchas.md`): compilar no es cargar. La misma
+señal vive en el gate local; en el gate de CI se OMITE (ahí no se descarga el
+binario de Electron).
+
 ## Artefactos por plataforma
 
 | SO | Formato | Sale de |
@@ -100,3 +108,11 @@ instaladores quedan como artefactos del run.
   en la página pública; solo los ve quien tiene permiso de escritura.
 - **Publicaste de más** → antes de publicar, un borrador se borra sin rastro:
   `gh release delete v<versión>` y `git push origin --delete v<versión>`.
+- **La app instalada abre en blanco** → el renderer no cargó `app://-`
+  (ruta del export rota, típico `__dirname` mal asumido en el main compilado).
+  Reproducí local con `pnpm build && pnpm smoke`; la resolución de rutas vive
+  en `main/paths.ts` con su test. Pasó en v0.1.0.
+- **Ícono genérico de Electron** → `build.mac.icon`/`win.icon`/`linux.icon`
+  apuntan a un archivo inexistente y electron-builder cae al default **sin
+  fallar**. Hoy los tres apuntan a `assets/icon.png` (512 px; electron-builder
+  lo convierte a icns/ico). Pasó en v0.1.0.

@@ -1,6 +1,7 @@
-import { BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
+import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
 import path from 'path';
 import { isDev, appServe } from './config';
+import { assetsDir } from './paths';
 
 /** Crea la ventana principal de EMMA y su menú nativo (ES). */
 export function createMainWindow(): BrowserWindow {
@@ -9,7 +10,7 @@ export function createMainWindow(): BrowserWindow {
     height: 820,
     minWidth: 900,
     minHeight: 640,
-    icon: path.join(__dirname, '..', 'assets', 'icon.png'),
+    icon: path.join(assetsDir(__dirname), 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, '..', 'preload.js'),
       webSecurity: isDev,
@@ -27,6 +28,8 @@ export function createMainWindow(): BrowserWindow {
     console.error(`[did-fail-load] ${code} ${desc} ${url}`)
   );
 
+  if (process.env.EMMA_SMOKE === '1') wireSmokeProbe(win);
+
   if (isDev) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL || 'http://localhost:3000');
     win.webContents.openDevTools();
@@ -38,6 +41,21 @@ export function createMainWindow(): BrowserWindow {
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   setupMenu(win);
   return win;
+}
+
+/**
+ * Sonda del smoke de producción (EMMA_SMOKE=1): sale 0 sólo si el renderer
+ * cargó Y tiene contenido — una ventana blanca por ruta rota sale 1, que es
+ * exactamente lo que el release v0.1.0 no verificó.
+ */
+function wireSmokeProbe(win: BrowserWindow): void {
+  win.webContents.on('did-fail-load', () => app.exit(1));
+  win.webContents.on('did-finish-load', async () => {
+    const hasContent = await win.webContents
+      .executeJavaScript('document.body !== null && document.body.innerHTML.length > 0')
+      .catch(() => false);
+    app.exit(hasContent ? 0 : 1);
+  });
 }
 
 function setupMenu(win: BrowserWindow): void {

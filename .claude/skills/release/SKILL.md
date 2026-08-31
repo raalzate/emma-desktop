@@ -28,7 +28,7 @@ frecuentes) está en `docs/RELEASE.md`; este skill es la mecánica verificada.
 |---|---|---|---|
 | 1 | Rama y árbol | `git status --short --branch` | debe ser `main`, limpio y sin ahead/behind. Trabajo sin fusionar → PR primero. |
 | 2 | Main sincronizada | `git pull --ff-only` | si no es fast-forward, la main local divergió: investigá antes. |
-| 3 | Gate completo local | `pnpm gate` | la única definición de entregable (7 señales, build incluido). `gate:fast` NO sirve acá. |
+| 3 | Gate completo local | `pnpm gate` | la única definición de entregable (8 señales, build y smoke de producción incluidos). `gate:fast` NO sirve acá. El smoke (`pnpm smoke`) debe decir VERDE, no OMITIDA: local siempre hay binario de Electron. |
 | 4 | CI verde en el HEAD | `gh run list --branch main --limit 1` | el mismo commit que vas a tagear debe tener el workflow `ci` en verde. |
 | 5 | Versión coherente | leer `version` en `package.json` | debe ser MAYOR que el último tag (`git tag -l 'v*' --sort=-v:refname \| head -1`). Si ya existe `v<version>`, primero sube la versión por PR a main (main está protegida). |
 | 6 | STATUS.md al día | leer el encabezado de `STATUS.md` | si el veredicto no es VERDE o la fecha es vieja, actualizalo en el mismo PR del bump. |

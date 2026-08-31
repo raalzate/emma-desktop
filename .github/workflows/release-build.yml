@@ -70,6 +70,14 @@ jobs:
       - name: Build electron app
         run: pnpm build
 
+      # Smoke de producción ANTES de empaquetar: lanza Electron por el camino
+      # empaquetado (electron-serve + app://-) y exige renderer con contenido.
+      # v0.1.0 se publicó compilando verde y abriendo una ventana blanca; este
+      # paso lo habría puesto rojo. En Linux el script se envuelve en xvfb-run.
+      - name: Production smoke (renderer carga con contenido)
+        shell: bash
+        run: node scripts/package-smoke.mjs
+
       # --- Empaquetado FIRMADO (sólo si hay certificado de macOS) ---
       # `--publish never`: los artefactos los sube softprops en el job `release`,
       # no el publish de electron-builder. shell bash unifica las 3 plataformas.

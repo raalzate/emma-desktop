@@ -48,6 +48,13 @@
         "command": ["pnpm", "build"],
         "fastSkip": true,
         "why": "next export + tsc electron + empaquetado difieren de dev: tree-shaking y resolución de módulos sólo fallan acá"
+      },
+      {
+        "name": "smoke de producción (app://- carga)",
+        "command": ["node", "scripts/package-smoke.mjs"],
+        "fastSkip": true,
+        "skipIfMissing": "node_modules/electron/dist",
+        "why": "el build puede estar verde con la app rota: v0.1.0 compiló perfecto y abría ventana blanca (electron-serve apuntando a build/main/out); sólo EJECUTAR el camino empaquetado lo ve. Se omite sin binario de Electron (gate de CI); el workflow de release lo corre en las 3 plataformas"
       }
     ]
   },

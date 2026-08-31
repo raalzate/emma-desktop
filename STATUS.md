@@ -8,7 +8,11 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.1.0 (2026-08-31), verificado con `gh release view v0.1.0`: publicado con los 3 instaladores (dmg · exe · AppImage). Prueba de humo manual del dmg: pendiente (deuda conocida de #95).
+- **Último release publicado:** v0.1.0 (2026-08-31) — **ROTO**: el dmg instalado abre
+  ventana en blanco (electron-serve apuntaba a `build/main/out`; ver gotcha 2026-08-31)
+  y con ícono Electron por defecto. Corregido en `main/paths.ts` + smoke de producción
+  en el gate y en `release-build.yml`; la deuda #95 (humo del instalador) quedó pagada
+  con freno ejecutable. Pendiente: tagear y publicar v0.1.1 con `/release`.
 
 ## Señales
 
@@ -21,6 +25,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
 | Tests | `pnpm test` | verde — 879 pruebas en 113 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
+| Smoke de producción | `pnpm smoke` | verde — Electron carga `app://-` con contenido (camino empaquetado); OMITIDA donde no hay binario de Electron (gate de CI) |
 
 Pre-commit instalado: sí (`core.hooksPath=.githooks`). CI corre el mismo gate: workflow
 `.github/workflows/ci.yml` (`pnpm gate`) en cada push/PR a `main`. Push directo a `main`
@@ -49,8 +54,10 @@ sea rutina, no estreno.
 - **Cobertura sin umbral:** `vitest.config.ts` no exige mínimo de cobertura; el Artículo 1
   (TDD) es REVIEW hasta que se declare `coverage.thresholds` (mecanismo candidato:
   `pnpm test:coverage` como señal del gate con umbral).
-- **Release workflow sin estrenar:** `release-build.yml` está escrito pero ningún tag `v*`
-  lo disparó todavía; el primer release verificará el empaquetado en las 3 plataformas.
+- **Smoke de producción no corre en el gate de CI:** `ci.yml` instala con
+  `ELECTRON_SKIP_BINARY_DOWNLOAD=1`, así que la señal se OMITE ahí (omitido ≠ pasó);
+  cubre el gate local y el workflow de release (3 plataformas). Aceptado a propósito
+  (~100 MB por run); revisar si vuelve a doler.
 - **Artículos REVIEW de la constitución** (1, 4, 6, 7, 9, 13): sin comando que falle; los
   juzga `reviewer`/`code-reviewer` en cada diff.
 - **Artículo 10 reclasificado a REVIEW** (v1.3.0): "integridad de aserciones" no es verificable
