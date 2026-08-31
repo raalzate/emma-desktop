@@ -21,6 +21,24 @@ Mecanismo: <el comando que ahora falla si alguien lo repite — o "ninguno ejecu
 
 ---
 
+### GOTCHA: el smoke del release murió en Linux — la cache de pnpm venía "construida" sin el binario de Electron
+
+Síntoma: primer build de v0.1.1: `Error: Electron failed to install correctly` en el paso
+  de smoke del job `Package (ubuntu-latest)`; mac y windows verdes. El install de Ubuntu
+  tardó 2.4 s y no corrió NINGÚN postinstall (el de mac muestra `electron postinstall: Done`).
+Causa:   `ci.yml` instala con `ELECTRON_SKIP_BINARY_DOWNLOAD=1` y comparte la cache de pnpm
+  con `release-build.yml` (misma clave: el lockfile). La cache de Ubuntu quedó marcada con
+  el postinstall de electron "hecho" pero sin `dist/`; al restaurarla, el release no volvió
+  a correrlo y `require('electron')` tiró. Dos workflows que instalan distinto NO pueden
+  dar por buena la misma cache de builds.
+Regla:   el smoke no confía en que el binario esté: lo verifica y, si falta, corre
+  `node_modules/electron/install.js` y reintenta antes de fallar.
+Mecanismo: auto-reparación en `scripts/package-smoke.mjs` (`electronBinary()` +
+  install.js). Verificado en rojo: con `node_modules/electron/dist` renombrado, el smoke
+  se auto-repara y termina VERDE; sin auto-reparación moría igual que en CI.
+
+---
+
 ### GOTCHA: el release v0.1.0 compiló verde y la app instalada abría una ventana en blanco
 
 Síntoma: el dmg de v0.1.0 instalado en Aplicaciones abre una ventana vacía (título
