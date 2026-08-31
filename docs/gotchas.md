@@ -21,6 +21,28 @@ Mecanismo: <el comando que ahora falla si alguien lo repite — o "ninguno ejecu
 
 ---
 
+### GOTCHA: el release v0.1.0 compiló verde y la app instalada abría una ventana en blanco
+
+Síntoma: el dmg de v0.1.0 instalado en Aplicaciones abre una ventana vacía (título
+  `emma-desktop`, contenido blanco) con el ícono genérico de Electron en el Dock. Gate,
+  CI y el workflow de release: todos verdes.
+Causa:   dos punteros rotos que NINGUNA señal ejecutaba. (1) `main/config.ts` servía el
+  renderer desde `join(__dirname, 'out')` asumiendo `__dirname = build/`, pero el archivo
+  compila a `build/main/config.js` → electron-serve apuntaba a `build/main/out`, que no
+  existe → `app://-` fallaba con ERR_FILE_NOT_FOUND → ventana blanca. (2) `build.mac.icon`
+  y `win.icon` citaban `assets/icon.icns`/`.ico` que nunca existieron (sólo hay `icon.png`)
+  → electron-builder cayó al ícono por defecto, en silencio. El build "verde" sólo probaba
+  que COMPILA, no que CARGA: la prueba de humo del instalador era deuda declarada (#95).
+Regla:   ningún release sin ejecutar el camino empaquetado: el renderer debe cargar
+  `app://-` CON contenido. Las rutas del main compilado se resuelven en `main/paths.ts`
+  (módulo puro con test), nunca con `join(__dirname, ...)` inline.
+Mecanismo: `pnpm smoke` (`scripts/package-smoke.mjs`, señal «smoke de producción» del
+  gate; el workflow de release lo corre en las 3 plataformas antes de empaquetar) +
+  `main/__tests__/paths.test.ts` que fija el layout compilado. Verificado en rojo:
+  con el bug de v0.1.0 reinyectado en `build/main/config.js`, el smoke sale 1.
+
+---
+
 ### GOTCHA: instrucción del arnés apuntaba a un script inexistente y nada lo veía
 
 Síntoma: `/harness-audit` (2026-08-31) encontró `npm run hooks:install` citado en <!-- linkcheck:ignora: cita el puntero muerto que causó el incidente -->
