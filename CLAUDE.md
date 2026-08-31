@@ -48,6 +48,31 @@ relaciones cross-file.
 
 ---
 
+## PFA — Processflow Architect (arquitectura viva)
+
+La arquitectura del repo vive como proyecto **"EMMA Desktop"** en Processflow
+Architect (MCP `pfa`, registrado en `.mcp.json`; requiere la app abierta con el
+servidor MCP activo en `http://127.0.0.1:7331/mcp`).
+
+- Para preguntas de **nivel arquitectura** (sistemas, contenedores, procesos,
+  estados del agente): consulta PFA antes de releer docs — `get_app_state`
+  (proyecto activo y vistas), `list_views` / `get_view` (una vista concreta),
+  `export_mermaid_view` (el diagrama como Mermaid para citarlo en un doc o PR).
+  Para código puntual sigue mandando graphify; PFA responde el "qué habla con
+  qué", no el "dónde está la función".
+- Vistas actuales del proyecto: **C4** (contexto + contenedores, modelo base),
+  **BPMN · Onboarding ReAct**, **UML · Estados ReAct**, **BPMN · Simulación y
+  feedback**. Cada elemento cita su fuente (`archivo:línea`): contrastá contra
+  el código antes de confiar en un diagrama viejo.
+- **Tras un cambio estructural** (capa nueva, proceso Electron, puerto, flujo
+  de casos de uso): actualizá la vista afectada con el skill
+  `disenar-diagrama` (`.claude/skills/disenar-diagrama/`) y exportá con
+  `export_as_view` + `replace: true` — nunca dupliques pestañas ni proyectos.
+- Si la app no está conectada (sin respuesta en el puerto), decláralo y seguí
+  con `docs/ARCHITECTURE.md`; no bloquees la tarea por PFA.
+
+---
+
 ## Arquitectura (regla de dependencias)
 
 Capas por dependencia; **las flechas solo apuntan hacia adentro**:

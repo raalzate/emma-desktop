@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pre-commit real (no .sample): si la integridad depende de disciplina humana, no es un gate.
-# Instalación: npm run hooks:install  (setea core.hooksPath=.githooks)
+# Instalación: pnpm hooks:install  (setea core.hooksPath=.githooks)
 #
 # Genérico: las rutas protegidas y el lint salen de `.claude/harness.config.json`.
 #

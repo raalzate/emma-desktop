@@ -2,16 +2,15 @@
 
 Port de **EMMA** (tutora de inglés conversacional para profesionales de TI) desde
 Python/Chainlit a una app de escritorio **Electron + Next.js + TypeScript**, con IA
-**local e híbrida**, siguiendo las tecnologías, patrones y configuración del proyecto
-`dev-presale` (ProcessFlow Architect).
+**local e híbrida**.
 
 ## Objetivo
 
 Conservar **el 100% de las funcionalidades** de EMMA, reimplementadas con la misma
-arquitectura por capas (domain / application / infrastructure / interface) y el
-patrón de escalado de IA (router local/remoto) de `dev-presale`.
+arquitectura por capas (domain / application / infrastructure / interface) y un
+patrón de escalado de IA (router local/remoto).
 
-## Stack (igual que dev-presale)
+## Stack
 
 - **Electron 39** — shell de escritorio. WebGPU habilitado (IA local).
 - **Next.js 15 (App Router, `output: 'export'`)** — UI, servida por `electron-serve`

@@ -1,6 +1,6 @@
 # Constitución del proyecto — EMMA Desktop
 
-**Versión 1.2.0** · Reglas **no negociables**. Cualquier PR o cambio (humano o agente) debe
+**Versión 1.3.0** · Reglas **no negociables**. Cualquier PR o cambio (humano o agente) debe
 cumplirlas. Versionado por enmiendas. Las convenciones del día a día viven en `CLAUDE.md`;
 el arnés que hace cumplir esto, en `.claude/harness.config.json` y `scripts/`.
 
@@ -12,7 +12,9 @@ Cada artículo declara su **fuerza**:
 
 > **Regla de honestidad:** un artículo BLOCKING **nombra el comando** que falla. Si no se puede
 > nombrar, el artículo es REVIEW. Etiquetar de BLOCKING lo que nadie verifica es la forma más
-> rápida de que nadie crea en este documento.
+> rápida de que nadie crea en este documento. Desde v1.3.0 esta regla tiene su propio freno:
+> `node scripts/docs-linkcheck.mjs` (en el gate) falla si el *Mecanismo:* de un artículo
+> BLOCKING no cita ningún comando ejecutable.
 
 Enmendar esta constitución es un commit propio, con el número de versión subido y el motivo en
 el cuerpo.
@@ -100,13 +102,16 @@ superficie mezcla ambos papeles.
 
 *Mecanismo:* ninguno ejecutable — lo revisa una persona en cada superficie nueva.
 
-## Artículo 10 — Integridad de aserciones · BLOCKING
+## Artículo 10 — Integridad de aserciones · REVIEW
 
 Jamás se ajusta una aserción para que un test pase. Si el test es correcto, se arregla
 producción. Si el test es incorrecto, se corrige **en un commit aparte** con la justificación
 en el mensaje.
 
-*Mecanismo:* el propio test + revisión del diff. Falsear esto exige mentir en un commit.
+*Mecanismo:* ninguno ejecutable — distinguir "aserción falseada" de "aserción corregida con
+motivo" exige leer la intención del diff, y eso lo hace la revisión (`code-reviewer` /
+`reviewer`). Estuvo etiquetado BLOCKING violando la regla de honestidad; reclasificado en
+v1.3.0, cuando esa regla ganó su freno.
 
 ## Artículo 11 — Rutas protegidas · BLOCKING
 
@@ -143,3 +148,8 @@ escala con el diagnóstico. Fallar rápido y con causa vale más que degradar en
   (BLOCKING/REVIEW) y su mecanismo; el Artículo 8 pasa de "Definition of Done" a gate único
   (`pnpm gate`); añade artículos 10–13 (integridad de aserciones, rutas protegidas, ciclo del
   incidente, conducta ante el error).
+- **v1.3.0** (2026-08-31) — El audit del arnés (`/harness-audit`) encontró el Artículo 10
+  etiquetado BLOCKING sin comando que falle. Se reclasifica a REVIEW y la regla de honestidad
+  gana freno propio: `docs-linkcheck` verifica que todo artículo BLOCKING cite un comando
+  ejecutable en su *Mecanismo:*, y que todo script npm/pnpm citado en docs y hooks exista en
+  `package.json`.
