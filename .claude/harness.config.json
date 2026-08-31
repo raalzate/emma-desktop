@@ -243,6 +243,13 @@
     "heading": "### GOTCHA",
     "requiredLines": ["Síntoma:", "Causa:", "Regla:", "Mecanismo:"]
   },
+  "releaseNotes": {
+    "$comment": "Regla RELEASE (#93): la versión de package.json debe tener sus notas escritas en docs/releases/<versión>.md ANTES de tagear — release-build.yml las usa como cuerpo del release. Sin esto, el release nace con una lista de commits que no le dice nada a quien instala.",
+    "dir": "docs/releases",
+    "template": "PLANTILLA.md",
+    "manifest": "package.json",
+    "requiredSections": ["### Cambios", "### Descargas", "### Requisitos"]
+  },
   "docs": {
     "ignore": [
       "node_modules",
