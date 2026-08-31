@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Espejo en GitHub de la ruta Sofka: los artefactos VIVEN en `specs/` (decisión
+ * Espejo en GitHub de la ruta SDD: los artefactos VIVEN en `specs/` (decisión
  * `tracker.artifactsIn: "repo"`, la verifica artifacts-check); las issues son lo
  * que un archivo no da — asignables, con estado propio y visibles sin clonar.
  *
@@ -46,7 +46,7 @@ function tituloDe(md, fallback) {
 }
 
 /**
- * Tareas de un `tasks.md`. Acepta las dos formas que produce el flujo Sofka:
+ * Tareas de un `tasks.md`. Acepta las dos formas que produce el flujo SDD:
  * filas `| T1 | descripción | requisitos | verificación |` o ítems de checklist
  * `- [ ] T001 descripción`. El checkbox es la única fuente de si está hecha.
  */
@@ -76,8 +76,8 @@ const recorta = (s) => (s.length <= RECORTE ? s : `${s.slice(0, RECORTE - 1)}…
 
 /** Los dos labels base. Sin ellos `issue create --label` falla entero, no avisa y no crea. */
 function asegurarLabelsBase() {
-  asegurarLabel(gh.featureLabel, "Feature de la ruta Sofka (spec en el cuerpo; el archivo manda en specs/)");
-  asegurarLabel(gh.taskLabel, "Tarea de una feature Sofka");
+  asegurarLabel(gh.featureLabel, "Feature de la ruta SDD (spec en el cuerpo; el archivo manda en specs/)");
+  asegurarLabel(gh.taskLabel, "Tarea de una feature SDD");
 }
 
 /**
@@ -188,7 +188,7 @@ function nuevaFeature(archivo) {
   }
 
   const labelFeature = `${gh.featureLabelPrefix}${feature}`;
-  asegurarLabel(labelFeature, `Feature Sofka ${feature} (specs/${feature}/)`);
+  asegurarLabel(labelFeature, `Feature SDD ${feature} (specs/${feature}/)`);
   const titulo = `[sdd] ${feature} — ${tituloDe(md, feature)}`;
   const url = ghCli([
     "issue",

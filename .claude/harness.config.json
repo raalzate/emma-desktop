@@ -31,7 +31,7 @@
       {
         "name": "artefactos en su lugar",
         "command": ["node", "scripts/artifacts-check.mjs"],
-        "why": "los specs del flujo Sofka viven en specs/: un plan suelto en otro lado parte el registro en dos"
+        "why": "los specs del flujo SDD viven en specs/: un plan suelto en otro lado parte el registro en dos"
       },
       {
         "name": "typecheck (app + electron)",
@@ -270,14 +270,14 @@
     "file": "STATUS.md"
   },
   "sdd": {
-    "$comment": "El kit SDD de este repo es Sofka (skills sofka-01-specify … sofka-07-implement, instaladas como plugin). `phases` queda vacío porque las skills no viven en skillRoots verificables; el valor está en `routes`.",
-    "kit": "sofka",
+    "$comment": "Flujo SDD genérico del repo: spec → checklist → plan → testify → tasks → implement, redactado por el subagente spec-author e implementado por tdd-engineer. `phases` queda vacío porque no hay skills verificables en skillRoots; el valor está en `routes`.",
+    "kit": "sdd",
     "skillRoots": ["~/.claude/skills", ".claude/skills"],
     "phases": [],
     "specsDir": "specs",
     "activeFeaturePointer": "",
     "github": {
-      "$comment": "Espejo en GitHub de la ruta Sofka: los artefactos VIVEN en specs/ (tracker.artifactsIn: repo, lo verifica artifacts-check); las issues son el tablero asignable y visible sin clonar. Lo usa scripts/sdd-github.mjs (pnpm sdd:*). Todo subcomando toca red: NO es señal del gate.",
+      "$comment": "Espejo en GitHub de la ruta SDD: los artefactos VIVEN en specs/ (tracker.artifactsIn: repo, lo verifica artifacts-check); las issues son el tablero asignable y visible sin clonar. Lo usa scripts/sdd-github.mjs (pnpm sdd:*). Todo subcomando toca red: NO es señal del gate.",
       "repo": "raalzate/emma-desktop",
       "featureLabel": "sdd:feature",
       "taskLabel": "sdd:task",
@@ -300,7 +300,7 @@
           "\\brearquitect",
           "\\bmigrar (el|la|todo)\\b"
         ],
-        "message": "Pedido de tamaño FEATURE → flujo Sofka: /sofka-01-specify → checklist → plan → testify → tasks → implement (Artículo 7 de la constitución). Si decidís saltarlo, declaralo en una línea con el porqué."
+        "message": "Pedido de tamaño FEATURE → flujo SDD: spec (subagente spec-author) → checklist → plan → testify → tasks → implement (Artículo 7 de la constitución). Si decidís saltarlo, declaralo en una línea con el porqué."
       },
       {
         "route": "bugfix",
@@ -312,7 +312,7 @@
           "\\berror en\\b",
           "\\bregresi[óo]n\\b"
         ],
-        "message": "Falla sobre algo que ya existe → /sofka-bugfix o test rojo que la reproduzca ANTES de tocar producción (Artículo 1: TDD)."
+        "message": "Falla sobre algo que ya existe → test rojo que la reproduzca ANTES de tocar producción (Artículo 1: TDD)."
       },
       {
         "route": "clarify",
@@ -322,7 +322,7 @@
           "\\bcomo veas\\b",
           "\\bmejorar (todo|esto)\\b"
         ],
-        "message": "Pedido ambiguo → /sofka-clarify o preguntá UNA sola cosa antes de tocar archivos."
+        "message": "Pedido ambiguo → preguntá UNA sola cosa antes de tocar archivos."
       },
       {
         "route": "none",
@@ -359,7 +359,7 @@
     }
   ],
   "tracker": {
-    "$comment": "Gestor de trabajo: GitHub (raalzate/emma-desktop). Los artefactos Sofka viven EN el repo (specs/); las issues los espejan (sdd.github + scripts/sdd-github.mjs). La referencia en commits es un issue #N o la ruta del spec. Aplicar un label exige permiso de triage/write: si la cuenta activa de gh no lo tiene, GitHub DESCARTA los labels y crea el issue igual, sin fallar — por eso sdd-github.mjs verifica DESPUÉS de crear.",
+    "$comment": "Gestor de trabajo: GitHub (raalzate/emma-desktop). Los artefactos SDD viven EN el repo (specs/); las issues los espejan (sdd.github + scripts/sdd-github.mjs). La referencia en commits es un issue #N o la ruta del spec. Aplicar un label exige permiso de triage/write: si la cuenta activa de gh no lo tiene, GitHub DESCARTA los labels y crea el issue igual, sin fallar — por eso sdd-github.mjs verifica DESPUÉS de crear.",
     "kind": "github",
     "issuePattern": "(^|[^A-Za-z0-9_])#[0-9]+|\\bspec:\\s*specs/",
     "issueExample": "#12 · Closes #12 · spec: specs/onboarding/spec.md",
@@ -367,7 +367,7 @@
       "Bug:                gh issue create --label bug --title \"…\" --body \"…\"",
       "Mejora acotada:     gh issue create --label enhancement --title \"…\" --body \"…\"",
       "Sólo documentación: gh issue create --label documentation --title \"…\" --body \"…\"",
-      "Tamaño feature:     /sofka-01-specify (queda en specs/) y después pnpm sdd:new specs/<feature>/spec.md"
+      "Tamaño feature:     escribí specs/<feature>/spec.md (subagente spec-author) y después pnpm sdd:new specs/<feature>/spec.md"
     ],
     "labels": {
       "bug": "bug",
