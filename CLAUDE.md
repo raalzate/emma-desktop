@@ -81,14 +81,14 @@ Capas por dependencia; **las flechas solo apuntan hacia adentro**:
 interface / components  ──►  application  ──►  domain
         (React, Electron, IO)     (casos de uso)   (reglas puras)
                     │                   ▲
-                    └──► infrastructure ┘   (adaptadores: SQLite/IPC, IA)
+                    └──► infrastructure ┘   (adaptadores: store JSON/IPC, IA)
 ```
 
 - **`src/domain/`** — reglas de negocio puras. **Prohibido** importar React,
   Electron, `fetch`, `fs`, o cualquier IO. Solo TypeScript puro + tipos.
 - **`src/application/`** — casos de uso. Orquestan el dominio y reciben los
   puertos por **inyección de dependencias** (argumentos), nunca los instancian.
-- **`src/infrastructure/`** — adaptadores concretos (repos SQLite vía IPC, IA).
+- **`src/infrastructure/`** — adaptadores concretos (repos del store JSON vía IPC, IA).
   Implementan puertos definidos en `domain`.
 - **`src/interface/` + `src/components/`** — renderer (React/Electron); cablean
   adaptadores a casos de uso.

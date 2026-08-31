@@ -26,8 +26,9 @@ patrón de escalado de IA (router local/remoto).
 - **TTS + karaoke: Web Speech API** (`speechSynthesis` con eventos `boundary` para
   los timings de palabra) — reemplaza a edge-tts.
 - **Gramática silenciosa: llamada estructurada a Gemma** (reemplaza al modelo T5).
-- **Persistencia: SQLite (`better-sqlite3`)** en el proceso main (perfil, progresión,
-  errores, roadmap, resúmenes de sesión), expuesta por IPC.
+- **Persistencia: store JSON por colección** en el proceso main (`main/services/store.ts`;
+  perfil, progresión, errores, roadmap, resúmenes de sesión), expuesta por IPC.
+  Sin dependencias nativas: un documento JSON por colección, escritura atómica.
 - **Tests: Vitest.**
 
 ## Patrón de IA (escalado local/remoto)
@@ -78,6 +79,6 @@ src/app/                     # Next App Router (páginas)
 src/components/              # UI React (ui/ shadcn + features)
 src/domain/                  # reglas puras (sin React/Electron/IO)
 src/application/             # casos de uso (orquestan dominio + puertos inyectados)
-src/infrastructure/          # adaptadores (repos SQLite vía IPC, IA)
+src/infrastructure/          # adaptadores (repos del store JSON vía IPC, IA)
 src/lib/ai/                  # router/providers/engine de IA
 ```
