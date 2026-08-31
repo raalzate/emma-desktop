@@ -1,7 +1,7 @@
 /**
  * Almacén de datos de EMMA en el proceso main — un documento JSON por "colección"
  * bajo userData/emma/store/ (override con EMMA_DB_DIR). Reemplaza a SQLite: para
- * una app de escritorio mono-usuario, archivos JSON son el patrón de dev-presale
+ * una app de escritorio mono-usuario, archivos JSON alcanzan
  * (sin dependencias nativas, portable, respaldables).
  *
  * El renderer NUNCA lee estos archivos: pasa por los handlers IPC (store-get/set),
