@@ -67,9 +67,9 @@ nuevo la juzga una persona contra el proyecto Python.
 
 ## Artículo 7 — Spec antes de código · REVIEW
 
-Features nuevas o cambios de comportamiento pasan por el flujo Sofka
-(specify → checklist → plan → testify → tasks → implement → analyze). Bugfixes usan
-`/sofka-bugfix`. Los artefactos viven en `specs/`.
+Features nuevas o cambios de comportamiento pasan por el flujo SDD
+(specify → checklist → plan → testify → tasks → implement → analyze). Los bugfixes
+arrancan con un test rojo que reproduzca la falla. Los artefactos viven en `specs/`.
 
 *Mecanismo:* el hook `sdd-router` pone la ruta delante del agente en cada pedido tamaño
 feature, y `node scripts/artifacts-check.mjs` verifica que los artefactos estén en `specs/`.

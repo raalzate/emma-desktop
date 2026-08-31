@@ -16,7 +16,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Self-test del arnés | `node scripts/harness-selftest.mjs` | verde — cada regla del config probada con una muestra que el freno bloquea |
 | Link-check de docs | `node scripts/docs-linkcheck.mjs` | verde |
 | Lint de convenciones | `node scripts/repo-lint.mjs` | verde — PUREZA (domain/application/infrastructure), ANY, SECRETO, CONSOLE, ONLY, INCIDENTE |
-| Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos Sofka en `specs/` |
+| Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en `specs/` |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
 | Tests | `pnpm test` | verde — 879 pruebas en 113 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
