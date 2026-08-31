@@ -108,6 +108,11 @@ instaladores quedan como artefactos del run.
   en la página pública; solo los ve quien tiene permiso de escritura.
 - **Publicaste de más** → antes de publicar, un borrador se borra sin rastro:
   `gh release delete v<versión>` y `git push origin --delete v<versión>`.
+- **El smoke muere con «Electron failed to install correctly»** → la cache de
+  pnpm se restauró "construida" por un install con `ELECTRON_SKIP_BINARY_DOWNLOAD=1`
+  (el gate de CI) y el binario no está. El smoke se auto-repara corriendo
+  `node_modules/electron/install.js`; si ves esto igual, el download falló de
+  verdad (red/proxy). Pasó en el primer build de v0.1.1 (Linux).
 - **La app instalada abre en blanco** → el renderer no cargó `app://-`
   (ruta del export rota, típico `__dirname` mal asumido en el main compilado).
   Reproducí local con `pnpm build && pnpm smoke`; la resolución de rutas vive

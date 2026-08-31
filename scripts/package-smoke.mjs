@@ -9,6 +9,7 @@
 // lo corre en las tres plataformas antes de empaquetar.
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -20,7 +21,32 @@ for (const ruta of ['build/main.js', 'build/out/index.html']) {
   }
 }
 
-const electron = require('electron'); // exporta la ruta del binario
+// require('electron') exporta la ruta del binario, pero TIRA si el postinstall
+// nunca corrió. Pasa cuando la cache de pnpm quedó "construida" por un install
+// con ELECTRON_SKIP_BINARY_DOWNLOAD=1 (el gate de CI): al restaurarla, pnpm da
+// el postinstall por hecho y el binario no está (release v0.1.1, job de Linux).
+// Auto-reparación: correr el install.js de Electron y reintentar.
+function electronBinary() {
+  try {
+    const bin = require('electron');
+    return typeof bin === 'string' && existsSync(bin) ? bin : null;
+  } catch {
+    return null;
+  }
+}
+
+let electron = electronBinary();
+if (!electron) {
+  console.log('SMOKE — binario de Electron ausente; corriendo node_modules/electron/install.js…');
+  const pkgDir = dirname(require.resolve('electron/package.json'));
+  spawnSync(process.execPath, ['install.js'], { cwd: pkgDir, stdio: 'inherit' });
+  electron = electronBinary();
+}
+if (!electron) {
+  console.error('SMOKE ROJO — no hay binario de Electron y su install.js no lo pudo bajar.');
+  process.exit(1);
+}
+
 const TIMEOUT_MS = 120_000;
 
 // En CI Linux no hay display: xvfb-run provee uno virtual. --no-sandbox porque
