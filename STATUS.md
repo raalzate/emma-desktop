@@ -8,6 +8,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
+- **Último release publicado:** v0.1.0 (2026-08-31), verificado con `gh release view v0.1.0`: publicado con los 3 instaladores (dmg · exe · AppImage). Prueba de humo manual del dmg: pendiente (deuda conocida de #95).
 
 ## Señales
 
@@ -27,7 +28,10 @@ bloqueado dos veces: `.githooks/pre-push` (local, antes de la red) y la protecci
 en GitHub (server-side, exige PR con el check `gate` verde). La ruta SDD se espeja en
 issues con `scripts/sdd-github.mjs` (`pnpm sdd:new · sdd:tasks · sdd:status · sdd:mirror`);
 los artefactos siguen viviendo en `specs/`. Releases: tag `v*` dispara
-`.github/workflows/release-build.yml` (dmg · exe · AppImage, borrador de release).
+`.github/workflows/release-build.yml` (dmg · exe · AppImage, borrador de release);
+el proceso está escrito en `docs/RELEASE.md`, las notas viven en `docs/releases/`
+(regla RELEASE del lint: sin notas de la versión no hay gate verde) y el primer
+release real (v0.1.0) se publicó el 2026-08-31.
 
 El gate se probó ROJO a propósito (2026-08-26): un `: any` temporal en `src/domain/` hizo
 fallar `repo-lint` con la regla ANY. Un gate que nunca falló es una esperanza, no un gate.
