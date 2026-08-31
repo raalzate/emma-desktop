@@ -165,7 +165,10 @@ for (const d of declared) {
 
   if (d.tipo === "ejecutable") {
     // Un binario de fuera del repo no se puede parsear: se afirma sólo lo verificable.
+    // En CI se omite si falta: herramientas como graphify viven en la máquina del
+    // desarrollador, no en el runner (mismo criterio que el kit SDD).
     if (existeEjecutable(d.file)) ok(`${d.event} → ${d.etiqueta} (ejecutable externo: sólo se verifica que exista)`);
+    else if (EN_CI) skip(`${d.event} → ${d.etiqueta}`, "ejecutable de la máquina del desarrollador; el runner de CI no lo tiene");
     else bad(`${d.event} → ${d.command}`, `no encontré el ejecutable \`${d.file}\` (ni por ruta ni en PATH)`);
     continue;
   }
