@@ -12,7 +12,7 @@ más externa.
 ┌─────────────────────────────────────────────────────────┐
 │ interface / components   (React, Electron renderer, IPC) │  ← más externa
 │  ┌────────────────────────────────────────────────────┐ │
-│  │ infrastructure   (SQLite vía IPC, adaptadores IA)   │ │
+│  │ infrastructure   (store JSON vía IPC, adaptadores IA)│ │
 │  │  ┌───────────────────────────────────────────────┐ │ │
 │  │  │ application   (casos de uso; orquestación)     │ │ │
 │  │  │  ┌──────────────────────────────────────────┐ │ │ │
@@ -46,7 +46,8 @@ El dominio define **puertos** (interfaces); afuera viven los **adaptadores**.
 - `src/domain/ai/llm-port.ts` → `LlmGenerate`, `TtsResult`, `WordTiming`.
   Adaptador: `src/lib/ai/llm-adapter.ts` sobre `router.ts` (decide local/remoto).
 - Repos de persistencia (perfil, progresión, errores…) → interfaz en `domain`,
-  adaptador SQLite/IPC en `infrastructure`.
+  adaptador en `infrastructure/persistence` sobre el store JSON del main vía IPC
+  (`store-client.ts` → handlers `store-get`/`store-set`).
 
 **Inyección:** los casos de uso reciben el puerto por argumento, nunca lo importan
 concreto. Ejemplo canónico: `application/english-teacher/teach-use-case.ts`
@@ -62,7 +63,9 @@ El dominio solo ve `LlmGenerate`. Cada llamada respeta su presupuesto de tokens
 ## Procesos Electron
 
 - **main** (`main.ts`, `main/`): ventana, config, IPC, esquemas, logger,
-  servicios. Llaves de nube cifradas con `safeStorage`. SQLite vive aquí.
+  servicios. Llaves de nube cifradas con `safeStorage`. La persistencia vive aquí:
+  store JSON por colección (`main/services/store.ts`, un documento por colección
+  bajo `userData/emma/store/`, escritura atómica) — reemplaza a SQLite.
 - **preload** (`preload.ts`): puente IPC tipado (contextBridge).
 - **renderer** (Next.js): UI, IA local WebGPU, STT (Whisper), TTS (Web Speech).
 
@@ -70,7 +73,7 @@ El dominio solo ve `LlmGenerate`. Cada llamada respeta su presupuesto de tokens
 
 - ¿Regla que no necesita IO ni framework? → `domain`.
 - ¿Orquesta varias reglas + un puerto? → `application` (caso de uso).
-- ¿Habla con SQLite, red, disco o un SDK? → `infrastructure` (adaptador de un puerto).
+- ¿Habla con el store, red, disco o un SDK? → `infrastructure` (adaptador de un puerto).
 - ¿Es React/Electron/IPC? → `interface` / `components` / `main`.
 
 Si dudas, empújalo hacia adentro (más puro) y saca el IO a un puerto.
