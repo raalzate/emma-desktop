@@ -163,6 +163,14 @@ for (const d of declared) {
     continue;
   }
 
+  // Un hook atado al $HOME de una máquina muere en cualquier otro clon: se declara por
+  // nombre (lo resuelve el PATH) o con `$CLAUDE_PROJECT_DIR`. Encontrado por /harness-audit (#91).
+  const casero = /(^|[\s"'=])(\/(?:Users|home)\/[^\s"']+|[A-Za-z]:\\Users\\[^\s"']+)/.exec(String(d.command ?? ""));
+  if (casero) {
+    bad(`${d.event} → ${d.etiqueta}`, `ruta atada a una máquina: \`${casero[2]}\` — declarálo por nombre (PATH) o con $CLAUDE_PROJECT_DIR`);
+    continue;
+  }
+
   if (d.tipo === "ejecutable") {
     // Un binario de fuera del repo no se puede parsear: se afirma sólo lo verificable.
     // En CI se omite si falta: herramientas como graphify viven en la máquina del
