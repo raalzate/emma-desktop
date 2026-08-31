@@ -51,6 +51,11 @@
       }
     ]
   },
+  "branches": {
+    "$comment": "Ramas donde el trabajo entra por pull request. `.githooks/pre-push` falla ANTES de la red con el motivo y la salida. La protección de `main` en GitHub es el freno fuerte —exige PR y el check `gate` en verde, aplica también a admins—; activada el 2026-08-31 vía API y anotada en STATUS.md.",
+    "protected": ["main"],
+    "reason": "el trabajo entra por pull request, con su revisión y el gate en verde. Un push directo entra sin que nadie lo mire."
+  },
   "protectedPaths": [
     {
       "pattern": "^\\.env",
