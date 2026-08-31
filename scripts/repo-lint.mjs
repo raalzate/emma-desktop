@@ -23,6 +23,7 @@
  *   INVARIANTE   un archivo conserva/prohíbe líneas concretas       config → invariants[]
  *   PATRON       texto prohibido en un ámbito, con su motivo        config → patterns[]
  *   INCIDENTE    todo gotcha declara su MECANISMO                   config → incidents
+ *   RELEASE      la versión del manifiesto tiene sus notas escritas config → releaseNotes
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -288,6 +289,52 @@ function checkIncidents(contenidoDado = null) {
   });
 }
 
+/**
+ * RELEASE — la versión del manifiesto tiene sus notas de release escritas.
+ *
+ * `release-build.yml` usa `docs/releases/<versión>.md` como cuerpo del release:
+ * si el archivo no existe, el release nace con una lista de commits autogenerada
+ * que no le dice nada a quien instala. La regla exige el archivo de la versión
+ * ACTUAL del manifiesto, sus tres secciones y que el texto nombre la versión
+ * (un texto que no la nombra es señal de copia de otra release). La plantilla
+ * no se valida a sí misma.
+ */
+function checkReleaseNotes(contenidoDado = null) {
+  const spec = config.releaseNotes;
+  if (!spec?.dir || !spec?.manifest) return;
+  let version;
+  try {
+    version = JSON.parse(read(spec.manifest)).version;
+  } catch {
+    return; // sin manifiesto legible (otro stack): la regla no aplica
+  }
+  if (!version) return;
+  const notesPath = `${spec.dir}/${version}.md`;
+  let content = contenidoDado;
+  if (content === null) {
+    try {
+      content = read(notesPath);
+    } catch {
+      fail(
+        notesPath,
+        0,
+        "RELEASE",
+        `la versión ${version} de \`${spec.manifest}\` no tiene notas de release. ` +
+          `Copiá \`${spec.dir}/${spec.template ?? "PLANTILLA.md"}\` y contá qué cambia para quien instala la app.`,
+      );
+      return;
+    }
+  }
+  for (const sec of spec.requiredSections ?? []) {
+    if (!content.includes(sec)) {
+      fail(notesPath, 0, "RELEASE", `falta la sección \`${sec}\`. Las notas llevan: ${(spec.requiredSections ?? []).join(" · ")}.`);
+    }
+  }
+  if (!content.includes(version)) {
+    fail(notesPath, 0, "RELEASE", `el texto no nombra la versión ${version} — señal de que se copió de otra release sin adaptar.`);
+  }
+}
+
 // ── Ejecución ────────────────────────────────────────────────────────────────
 
 if (process.argv.includes("--rules")) {
@@ -299,6 +346,7 @@ if (process.argv.includes("--rules")) {
     ["INVARIANTE", `${(config.invariants ?? []).length} archivo(s)`, (config.invariants ?? []).map((r) => r.file).join(", ")],
     ["PATRON", `${(config.patterns ?? []).length} patrón(es)`, (config.patterns ?? []).map((r) => r.id).join(", ")],
     ["INCIDENTE", config.incidents?.file ? "activa" : "inactiva", config.incidents?.file ?? "—"],
+    ["RELEASE", config.releaseNotes?.dir ? "activa" : "inactiva", config.releaseNotes?.dir ?? "—"],
   ];
   console.log("Reglas activas (todas salen de .claude/harness.config.json):\n");
   for (const [regla, estado, detalle] of filas) console.log(`  ${regla.padEnd(12)} ${estado.padEnd(16)} ${detalle}`);
@@ -314,9 +362,22 @@ const single = fileFlagIndex !== -1 ? process.argv[fileFlagIndex + 1] : null;
 const desdeStdin = process.argv.includes("--stdin");
 const contenidoStdin = desdeStdin ? fs.readFileSync(0, "utf8") : null;
 
+/** Ruta de las notas de la versión ACTUAL del manifiesto (null si la regla no aplica). */
+function releaseNotesPath() {
+  const spec = config.releaseNotes;
+  if (!spec?.dir || !spec?.manifest) return null;
+  try {
+    const version = JSON.parse(read(spec.manifest)).version;
+    return version ? `${spec.dir}/${version}.md` : null;
+  } catch {
+    return null;
+  }
+}
+
 if (single) {
   const relPath = single.split(path.sep).join("/");
   if (relPath === config.incidents?.file) checkIncidents(contenidoStdin);
+  else if (relPath === releaseNotesPath()) checkReleaseNotes(contenidoStdin);
   else if (relPath === config.forbiddenDeps?.manifest && !desdeStdin) checkDeps();
   else checkFile(relPath, contenidoStdin);
 } else {
@@ -324,6 +385,7 @@ if (single) {
   checkDeps();
   checkInvariants();
   checkIncidents();
+  checkReleaseNotes();
 }
 
 if (problems.length) {

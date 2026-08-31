@@ -9,6 +9,9 @@ Un release es un gate verde congelado en un tag. Nada se tagea que no haya pasad
 TODAS las verificaciones de abajo; un paso rojo **detiene el release** y se
 reporta el error real — no se "sigue igual".
 
+El porqué de cada pieza (workflows, firma ad-hoc, secrets, problemas
+frecuentes) está en `docs/RELEASE.md`; este skill es la mecánica verificada.
+
 ## 0 · Dónde nace un release
 
 - El tag `v*` sobre `main` dispara `.github/workflows/release-build.yml`:
@@ -29,10 +32,11 @@ reporta el error real — no se "sigue igual".
 | 4 | CI verde en el HEAD | `gh run list --branch main --limit 1` | el mismo commit que vas a tagear debe tener el workflow `ci` en verde. |
 | 5 | Versión coherente | leer `version` en `package.json` | debe ser MAYOR que el último tag (`git tag -l 'v*' --sort=-v:refname \| head -1`). Si ya existe `v<version>`, primero sube la versión por PR a main (main está protegida). |
 | 6 | STATUS.md al día | leer el encabezado de `STATUS.md` | si el veredicto no es VERDE o la fecha es vieja, actualizalo en el mismo PR del bump. |
+| 7 | Notas de release escritas | existe `docs/releases/<version>.md` con sus tres secciones | la regla RELEASE de `scripts/repo-lint.mjs` ya lo exige dentro del gate (paso 3); si el gate pasó, esto está. El workflow usa ese archivo como cuerpo del release. Plantilla: `docs/releases/PLANTILLA.md`. |
 
 ## 2 · Tag (el punto de no retorno)
 
-Solo con los 6 prechequeos verdes:
+Solo con los 7 prechequeos verdes:
 
 ```bash
 git tag -a v<version> -m "EMMA Desktop v<version> — <una línea con lo que entra>"

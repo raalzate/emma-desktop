@@ -11,6 +11,8 @@ Documentos de referencia:
 - Reglas no negociables → `docs/CONSTITUTION.md` (cada artículo con fuerza BLOCKING/REVIEW)
 - Estado verificado del repo → `STATUS.md` (lo imprime el hook SessionStart)
 - Incidentes que ya costaron horas → `docs/gotchas.md`
+- Proceso de release (workflows, firma, notas) → `docs/RELEASE.md`; la mecánica
+  verificada la corre el skill `/release`
 
 ---
 

@@ -669,6 +669,25 @@ if (config.incidents?.file) {
   else bad("lint INCIDENTE exige `Mecanismo:`", `exit ${r.status}: ${r.out.trim() || "sin salida"}`);
 }
 
+// 4g. RELEASE: notas sin secciones (o que no nombran la versión) son rojas (cebo por stdin).
+if (config.releaseNotes?.dir && config.releaseNotes?.manifest) {
+  let version = null;
+  try {
+    version = JSON.parse(fs.readFileSync(abs(config.releaseNotes.manifest), "utf8")).version;
+  } catch {
+    /* sin manifiesto legible: el caso se salta abajo */
+  }
+  if (!version) {
+    skip("lint RELEASE", `no pude leer version de ${config.releaseNotes.manifest}`);
+  } else {
+    const ruta = `${config.releaseNotes.dir}/${version}.md`;
+    const cebo = "## Notas copiadas de otra release\n\nSin secciones y sin nombrar la versión.\n";
+    const r = lint(ruta, cebo);
+    if (r.status !== 0 && r.out.includes("RELEASE")) ok(`lint RELEASE exige secciones y versión en \`${ruta}\``);
+    else bad("lint RELEASE exige notas completas", `exit ${r.status}: ${r.out.trim() || "sin salida"}`);
+  }
+}
+
 // 4f. El arnés no escribe temporales dentro del árbol de fuentes.
 {
   const antes = fs.readdirSync(REPO_ROOT);
