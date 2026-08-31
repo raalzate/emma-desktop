@@ -1,0 +1,8 @@
+blockExoticSubdeps: false
+allowBuilds:
+  electron: true
+  electron-winstaller: true
+  msedge-tts: true
+  onnxruntime-node: true
+  protobufjs: true
+  sharp: true

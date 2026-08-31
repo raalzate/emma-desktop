@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Paleta fría y gris-azulada para modo claro */
+    --background: 210 20% 98%;        /* Blanco-azulado muy suave */
+    --foreground: 220 15% 15%;        /* Gris-azul oscuro muy apagado */
+
+    --card: 210 20% 96%;
+    --card-foreground: 220 15% 15%;
+
+    --popover: 210 20% 98%;
+    --popover-foreground: 220 15% 15%;
+
+    --primary: 218 35% 62%;           /* Azul frío medio (antes era índigo cálido) */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 18% 92%;
+    --secondary-foreground: 220 12% 25%;
+
+    --muted: 210 20% 94%;
+    --muted-foreground: 220 10% 50%;
+
+    --accent: 200 30% 70%;            /* Azul-grisáceo frío */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 62%;         /* Rojo menos saturado para que no rompa la armonía fría */
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 218 35% 62%;
+
+    /* Gráficos también en tonos fríos y apagados */
+    --chart-1: 210 40% 60%;
+    --chart-2: 200 35% 55%;
+    --chart-3: 220 30% 50%;
+    --chart-4: 190 35% 65%;
+    --chart-5: 230 30% 45%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Modo oscuro suave, slate azulado (no negro): más elegante y menos cansado. */
+    --background: 222 16% 17%;        /* Slate templado, ni negro ni plano */
+    --foreground: 210 16% 90%;        /* Gris-azul claro legible */
+
+    --card: 222 15% 20%;              /* Paneles ligeramente sobre el fondo */
+    --card-foreground: 210 16% 90%;
+
+    --popover: 222 15% 20%;
+    --popover-foreground: 210 16% 90%;
+
+    --primary: 218 52% 68%;           /* Azul frío vivo pero elegante */
+    --primary-foreground: 222 20% 12%;
+
+    --secondary: 220 13% 26%;
+    --secondary-foreground: 210 14% 82%;
+
+    --muted: 220 13% 25%;
+    --muted-foreground: 215 12% 66%;
+
+    /* accent = superficie de hover/focus de menús (convención shadcn): slate
+       sutil sobre el fondo, con texto claro, para que todo siga legible. */
+    --accent: 220 13% 28%;
+    --accent-foreground: 210 16% 92%;
+
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 220 12% 30%;
+    --input: 220 12% 30%;
+    --ring: 218 52% 68%;
+
+    /* Gráficos oscuros pero fríos */
+    --chart-1: 210 45% 65%;
+    --chart-2: 200 40% 60%;
+    --chart-3: 220 40% 55%;
+    --chart-4: 190 45% 70%;
+    --chart-5: 230 35% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

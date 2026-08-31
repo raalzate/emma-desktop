@@ -1,0 +1,37 @@
+# CI corre EL MISMO gate que el humano y que el agente (`pnpm gate`). Si CI
+# verifica algo distinto de lo que verifica el desarrollador, una de las dos
+# señales miente y nadie sabe cuál.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancela ejecuciones previas del mismo ref cuando llega un push nuevo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # El gate no ejecuta Electron (next export + tsc + vitest): saltar la
+      # descarga del binario ahorra ~100 MB por run.
+      - run: pnpm install --frozen-lockfile
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+
+      - name: gate
+        run: pnpm gate

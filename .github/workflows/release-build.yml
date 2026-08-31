@@ -1,0 +1,172 @@
+name: Build and Publish Release
+
+# Empaqueta los instaladores de escritorio (dmg · exe · AppImage) con
+# electron-builder y, si el disparo fue un tag `v*`, publica UN borrador de
+# release con los tres. Dos etapas a propósito: la matriz empaqueta y sube
+# artefactos; un único job los baja y crea el release (publicar desde la matriz
+# crea una carrera: tres jobs creando borradores para el mismo tag).
+# En disparo manual sólo quedan los artefactos del run. NO corre en CI normal.
+on:
+  push:
+    tags:
+      - "v*" # Ej: v1.0.0
+  workflow_dispatch: # Permite lanzar builds a demanda desde la UI de GitHub.
+
+# Necesario para que softprops/action-gh-release pueda crear/editar el release
+# y subir los assets del repositorio actual.
+permissions:
+  contents: write
+
+# Un solo build por tag/ref a la vez (no cancelamos: un empaquetado a medias no sirve).
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Package (${{ matrix.os }})
+    strategy:
+      fail-fast: false # Un fallo en una plataforma no cancela las demás.
+      matrix:
+        include:
+          - os: macos-latest
+            platform: mac
+          - os: windows-latest
+            platform: win
+          - os: ubuntu-latest
+            platform: linux
+
+    runs-on: ${{ matrix.os }}
+
+    # Firma sólo si HAY certificado de macOS configurado. GitHub expande un secret
+    # ausente a "" (cadena vacía, NO undefined) y electron-builder trata `CSC_LINK=""`
+    # como "firma con este cert" → intenta importar una ruta vacía y revienta con
+    # "not a file". Por eso NO pasamos CSC_LINK vacío: decidimos aquí, con el
+    # secret, si el paso de empaquetado firma o no.
+    env:
+      SIGN_MAC: ${{ secrets.CSC_LINK != '' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # Aquí SÍ corre el postinstall completo (binario de Electron, rebuild de
+      # módulos nativos): el empaquetado los necesita, a diferencia del gate de CI.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Compila el renderer Next.js + el proceso Electron y mueve la salida
+      # estática a build/out. Ver script "build" en package.json.
+      - name: Build electron app
+        run: pnpm build
+
+      # --- Empaquetado FIRMADO (sólo si hay certificado de macOS) ---
+      # `--publish never`: los artefactos los sube softprops en el job `release`,
+      # no el publish de electron-builder. shell bash unifica las 3 plataformas.
+      - name: Package with electron-builder (signed)
+        if: env.SIGN_MAC == 'true'
+        shell: bash
+        run: pnpm exec electron-builder --${{ matrix.platform }} --publish never
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      # --- Empaquetado SIN cert Apple (firma AD-HOC en macOS) ---
+      # NO pasamos CSC_LINK (vacío dispararía una firma fallida) y desactivamos el
+      # auto-descubrimiento de identidades del llavero. En Apple Silicon un binario
+      # SIN NINGUNA firma sale "dañado" (arm64 exige al menos firma ad-hoc), así que
+      # forzamos identidad ad-hoc (`mac.identity=-`) y apagamos hardenedRuntime
+      # (sólo hace falta para notarización). win/linux ignoran mac.*.
+      - name: Package with electron-builder (ad-hoc / unsigned)
+        if: env.SIGN_MAC != 'true'
+        shell: bash
+        run: pnpm exec electron-builder --${{ matrix.platform }} --publish never -c.mac.identity=- -c.mac.hardenedRuntime=false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+      # Los instaladores SIEMPRE salen como artefactos del run: son la entrada
+      # del job `release` (un tag) y, en un disparo manual, lo descargable.
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.platform }}
+          path: |
+            dist/*.dmg
+            dist/*.exe
+            dist/*.AppImage
+          if-no-files-found: warn
+          retention-days: 30
+
+  # El release lo crea UN SOLO job, después de la matriz: un publicador único
+  # no compite consigo mismo y el log dice una sola cosa.
+  release:
+    name: Publish draft release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      # El checkout va PRIMERO: `actions/checkout` limpia el workspace
+      # (`clean: true` por defecto); puesto después de bajar los artefactos
+      # los borraría y el release nacería vacío.
+      - name: Checkout (para las notas del release)
+        uses: actions/checkout@v4
+
+      - name: Download installers from the matrix
+        uses: actions/download-artifact@v4
+        with:
+          path: installers
+          pattern: installers-*
+          merge-multiple: true
+
+      - name: List what will be attached
+        run: ls -lh installers
+
+      # Notas del release: si existe docs/releases/<versión>.md se usa (nace
+      # escrito y revisado en el diff); si no, GitHub genera notas automáticas.
+      - name: Resolve release notes
+        id: notes
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          path="docs/releases/${version}.md"
+          if [ -f "$path" ]; then
+            echo "path=$path" >> "$GITHUB_OUTPUT"
+            echo "auto=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "auto=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true # Borrador: lo revisa el humano antes de publicar.
+          # Un borrador sin instaladores es un release inútil que saldría VERDE:
+          # que falte un patrón es un fallo, no un detalle.
+          fail_on_unmatched_files: true
+          body_path: ${{ steps.notes.outputs.auto == 'false' && steps.notes.outputs.path || '' }}
+          generate_release_notes: ${{ steps.notes.outputs.auto == 'true' }}
+          # Sólo los formatos que electron-builder produce con la config actual
+          # (mac: dmg · win: nsis/exe · linux: AppImage). Agregar un patrón acá
+          # implica agregar su target en package.json → build.
+          files: |
+            installers/*.dmg
+            installers/*.exe
+            installers/*.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

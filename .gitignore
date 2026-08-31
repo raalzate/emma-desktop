@@ -1,0 +1,45 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+/dist
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# Claude Code local state
+.claude/settings.local.json
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+
+# local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# EMMA local data (perfil/progreso/sesiones viven en userData en runtime)
+/data/
+
+# índices generados por herramientas (se regeneran: graphify update ., serena)
+/graphify-out/
+/.serena/
+/.git/gate-dirty

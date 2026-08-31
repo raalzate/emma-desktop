@@ -1,0 +1,382 @@
+{
+  "$comment": "Config del arnés de EMMA Desktop. Es el ÚNICO archivo específico del repo: los hooks y los scripts leen de acá. Referencia de claves: docs/config-reference.md del repo agent-harness.",
+  "gate": {
+    "command": "pnpm gate",
+    "fastCommand": "pnpm gate:fast",
+    "marker": ".git/gate-dirty",
+    "codeGlobs": [
+      "src/",
+      "main/",
+      "main.ts",
+      "preload.ts",
+      "scripts/",
+      ".claude/hooks/"
+    ],
+    "signals": [
+      {
+        "name": "self-test del arnés",
+        "command": ["node", "scripts/harness-selftest.mjs"],
+        "why": "un hook roto o un config que apunta a la nada fallan en silencio: ninguna otra señal los ve"
+      },
+      {
+        "name": "link-check de docs",
+        "command": ["node", "scripts/docs-linkcheck.mjs"],
+        "why": "mover un doc rompe punteros de la memoria del agente (CLAUDE.md, docs/) que nadie más mira"
+      },
+      {
+        "name": "lint de convenciones",
+        "command": ["node", "scripts/repo-lint.mjs"],
+        "why": "la regla de dependencias hexagonal y la pureza del dominio no las ve ningún compilador"
+      },
+      {
+        "name": "artefactos en su lugar",
+        "command": ["node", "scripts/artifacts-check.mjs"],
+        "why": "los specs del flujo Sofka viven en specs/: un plan suelto en otro lado parte el registro en dos"
+      },
+      {
+        "name": "typecheck (app + electron)",
+        "command": ["pnpm", "typecheck"],
+        "why": "vitest transpila por archivo y no type-checkea: un import inválido pasa los tests y rompe el build; además main/preload compilan con otro tsconfig"
+      },
+      {
+        "name": "tests (vitest)",
+        "command": ["pnpm", "test"],
+        "why": "comportamiento del dominio y la aplicación; paridad con EMMA Python"
+      },
+      {
+        "name": "build de producción",
+        "command": ["pnpm", "build"],
+        "fastSkip": true,
+        "why": "next export + tsc electron + empaquetado difieren de dev: tree-shaking y resolución de módulos sólo fallan acá"
+      }
+    ]
+  },
+  "protectedPaths": [
+    {
+      "pattern": "^\\.env",
+      "reason": ".env* guarda las API keys de los proveedores de IA remota: lo edita el humano, nunca el agente."
+    },
+    {
+      "pattern": "^pnpm-lock\\.yaml$",
+      "agentOnly": true,
+      "reason": "el lockfile se regenera con pnpm, no se edita a mano. Sí se commitea: CI instala con --frozen-lockfile."
+    },
+    {
+      "pattern": "^\\.git/",
+      "reason": "historia de git: fuera del alcance del agente."
+    },
+    {
+      "pattern": "^node_modules/",
+      "reason": "dependencias: se cambian por package.json + pnpm install."
+    },
+    {
+      "pattern": "^(build|dist|out|coverage|\\.next)/",
+      "reason": "artefactos derivados del build de Next/Electron: se regeneran, no se editan."
+    },
+    {
+      "pattern": "^graphify-out/",
+      "reason": "índice generado por graphify: se actualiza con `graphify update .`, no a mano."
+    },
+    {
+      "pattern": "^\\.serena/",
+      "reason": "índice de Serena: lo mantiene la herramienta."
+    },
+    {
+      "pattern": "^English-for-Software-Engineers-fuente\\.md$",
+      "agentOnly": true,
+      "reason": "material fuente del currículo: es el original del que se deriva el contenido, no se toca. Sí vive en el repo: de él se deriva el contenido."
+    }
+  ],
+  "bash": {
+    "deny": [
+      {
+        "pattern": "--no-ver[i]fy",
+        "reason": "saltarse los hooks de verificación está prohibido. Si el gate estorba, se arregla el gate."
+      },
+      {
+        "pattern": "git\\s+push\\s+.*--force(?!-with-lease)",
+        "reason": "`--force` reescribe historia remota. Usá --force-with-lease y pedí confirmación."
+      },
+      {
+        "pattern": "git\\s+reset\\s+--hard",
+        "reason": "destruye trabajo sin commitear. Usá `git stash` o pedí confirmación."
+      },
+      {
+        "pattern": "git\\s+clean\\s+-[a-z]*f",
+        "reason": "borra archivos no rastreados. Dry-run primero: `git clean -n`."
+      },
+      {
+        "pattern": "git\\s+add\\s+(\\.|-A|--all)(\\s|$)",
+        "reason": "arrastra artefactos y secretos. Agregá archivos por nombre."
+      },
+      {
+        "pattern": "\\bnpm\\s+(install|i|ci|add|publish)\\b",
+        "reason": "este repo usa pnpm: npm genera un package-lock.json paralelo y rompe la reproducibilidad. Usá pnpm."
+      },
+      {
+        "pattern": "\\bpnpm\\s+(add|install|i)\\b[^|;&]*\\s(--force|-f)\\b",
+        "reason": "instalar con --force rompe la reproducibilidad del lockfile."
+      },
+      {
+        "pattern": "electron-builder\\b[^|;&]*--publish",
+        "reason": "publicar el instalador es irreversible: lo hace el humano desde un tag, no el agente."
+      },
+      {
+        "pattern": "\\bsed\\s+(-[a-zA-Z]*\\s+)*-i\\b.*\\b(src|main)\\b",
+        "reason": "edición masiva in-place sobre el árbol de fuentes. Usá el editor del agente."
+      },
+      {
+        "pattern": "\\bfind\\b[^|;&]*-delete",
+        "reason": "borra sin mostrar. Corré el find sin -delete y confirmá la lista."
+      },
+      {
+        "pattern": "\\bcurl\\b[^|;&]*\\|\\s*(ba)?sh",
+        "reason": "ejecuta código remoto sin revisarlo. Bajá el script, leelo, después corrélo."
+      }
+    ]
+  },
+  "reuse": [
+    {
+      "pattern": "\\bnew\\s+(LiteRtEngine|LiteRTEngine)\\s*\\(",
+      "appliesTo": "^src/(?!lib/ai/)",
+      "reason": "el motor de IA local se instancia UNA vez dentro de src/lib/ai/ y se consume vía el puerto LlmGenerate (src/domain/ai/llm-port.ts) inyectado. Instanciarlo en otra capa duplica el modelo en memoria (WebGPU) y rompe la regla de dependencias.",
+      "see": "src/lib/ai/litert-engine.ts"
+    }
+  ],
+  "lint": {
+    "command": ["node", "scripts/repo-lint.mjs"],
+    "fileFlag": "--file"
+  },
+  "purity": [
+    {
+      "dir": "src/domain",
+      "forbiddenImports": [
+        "react",
+        "react-dom",
+        "next",
+        "electron",
+        "node:",
+        "fs",
+        "path",
+        "child_process",
+        "@/components",
+        "@/hooks",
+        "@/app/",
+        "@/interface",
+        "@/infrastructure",
+        "@/lib/ai"
+      ],
+      "except": [],
+      "reason": "Artículo 2 de la constitución: el dominio es TypeScript puro, cero IO/framework. Cualquier IO se expresa como puerto y se inyecta. Datos puros de @/lib/*-data sí están permitidos."
+    },
+    {
+      "dir": "src/application",
+      "forbiddenImports": [
+        "react",
+        "react-dom",
+        "next",
+        "electron",
+        "node:",
+        "fs",
+        "child_process",
+        "@/components",
+        "@/hooks",
+        "@/app/",
+        "@/interface",
+        "@/infrastructure",
+        "@/lib"
+      ],
+      "except": [],
+      "reason": "Artículo 3: los casos de uso orquestan el dominio y reciben los puertos por inyección; nunca importan adaptadores concretos ni UI."
+    },
+    {
+      "dir": "src/infrastructure",
+      "forbiddenImports": [
+        "@/components",
+        "@/hooks",
+        "@/app/",
+        "@/interface"
+      ],
+      "except": [],
+      "reason": "la regla de dependencias apunta hacia adentro: un adaptador que importa UI invierte la flecha."
+    }
+  ],
+  "forbiddenDeps": {
+    "manifest": "package.json",
+    "packages": [],
+    "reason": ""
+  },
+  "patterns": [
+    {
+      "id": "ANY",
+      "pattern": ":\\s*any\\b",
+      "appliesTo": "^src/(domain|application)/",
+      "allow": [],
+      "message": "Artículo 5: sin `any` en dominio/aplicación — apaga el type-checker justo donde más vale. Escribí el tipo, o `unknown` con validación Zod en la frontera."
+    },
+    {
+      "id": "SECRETO",
+      "pattern": "process\\.env\\.[A-Z_]*(KEY|TOKEN|SECRET|PASSWORD)",
+      "appliesTo": "^src/(app|components|hooks|interface)/",
+      "allow": [],
+      "message": "un secreto leído desde código del renderer termina en el bundle. Las API keys se leen en el proceso main o en src/lib/ai y se pasa sólo el resultado."
+    },
+    {
+      "id": "CONSOLE",
+      "pattern": "console\\.(log|debug)\\(",
+      "appliesTo": "^src/(domain|application)/(?!.*__tests__)",
+      "allow": [],
+      "message": "console.log en dominio/aplicación es IO disfrazado y ensucia la salida. Si necesitás observabilidad, es un puerto."
+    }
+  ],
+  "tests": {
+    "filePattern": "(^|/)__tests__/|\\.(test|spec)\\.[cm]?[jt]sx?$",
+    "onlyPattern": "\\b(describe|it|test)\\.only\\("
+  },
+  "incidents": {
+    "file": "docs/gotchas.md",
+    "heading": "### GOTCHA",
+    "requiredLines": ["Síntoma:", "Causa:", "Regla:", "Mecanismo:"]
+  },
+  "docs": {
+    "ignore": [
+      "node_modules",
+      ".git",
+      "build",
+      "dist",
+      "out",
+      "coverage",
+      ".next",
+      "graphify-out",
+      ".serena",
+      ".claude/skills/graphify"
+    ],
+    "ignoreFiles": [
+      "English-for-Software-Engineers-fuente.md",
+      "docs/buenas-practicas.md",
+      ".claude/skills/graphify/SKILL.md",
+      ".claude/skills/graphify/references/extraction-spec.md",
+      ".claude/skills/graphify/references/transcribe.md",
+      ".claude/skills/graphify/references/update.md"
+    ],
+    "externalPaths": []
+  },
+  "status": {
+    "file": "STATUS.md"
+  },
+  "sdd": {
+    "$comment": "El kit SDD de este repo es Sofka (skills sofka-01-specify … sofka-07-implement, instaladas como plugin). `phases` queda vacío porque las skills no viven en skillRoots verificables; el valor está en `routes`.",
+    "kit": "sofka",
+    "skillRoots": ["~/.claude/skills", ".claude/skills"],
+    "phases": [],
+    "specsDir": "specs",
+    "activeFeaturePointer": "",
+    "github": {
+      "$comment": "Espejo en GitHub de la ruta Sofka: los artefactos VIVEN en specs/ (tracker.artifactsIn: repo, lo verifica artifacts-check); las issues son el tablero asignable y visible sin clonar. Lo usa scripts/sdd-github.mjs (pnpm sdd:*). Todo subcomando toca red: NO es señal del gate.",
+      "repo": "raalzate/emma-desktop",
+      "featureLabel": "sdd:feature",
+      "taskLabel": "sdd:task",
+      "featureLabelPrefix": "feature:",
+      "labelColor": "5319E7",
+      "gotchaLabel": "gotcha",
+      "adrLabel": "adr",
+      "decisionsDir": "docs/decisions"
+    },
+    "routes": [
+      {
+        "route": "sdd",
+        "patterns": [
+          "\\bnueva (feature|funcionalidad|pantalla)\\b",
+          "\\b(feature|módulo|modulo) nuev[oa]\\b",
+          "\\bepic\\b",
+          "\\bmvp\\b",
+          "\\bhistorias de usuario\\b",
+          "\\breescrib(ir|e)\\b",
+          "\\brearquitect",
+          "\\bmigrar (el|la|todo)\\b"
+        ],
+        "message": "Pedido de tamaño FEATURE → flujo Sofka: /sofka-01-specify → checklist → plan → testify → tasks → implement (Artículo 7 de la constitución). Si decidís saltarlo, declaralo en una línea con el porqué."
+      },
+      {
+        "route": "bugfix",
+        "patterns": [
+          "\\bbug\\b",
+          "\\bfalla\\b",
+          "\\bno funciona\\b",
+          "\\bse rompe\\b",
+          "\\berror en\\b",
+          "\\bregresi[óo]n\\b"
+        ],
+        "message": "Falla sobre algo que ya existe → /sofka-bugfix o test rojo que la reproduzca ANTES de tocar producción (Artículo 1: TDD)."
+      },
+      {
+        "route": "clarify",
+        "patterns": [
+          "\\bno s[ée] si\\b",
+          "\\balgo as[íi]\\b",
+          "\\bcomo veas\\b",
+          "\\bmejorar (todo|esto)\\b"
+        ],
+        "message": "Pedido ambiguo → /sofka-clarify o preguntá UNA sola cosa antes de tocar archivos."
+      },
+      {
+        "route": "none",
+        "patterns": [
+          "\\btypo\\b",
+          "\\bcopy\\b",
+          "\\brenombrar\\b",
+          "\\bformatear\\b",
+          "\\bdocumentar\\b",
+          "\\bexplicame\\b"
+        ],
+        "message": ""
+      }
+    ]
+  },
+  "graph": {
+    "graphFile": "graphify-out/graph.json",
+    "reportFile": "graphify-out/GRAPH_REPORT.md",
+    "queryCommand": "graphify query \"<pregunta>\"",
+    "questionPatterns": [
+      "d[óo]nde (est[áa]|vive|queda)",
+      "qui[ée]n (usa|llama|importa)",
+      "c[óo]mo funciona",
+      "qu[ée] (m[óo]dulos?|archivos?|capas?)",
+      "\\bwhere is\\b",
+      "\\bwho (uses|calls)\\b"
+    ]
+  },
+  "postCommit": [
+    {
+      "name": "grafo de conocimiento (graphify)",
+      "command": ["graphify", "update", "."],
+      "watch": [".ts", ".tsx", ".md"]
+    }
+  ],
+  "tracker": {
+    "$comment": "Gestor de trabajo: GitHub (raalzate/emma-desktop). Los artefactos Sofka viven EN el repo (specs/); las issues los espejan (sdd.github + scripts/sdd-github.mjs). La referencia en commits es un issue #N o la ruta del spec. Aplicar un label exige permiso de triage/write: si la cuenta activa de gh no lo tiene, GitHub DESCARTA los labels y crea el issue igual, sin fallar — por eso sdd-github.mjs verifica DESPUÉS de crear.",
+    "kind": "github",
+    "issuePattern": "(^|[^A-Za-z0-9_])#[0-9]+|\\bspec:\\s*specs/",
+    "issueExample": "#12 · Closes #12 · spec: specs/onboarding/spec.md",
+    "newIssueHint": [
+      "Bug:                gh issue create --label bug --title \"…\" --body \"…\"",
+      "Mejora acotada:     gh issue create --label enhancement --title \"…\" --body \"…\"",
+      "Sólo documentación: gh issue create --label documentation --title \"…\" --body \"…\"",
+      "Tamaño feature:     /sofka-01-specify (queda en specs/) y después pnpm sdd:new specs/<feature>/spec.md"
+    ],
+    "labels": {
+      "bug": "bug",
+      "enhancement": "enhancement",
+      "docs": "documentation"
+    },
+    "artifactsIn": "repo",
+    "specsDir": "specs",
+    "allowedInRepo": []
+  },
+  "commitMsg": {
+    "codePattern": "^(src/|main/|main\\.ts|preload\\.ts|scripts/|\\.claude/)",
+    "ignoreExtensions": [".md", ".png", ".jpg", ".svg", ".icns", ".ico"],
+    "skipSubjects": ["Merge ", "Revert ", "fixup! ", "squash! "],
+    "escapeLine": "sin-issue:"
+  }
+}

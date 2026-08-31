@@ -1,0 +1,120 @@
+{
+  "name": "emma-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "EMMA Desktop — tutora de inglés conversacional local-first (Electron + Next.js) con IA local (Gemma/LiteRT-LM en WebGPU) e híbrida (nube opcional).",
+  "author": "EMMA",
+  "main": "build/main.js",
+  "scripts": {
+    "dev": "next dev",
+    "next-dev": "next dev",
+    "next-build": "next build",
+    "ts:build": "tsc -p tsconfig.electron.json",
+    "ts:watch": "tsc -p tsconfig.electron.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "move-out": "rimraf build/out && mv out build/out",
+    "electron-dev": "concurrently -k -n NEXT,TS,ELECTRON -c green,cyan,yellow \"npm:next-dev\" \"npm:ts:watch\" \"wait-on http://localhost:${PORT:-3000} && ELECTRON_RENDERER_URL=http://localhost:${PORT:-3000} electron .\"",
+    "build": "npm run next-build && npm run ts:build && npm run move-out",
+    "electron-build:mac": "npm run build && electron-builder --mac",
+    "electron-build:win": "npm run build && electron-builder --win",
+    "electron-build:linux": "npm run build && electron-builder --linux",
+    "gate": "bash scripts/gate.sh",
+    "gate:fast": "bash scripts/gate.sh fast",
+    "selftest": "node scripts/harness-selftest.mjs",
+    "lint:rules": "node scripts/repo-lint.mjs --rules",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "rebuild": "electron-rebuild",
+    "sdd:new": "node scripts/sdd-github.mjs new",
+    "sdd:tasks": "node scripts/sdd-github.mjs tasks",
+    "sdd:status": "node scripts/sdd-github.mjs status",
+    "sdd:mirror": "node scripts/sdd-github.mjs mirror-docs"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^4.1.3",
+    "@huggingface/transformers": "^3.3.3",
+    "@litert-lm/core": "^0.13.1",
+    "@radix-ui/react-accordion": "^1.2.3",
+    "@radix-ui/react-alert-dialog": "^1.1.6",
+    "@radix-ui/react-checkbox": "^1.1.4",
+    "@radix-ui/react-dialog": "^1.1.6",
+    "@radix-ui/react-dropdown-menu": "^2.1.6",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-popover": "^1.1.6",
+    "@radix-ui/react-progress": "^1.1.2",
+    "@radix-ui/react-scroll-area": "^1.2.3",
+    "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-separator": "^1.1.2",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.3",
+    "@radix-ui/react-toast": "^1.2.6",
+    "@radix-ui/react-tooltip": "^1.1.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dotenv": "^16.5.0",
+    "electron-serve": "^3.0.0",
+    "lucide-react": "^0.475.0",
+    "msedge-tts": "^2.0.7",
+    "next": "^15.5.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.2",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
+    "tailwind-merge": "^2.5.2",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@electron/notarize": "^3.1.1",
+    "@electron/rebuild": "^3.2.9",
+    "@tailwindcss/typography": "^0.5.20",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@vitest/coverage-v8": "^4.1.9",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.2.1",
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12",
+    "postcss": "^8",
+    "rimraf": "^6.0.1",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.9",
+    "wait-on": "^9.0.1"
+  },
+  "pnpm": {
+    "blockExoticSubdeps": false
+  },
+  "build": {
+    "appId": "com.emma.desktop",
+    "productName": "EMMA",
+    "asar": true,
+    "directories": {
+      "output": "dist",
+      "buildResources": "buildResources"
+    },
+    "files": [
+      "build/**/*",
+      "!**/*.map"
+    ],
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    }
+  }
+}
