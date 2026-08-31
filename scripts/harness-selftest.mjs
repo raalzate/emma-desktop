@@ -551,6 +551,48 @@ if ((config.docs?.mentionSignals ?? []).length && (config.gate?.signals ?? []).l
   }
 }
 
+// 3i. Un script npm/pnpm citado que no existe en el manifest es rojo; un subcomando
+//     nativo del gestor no se verifica. Cebo por el modo virtual: nada toca el árbol.
+if (config.docs?.scriptRefs && fs.existsSync(abs("scripts/docs-linkcheck.mjs"))) {
+  const virtual = (contenido) =>
+    spawnSync("node", [abs("scripts/docs-linkcheck.mjs"), "--file", "docs/cebo-virtual.md", "--stdin"], {
+      input: contenido,
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+    });
+  const rojo = virtual("Antes de entregar corré `pnpm script-fantasma`.\n");
+  if (rojo.status !== 0 && `${rojo.stdout}${rojo.stderr}`.includes("script npm/pnpm citado")) {
+    ok("link-check caza un script npm/pnpm citado que no existe");
+  } else {
+    bad("link-check caza un script citado inexistente", `exit ${rojo.status}: ${(rojo.stdout + rojo.stderr).trim().slice(0, 160)}`);
+  }
+  const verde = virtual("Instalá con `pnpm install` y después `pnpm exec vitest`.\n");
+  if (verde.status === 0) ok("link-check deja pasar los subcomandos nativos del gestor");
+  else bad("link-check deja pasar subcomandos nativos", `exit ${verde.status}: ${(verde.stdout + verde.stderr).trim().slice(0, 160)}`);
+}
+
+// 3j. Un artículo BLOCKING cuyo *Mecanismo:* no cita comando ejecutable es rojo (la regla
+//     de honestidad de la constitución, con freno). Cebo: constitución temporal vía --config.
+if (config.docs?.constitution?.file && fs.existsSync(abs("scripts/docs-linkcheck.mjs"))) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "harness-constitucion-"));
+  try {
+    const md = path.join(tmp, "constitucion-cebo.md");
+    fs.writeFileSync(md, "## Artículo 1 — Confianza · BLOCKING\n\nNadie rompe nada.\n\n*Mecanismo:* la buena voluntad del equipo.\n");
+    const cebo = JSON.parse(JSON.stringify(config));
+    cebo.docs.constitution = { file: md };
+    const cfg = path.join(tmp, "cebo.json");
+    fs.writeFileSync(cfg, JSON.stringify(cebo));
+    const res = spawnSync("node", [abs("scripts/docs-linkcheck.mjs"), "--config", cfg], { encoding: "utf8" });
+    if (res.status !== 0 && `${res.stdout}${res.stderr}`.includes("artículo BLOCKING sin freno")) {
+      ok("link-check caza un artículo BLOCKING sin comando ejecutable");
+    } else {
+      bad("link-check caza un BLOCKING sin freno", `exit ${res.status}: ${(res.stdout + res.stderr).trim().slice(0, 160)}`);
+    }
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 // ── 4. Las reglas del lint muerden (por stdin: no escribe archivos) ──────────
 section("4. reglas del lint");
 

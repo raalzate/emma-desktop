@@ -14,7 +14,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Señal | Comando | Resultado |
 |---|---|---|
 | Self-test del arnés | `node scripts/harness-selftest.mjs` | verde — cada regla del config probada con una muestra que el freno bloquea |
-| Link-check de docs | `node scripts/docs-linkcheck.mjs` | verde |
+| Link-check de docs | `node scripts/docs-linkcheck.mjs` | verde — enlaces, rutas citadas, scripts npm/pnpm citados y honestidad BLOCKING de la constitución |
 | Lint de convenciones | `node scripts/repo-lint.mjs` | verde — PUREZA (domain/application/infrastructure), ANY, SECRETO, CONSOLE, ONLY, INCIDENTE |
 | Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en `specs/` |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
@@ -32,10 +32,13 @@ los artefactos siguen viviendo en `specs/`. Releases: tag `v*` dispara
 El gate se probó ROJO a propósito (2026-08-26): un `: any` temporal en `src/domain/` hizo
 fallar `repo-lint` con la regla ANY. Un gate que nunca falló es una esperanza, no un gate.
 
-**Madurez del arnés (escala L0–L4 de `docs/buenas-practicas.md`): L3** — gate único con
-pre-commit y hooks del ciclo del agente vivos (self-test verde), rutas protegidas, subagentes
-y comandos instalados, CI corriendo el mismo gate y `main` protegida (2026-08-31). L4 pide
-el ciclo RHO estrenado (`/lesson` aún sin usar con un incidente real).
+**Madurez del arnés (escala L0–L4 de `docs/buenas-practicas.md`): L3, camino a L4** — gate
+único con pre-commit y hooks del ciclo del agente vivos (self-test verde), rutas protegidas,
+subagentes y comandos instalados, CI corriendo el mismo gate y `main` protegida (2026-08-31).
+El ciclo RHO se estrenó el 2026-08-31: `/harness-audit` encontró punteros muertos y un
+artículo BLOCKING sin freno, y `/lesson` los convirtió en dos frenos nuevos del link-check
+con sus casos de self-test (primer gotcha real en `docs/gotchas.md`). L4 pide que el ciclo
+sea rutina, no estreno.
 
 ## Deuda conocida
 
@@ -46,4 +49,5 @@ el ciclo RHO estrenado (`/lesson` aún sin usar con un incidente real).
   lo disparó todavía; el primer release verificará el empaquetado en las 3 plataformas.
 - **Artículos REVIEW de la constitución** (1, 4, 6, 7, 9, 13): sin comando que falle; los
   juzga `reviewer`/`code-reviewer` en cada diff.
-- `docs/gotchas.md` sólo tiene la entrada de formato: ningún incidente registrado todavía.
+- **Artículo 10 reclasificado a REVIEW** (v1.3.0): "integridad de aserciones" no es verificable
+  por máquina; lo juzga la revisión del diff. Volvería a BLOCKING sólo con un freno real.

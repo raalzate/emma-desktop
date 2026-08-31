@@ -264,7 +264,10 @@
       ".claude/skills/graphify/references/transcribe.md",
       ".claude/skills/graphify/references/update.md"
     ],
-    "externalPaths": []
+    "externalPaths": [],
+    "proseInSource": [".githooks", ".claude/hooks"],
+    "scriptRefs": { "manifest": "package.json" },
+    "constitution": { "file": "docs/CONSTITUTION.md" }
   },
   "status": {
     "file": "STATUS.md"

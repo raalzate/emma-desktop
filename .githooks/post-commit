@@ -6,7 +6,7 @@
 # Sin esa clave, este hook no hace nada y sale en 0: es opcional a propósito.
 #
 # Por qué vive acá y NO en `.git/hooks/`: este repo setea `core.hooksPath=.githooks`
-# (npm run hooks:install), así que git IGNORA `.git/hooks/post-commit`. Una herramienta
+# (pnpm hooks:install), así que git IGNORA `.git/hooks/post-commit`. Una herramienta
 # que "instala su hook" ahí lo deja escrito, se ve bien y nunca corre.
 #
 # Barato y silencioso: si falla, el commit YA ocurrió y no se toca. Lo derivado es una
