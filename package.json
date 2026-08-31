@@ -109,7 +109,7 @@
     ],
     "mac": {
       "target": "dmg",
-      "icon": "assets/icon.png",
+      "icon": "assets/icon-mac.png",
       "hardenedRuntime": true,
       "gatekeeperAssess": false
     },
