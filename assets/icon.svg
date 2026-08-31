@@ -1,0 +1,57 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Fondo: teal profundo, diagonal, con luz arriba a la izquierda -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#14b8a6"/>
+      <stop offset="0.55" stop-color="#0d9488"/>
+      <stop offset="1" stop-color="#115e59"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.28" cy="0.2" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="letter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f766e"/>
+      <stop offset="1" stop-color="#134e4a"/>
+    </linearGradient>
+    <filter id="softshadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="28" flood-color="#042f2e" flood-opacity="0.35"/>
+    </filter>
+    <filter id="bubbleshadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#042f2e" flood-opacity="0.30"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle estilo macOS: 824px centrados en lienzo 1024 -->
+  <g>
+    <rect x="0" y="0" width="1024" height="1024" rx="229" fill="url(#bg)"/>
+    <rect x="0" y="0" width="1024" height="1024" rx="229" fill="url(#glow)"/>
+  </g>
+
+  <!-- Globo de diálogo con cola, centrado -->
+  <g transform="translate(512,512) scale(1.2427) translate(-512,-512)"><g filter="url(#bubbleshadow)">
+    <path fill="#ffffff" d="
+      M 512 262
+      C 664 262 776 364 776 496
+      C 776 628 664 730 512 730
+      C 478 730 446 725 417 716
+      C 380 748 330 768 282 772
+      C 272 773 266 762 273 754
+      C 292 731 306 700 310 668
+      C 271 625 248 563 248 496
+      C 248 364 360 262 512 262
+      Z"/>
+  </g>
+
+  <!-- «e» de EMMA -->
+  <g transform="translate(512,512) scale(1.2427) translate(-512,-512)"><text x="510" y="636" text-anchor="middle"
+        font-family="Avenir Next, Helvetica, sans-serif" font-weight="700"
+        font-size="392" fill="url(#letter)">e</text></g>
+
+  <!-- Chispa: el toque de IA, arriba a la derecha del globo -->
+  <g transform="translate(512,512) scale(1.2427) translate(-512,-512)"><g fill="#fbbf24">
+    <path d="M 762 250 C 770 292 786 308 828 316 C 786 324 770 340 762 382 C 754 340 738 324 696 316 C 738 308 754 292 762 250 Z"/>
+    <path d="M 836 386 C 840 407 848 415 869 419 C 848 423 840 431 836 452 C 832 431 824 423 803 419 C 824 415 832 407 836 386 Z" opacity="0.9"/>
+  </g>
+</g></g></svg>
