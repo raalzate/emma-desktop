@@ -10,7 +10,7 @@
  * español (Artículo 9).
  */
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Clapperboard, Target, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildSceneNarration, type NarrationKind } from "@/domain/chat/scene-narration";
@@ -27,6 +27,11 @@ interface Props {
    * se vivió esa escena y volver a teclearla haría esperar por nada.
    */
   animate?: boolean;
+  /**
+   * La narración terminó. La conversación se revela recién entonces: mientras
+   * la escena se teclea, la persona no habla ni aparece "escribiendo…" debajo.
+   */
+  onDone?: () => void;
 }
 
 const ICON_BY_KIND: Record<NarrationKind, typeof Clapperboard> = {
@@ -40,7 +45,7 @@ function Caret() {
   return <span className="ml-0.5 inline-block w-[2px] animate-pulse bg-foreground/60">&nbsp;</span>;
 }
 
-export function SceneNarration({ scenario, situation, animate = true }: Props) {
+export function SceneNarration({ scenario, situation, animate = true, onDone }: Props) {
   const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
   const beats = useMemo(
     () =>
@@ -55,6 +60,12 @@ export function SceneNarration({ scenario, situation, animate = true }: Props) {
   );
   const texts = useMemo(() => beats.map((b) => b.text), [beats]);
   const { visible, done, skip } = useTypewriter(texts, { animate });
+
+  // Al reabrir del histórico el hook nace ya `done`: el aviso tiene que salir
+  // igual, o la conversación guardada se quedaría escondida para siempre.
+  useEffect(() => {
+    if (done) onDone?.();
+  }, [done, onDone]);
 
   return (
     <div className="mx-auto w-full max-w-xl space-y-2 py-2">

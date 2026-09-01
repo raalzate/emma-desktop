@@ -1,4 +1,10 @@
+// Los plugins se importan como ESM, no con `require()`: el archivo ya es ESM
+// (`import` + `export default`) y Node 25 lo carga como tal, donde `require` no
+// existe. La mezcla tumbaba `next dev` en la primera recompilación de Tailwind
+// con `ReferenceError: require is not defined`.
 import type { Config } from 'tailwindcss';
+import tailwindcssAnimate from 'tailwindcss-animate';
+import typography from '@tailwindcss/typography';
 
 export default {
   darkMode: ['class'],
@@ -50,5 +56,5 @@ export default {
       },
     },
   },
-  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
+  plugins: [tailwindcssAnimate, typography],
 } satisfies Config;
