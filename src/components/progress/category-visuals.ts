@@ -7,7 +7,9 @@
  * ceremonias ágiles, sin leer un solo título.
  *
  * Las clases van escritas enteras porque Tailwind no detecta nombres compuestos
- * en tiempo de ejecución.
+ * en tiempo de ejecución. Los colores son los tokens del tema `cat-1…cat-5`
+ * (rediseño «Café sereno», FR-029): variables CSS con variante clara/oscura,
+ * así que ya no hacen falta clases `dark:`.
  */
 
 import { Bug, Code2, Repeat, Server, Users, type LucideIcon } from "lucide-react";
@@ -32,47 +34,47 @@ export const CATEGORY_VISUALS: Record<string, CategoryVisual> = {
   COLLABORATIVE_WORK: {
     icon: Users,
     label: "Trabajo en equipo",
-    border: "border-sky-500",
-    fill: "bg-sky-500 text-white",
-    text: "text-sky-600 dark:text-sky-400",
-    ring: "ring-sky-500/25",
-    stroke: "stroke-sky-500/60",
+    border: "border-cat-1",
+    fill: "bg-cat-1 text-white",
+    text: "text-cat-1",
+    ring: "ring-cat-1/25",
+    stroke: "stroke-cat-1/60",
   },
   SOFTWARE_DEVELOPMENT: {
     icon: Code2,
     label: "Desarrollo",
-    border: "border-violet-500",
-    fill: "bg-violet-500 text-white",
-    text: "text-violet-600 dark:text-violet-400",
-    ring: "ring-violet-500/25",
-    stroke: "stroke-violet-500/60",
+    border: "border-cat-2",
+    fill: "bg-cat-2 text-white",
+    text: "text-cat-2",
+    ring: "ring-cat-2/25",
+    stroke: "stroke-cat-2/60",
   },
   AGILE_METHODOLOGIES: {
     icon: Repeat,
     label: "Ceremonias ágiles",
-    border: "border-amber-500",
-    fill: "bg-amber-500 text-white",
-    text: "text-amber-600 dark:text-amber-400",
-    ring: "ring-amber-500/25",
-    stroke: "stroke-amber-500/60",
+    border: "border-cat-3",
+    fill: "bg-cat-3 text-white",
+    text: "text-cat-3",
+    ring: "ring-cat-3/25",
+    stroke: "stroke-cat-3/60",
   },
   DEVOPS: {
     icon: Server,
     label: "Operación",
-    border: "border-emerald-500",
-    fill: "bg-emerald-500 text-white",
-    text: "text-emerald-600 dark:text-emerald-400",
-    ring: "ring-emerald-500/25",
-    stroke: "stroke-emerald-500/60",
+    border: "border-cat-4",
+    fill: "bg-cat-4 text-white",
+    text: "text-cat-4",
+    ring: "ring-cat-4/25",
+    stroke: "stroke-cat-4/60",
   },
   TESTING: {
     icon: Bug,
     label: "Calidad",
-    border: "border-rose-500",
-    fill: "bg-rose-500 text-white",
-    text: "text-rose-600 dark:text-rose-400",
-    ring: "ring-rose-500/25",
-    stroke: "stroke-rose-500/60",
+    border: "border-cat-5",
+    fill: "bg-cat-5 text-white",
+    text: "text-cat-5",
+    ring: "ring-cat-5/25",
+    stroke: "stroke-cat-5/60",
   },
 };
 

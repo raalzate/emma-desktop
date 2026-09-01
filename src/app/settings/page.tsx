@@ -15,13 +15,15 @@ import { RemoteAiConfig } from "@/components/settings/remote-ai-config";
 import { SystemInfoCard } from "@/components/settings/system-info-card";
 import { UpdatesCard } from "@/components/settings/updates-card";
 import { DataManagementCard } from "@/components/settings/data-management-card";
+import { AppShell } from "@/components/nav/app-shell";
 import { PageHeader } from "@/components/nav/page-header";
 
 export default function SettingsPage() {
   return (
-    <>
+    <AppShell>
     <PageHeader title="Configuración" />
-    <main className="mx-auto w-full max-w-3xl space-y-6 p-6">
+    {/* div y no <main>: el AppShell ya aporta el <main> del layout */}
+    <div className="mx-auto w-full max-w-3xl space-y-6 p-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">Configuración</h1>
         <p className="text-sm text-muted-foreground">
@@ -61,7 +63,7 @@ export default function SettingsPage() {
           <DataManagementCard />
         </TabsContent>
       </Tabs>
-    </main>
-    </>
+    </div>
+    </AppShell>
   );
 }

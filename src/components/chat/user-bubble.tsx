@@ -16,7 +16,8 @@ function playAudio(url: string) {
 export function UserBubble({ text, at, audioUrl }: { text: string; at?: number; audioUrl?: string }) {
   return (
     <div className="flex flex-col items-end duration-300 animate-in fade-in slide-in-from-bottom-1">
-      <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-sm text-primary-foreground shadow-sm">
+      {/* Azul primary con esquina inferior derecha 4px (FR-018). */}
+      <div className="max-w-[80%] whitespace-pre-wrap rounded-bubble rounded-br-[4px] bg-primary px-4 py-2 text-sm text-primary-foreground shadow-[0_1px_2px_rgba(31,41,51,0.08)]">
         {audioUrl && (
           <div className="mb-1 flex items-center gap-2">
             <Button

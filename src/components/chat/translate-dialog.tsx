@@ -35,7 +35,7 @@ export function TranslateDialog({ text, onClose }: { text: string | null; onClos
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Languages className="h-5 w-5 text-primary" /> Translate
+            <Languages className="h-5 w-5 text-primary" /> Traducir
           </DialogTitle>
         </DialogHeader>
         <Select value={lang} onValueChange={setLang}>

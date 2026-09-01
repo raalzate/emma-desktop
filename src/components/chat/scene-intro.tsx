@@ -59,9 +59,15 @@ function SituationBriefing({
             Creando tu escena…
           </p>
         ) : (
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-            {narrative ?? briefing.hypothetical}
-          </p>
+          // Franja de escena (FR-014): banda ámbar suave con tag mono.
+          <div className="mt-2 flex items-start gap-2.5 rounded-[10px] bg-accent-soft px-3 py-2.5">
+            <span className="mt-0.5 shrink-0 font-code text-[10px] font-medium tracking-[0.15em] text-accent-foreground">
+              ESCENA
+            </span>
+            <p className="text-sm italic leading-relaxed text-foreground/80">
+              {narrative ?? briefing.hypothetical}
+            </p>
+          </div>
         )}
         {briefing.missionLines.length > 0 && (
           <div className="mt-3">
@@ -71,7 +77,7 @@ function SituationBriefing({
             <ul className="mt-1.5 space-y-1.5">
               {briefing.missionLines.map((line, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
-                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-scaffold-easy" />
                   <span>{line}</span>
                 </li>
               ))}

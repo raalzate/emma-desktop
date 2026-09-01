@@ -10,6 +10,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useEmma } from "@/interface/emma-context";
+import { AppShell } from "@/components/nav/app-shell";
 import { PathwayHome } from "@/components/progress/pathway-home";
 import { ProgressSkeleton } from "@/components/progress/progress-skeleton";
 
@@ -22,8 +23,18 @@ export default function Home() {
     if (ready && !completed) router.replace("/onboarding/");
   }, [ready, completed, router]);
 
-  if (!ready || !runtime || !profile) return <ProgressSkeleton />;
+  if (!ready || !runtime || !profile) {
+    return (
+      <AppShell>
+        <ProgressSkeleton />
+      </AppShell>
+    );
+  }
   if (!completed) return null;
 
-  return <PathwayHome runtime={runtime} level={profile.englishLevel} />;
+  return (
+    <AppShell>
+      <PathwayHome runtime={runtime} level={profile.englishLevel} />
+    </AppShell>
+  );
 }
