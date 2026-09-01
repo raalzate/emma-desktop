@@ -117,10 +117,22 @@ export function sceneDirective(state: SceneState, opts?: { deepen?: boolean }): 
   const next = state.pending[0];
   if (!next) {
     if (opts?.deepen) {
-      const lastFact = state.covered[state.covered.length - 1]?.fact ?? "";
+      // El hecho para profundizar tiene que TENER contenido. Con «Nothing» como
+      // último hecho la orden era «pedí más detalle sobre: "Nothing"»: imposible
+      // de cumplir, las dos generaciones salían basura y la escena caía en la
+      // línea de recuperación ("Sorry, I lost my train of thought"). Se busca
+      // hacia atrás el último hecho sustantivo; si no hay ninguno, la orden no
+      // cita nada y sigue siendo cumplible.
+      const lastFact = [...state.covered].reverse().find((c) => isSubstantive(c.fact))?.fact;
+      if (!lastFact) {
+        return (
+          `${knownLine}Do NOT close the scene yet. Ask them one natural, curious ` +
+          "question about their work today, in character."
+        );
+      }
       return (
         `${knownLine}Do NOT close the scene yet. React to their last answer and ask ONE ` +
-        `curious follow-up to get more detail about what they just told you: "${lastFact}"`
+        `curious follow-up to get more detail about something they told you: "${lastFact}"`
       );
     }
     return `${knownLine}All topics are covered: summarize their update in one line and close the scene in character.`;

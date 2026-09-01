@@ -55,6 +55,52 @@ describe("sceneDirective — reaccionar antes de preguntar", () => {
   });
 });
 
+/**
+ * Incidente observado en la app: «Nothing» cerraba el checklist en el turno 3,
+ * se activaba `deepen` y la directiva pedía «ask ONE curious follow-up to get
+ * more detail about: "Nothing"». Es imposible de cumplir: las dos generaciones
+ * salían basura y la escena caía en la línea de recuperación («Sorry, I lost my
+ * train of thought»). Profundizar exige un hecho con contenido.
+ */
+describe("sceneDirective — profundizar necesita un hecho con contenido", () => {
+  function coveredEndingInNegative() {
+    let state = standup();
+    for (const line of [
+      "yesterday i finished the retry logic.",
+      "today i plan to run the load test.",
+      "Nothing",
+    ]) {
+      state = advanceScene(state, line);
+    }
+    return state;
+  }
+
+  it("no propone profundizar sobre una negación cerrada", () => {
+    const directive = sceneDirective(coveredEndingInNegative(), { deepen: true });
+    expect(directive).not.toMatch(/detail about[^"]*"Nothing"/i);
+  });
+
+  it("se apoya en el último hecho que SÍ tenía contenido", () => {
+    const directive = sceneDirective(coveredEndingInNegative(), { deepen: true });
+    expect(directive).toContain("load test");
+  });
+
+  it("sigue sin cerrar la escena", () => {
+    expect(sceneDirective(coveredEndingInNegative(), { deepen: true }).toLowerCase()).toContain(
+      "do not close",
+    );
+  });
+
+  it("sin ningún hecho con contenido da una orden cumplible, no una cita vacía", () => {
+    let state = standup();
+    for (const line of ["No", "Nothing", "nope"]) state = advanceScene(state, line);
+    const directive = sceneDirective(state, { deepen: true });
+    expect(directive.toLowerCase()).toContain("do not close");
+    expect(directive.toLowerCase()).toMatch(/ask (?:them )?one/);
+    expect(directive).not.toMatch(/"\s*"/);
+  });
+});
+
 describe("resolveSceneClose — no cerrar antes de poder evaluar", () => {
   const base = {
     checklistComplete: true,
