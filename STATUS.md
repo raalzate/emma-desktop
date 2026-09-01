@@ -4,15 +4,16 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-08-31
+- **Fecha del último gate completo:** 2026-09-01
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.1.0 (2026-08-31) — **ROTO**: el dmg instalado abre
-  ventana en blanco (electron-serve apuntaba a `build/main/out`; ver gotcha 2026-08-31)
-  y con ícono Electron por defecto. Corregido en `main/paths.ts` + smoke de producción
-  en el gate y en `release-build.yml`; la deuda #95 (humo del instalador) quedó pagada
-  con freno ejecutable. Pendiente: tagear y publicar v0.1.1 con `/release`.
+- **Último release publicado:** ninguno — v0.1.0 se retiró (dmg roto, gotcha 2026-08-31)
+  y v0.1.1 quedó construida en BORRADOR sin publicar (3 instaladores listos). v0.2.0
+  en curso (milestone «v0.2.0 — Flujo conversacional», issues #106/#119): lección
+  persistida, escena narrada, bucle agéntico sin contradicciones («LLM juzga, código
+  decide») e invariantes de conversación deterministas. Publicar el borrador es gesto
+  del humano.
 
 ## Señales
 
@@ -23,7 +24,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Lint de convenciones | `node scripts/repo-lint.mjs` | verde — PUREZA (domain/application/infrastructure), ANY, SECRETO, CONSOLE, ONLY, INCIDENTE |
 | Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en issues de GitHub; sin `specs/` en el repo |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
-| Tests | `pnpm test` | verde — 879 pruebas en 113 archivos |
+| Tests | `pnpm test` | verde — 1097 pruebas en 134 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
 | Smoke de producción | `pnpm smoke` | verde — Electron carga `app://-` con contenido (camino empaquetado); OMITIDA donde no hay binario de Electron (gate de CI) |
 
