@@ -21,6 +21,7 @@ import { personaAnchor } from "@/domain/chat/simulation-prompt";
 import {
   advanceScene,
   createSceneState,
+  deepeningTarget,
   isReaskingCovered,
   isSceneComplete,
   sceneDirective,
@@ -356,7 +357,13 @@ export function useChatSession(d: Deps) {
         // Decide: directiva exacta (qué ya se sabe / qué preguntar ahora / cerrar).
         sceneCue: directive || undefined,
         // Verify: veta re-preguntas de ítems ya cubiertos (dispara el reintento).
-        validateReply: (r) => !isReaskingCovered(r, sceneState.current),
+        // Recibe lo que Decide ordenó: al profundizar, la pregunta sobre ESE
+        // ítem cubierto es la orden, no una re-pregunta. Sin este dato el veto
+        // tumbaba las dos generaciones y la escena caía en la recuperación.
+        validateReply: (r) =>
+          !isReaskingCovered(r, sceneState.current, {
+            deepeningOn: deepen ? deepeningTarget(sceneState.current)?.id : undefined,
+          }),
         onToken: (c) => setStreaming((s) => s + c),
       });
       setMessages((m) => [...m, { role: "assistant", content: reply, at: Date.now() }]);

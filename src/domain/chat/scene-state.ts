@@ -70,8 +70,40 @@ export function isSubstantive(message: string): boolean {
 const CLOSED_NEGATIVE =
   /^(?:no|not|nope|nah|none|n[ao]t?[th]ing|neither)(?:\s+(?:really|much|else|at all|for now|right now|yet|blockers?))?[.!]?$/i;
 
+/** La negación con la que ARRANCA el mensaje, si arranca con una. */
+const OPENING_NEGATION = /^(?:no|not|nope|nah|none|n[ao]t?[th]ing|neither)\b[,.!]?\s*/i;
+
+/**
+ * Palabras que pueden acompañar a una negación sin convertirla en respuesta con
+ * contenido: tranquilizar ("I am fine", "all good") es parte de decir que no.
+ */
+const REASSURANCE = new Set([
+  "really", "much", "else", "all", "yet", "now", "right", "fine", "good", "great",
+  "ok", "okay", "everything", "thanks", "blockers", "blocker", "issues", "issue",
+  "problems", "problem", "side", "end", "moment",
+  // Una segunda negación tampoco es contenido: "No, nothing much."
+  "no", "not", "nope", "nah", "none", "nothing", "neither",
+]);
+
+/**
+ * ¿El mensaje es una negación que zanja el tema?
+ *
+ * Dos formas. La escueta ("Not", "Nothing much") y —la que rompió una escena
+ * real— la CORTÉS: «No, I am fine for now.» El detector exigía que la negación
+ * fuera todo el mensaje, así que esa respuesta no era negación cerrada; y con
+ * una sola palabra de contenido tampoco era sustantiva. Se perdía entera: el
+ * objetivo seguía pendiente y la persona repreguntaba los bloqueos que el
+ * aprendiz acababa de descartar.
+ */
 export function isClosedNegative(message: string): boolean {
-  return CLOSED_NEGATIVE.test(message.trim().replace(/\s+/g, " "));
+  const clean = message.trim().replace(/\s+/g, " ");
+  if (CLOSED_NEGATIVE.test(clean)) return true;
+  if (!OPENING_NEGATION.test(clean)) return false;
+  // Tras la negación no puede quedar contenido de trabajo: sólo relleno o
+  // palabras de tranquilizar. "no, i am blocked by the DBA" sí trae contenido.
+  const rest = clean.replace(OPENING_NEGATION, "");
+  const words = rest.toLowerCase().replace(/['’`]/g, "").match(/[a-záéíóúñü]+/g) ?? [];
+  return words.every((w) => FILLER.has(w) || REASSURANCE.has(w));
 }
 
 /** Estado inicial del checklist del escenario, o null si es de flujo libre. */
@@ -166,9 +198,7 @@ export function sceneDirective(state: SceneState, opts?: { deepen?: boolean }): 
       // recuperación ("Sorry, I lost my train of thought"). No alcanza con
       // `isSubstantive`: «Nathing for now» tiene dos palabras de contenido y la
       // pasaba. Una negación nunca es material para profundizar.
-      const lastFact = [...state.covered]
-        .reverse()
-        .find((c) => isSubstantive(c.fact) && !isClosedNegative(c.fact))?.fact;
+      const lastFact = deepeningTarget(state)?.fact;
       if (!lastFact) {
         return (
           `${knownLine}The scene is not over. Say one short line that shows real ` +
@@ -187,6 +217,25 @@ export function sceneDirective(state: SceneState, opts?: { deepen?: boolean }): 
     `${knownLine}React to what they just said in one short clause — never contradict ` +
     `it — then ask ONLY about ${next.ask}.`
   );
+}
+
+/**
+ * El ítem cubierto sobre el que toca profundizar, o null si ninguno da para
+ * ello. Es la MISMA elección que usa la directiva de `deepen`, expuesta para
+ * que el veto de Verify sepa qué se ordenó y no lo rechace (ver VerifyContext).
+ *
+ * Se exige contenido real: una negación —aunque tenga dos palabras y pase el
+ * filtro de sustantividad, como «Nathing for now»— no es material del que se
+ * pueda pedir un detalle.
+ */
+export function deepeningTarget(
+  state: SceneState | null,
+): { id: string; fact: string } | null {
+  if (!state) return null;
+  const found = [...state.covered]
+    .reverse()
+    .find((c) => isSubstantive(c.fact) && !isClosedNegative(c.fact));
+  return found ? { id: found.id, fact: found.fact } : null;
 }
 
 /**
@@ -215,11 +264,31 @@ export function isSceneComplete(state: SceneState | null): boolean {
  * salida válida: dos generaciones rechazadas y la escena caía en la línea de
  * recuperación, como si hubiera perdido el hilo.
  */
-export function isReaskingCovered(reply: string, state: SceneState | null): boolean {
+export interface VerifyContext {
+  /**
+   * Ítem cubierto sobre el que Decide ordenó profundizar en ESTE turno.
+   *
+   * Sin este dato, Verify vetaba justo lo que Decide acababa de pedir: con el
+   * checklist completo, `deepen` manda ir al detalle de un ítem YA CUBIERTO y
+   * este veto prohíbe preguntar por ítems cubiertos. Las dos generaciones caían
+   * y la escena terminaba en la línea de recuperación ("Sorry, I lost my train
+   * of thought"), como si la persona se hubiera colgado.
+   */
+  deepeningOn?: string;
+}
+
+export function isReaskingCovered(
+  reply: string,
+  state: SceneState | null,
+  context: VerifyContext = {},
+): boolean {
   if (!state || state.covered.length === 0) return false;
   const probing = /\?|\bwhat\b|\btell me\b|\bneed to know\b/i.test(reply);
   if (!probing) return false;
   const next = state.pending[0];
   if (next?.reaskMarkers.test(reply)) return false;
-  return state.covered.some((c) => c.reaskMarkers.test(reply));
+  // Lo que Decide ordenó profundizar no es una re-pregunta: es la orden.
+  return state.covered.some(
+    (c) => c.id !== context.deepeningOn && c.reaskMarkers.test(reply),
+  );
 }

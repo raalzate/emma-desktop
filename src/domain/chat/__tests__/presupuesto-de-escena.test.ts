@@ -85,8 +85,17 @@ describe("depthFor — la profundidad exige guion que la sostenga", () => {
   });
 
   it("los escenarios profundos conservan su presupuesto largo", () => {
-    for (const scenarioType of ["code_review", "tech_interview", "incident_postmortem", "design_review"]) {
+    for (const scenarioType of Object.keys(SCENE_DEPTH)) {
       expect(maxTurnsFor(scenarioType), scenarioType).toBe(MAX_TURNS_BY_SCENARIO[scenarioType]);
+    }
+  });
+
+  // La profundidad es para escenas cuyo presupuesto largo alguien DECLARÓ. Un
+  // escenario que sólo hereda el default nunca dijo querer diez turnos, y
+  // dárselos es volver a prometer conversación sin guion que la sostenga.
+  it("sólo se declara profundidad donde el presupuesto largo es deliberado", () => {
+    for (const scenarioType of Object.keys(SCENE_DEPTH)) {
+      expect(MAX_TURNS_BY_SCENARIO[scenarioType], scenarioType).toBeDefined();
     }
   });
 });

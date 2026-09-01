@@ -32,6 +32,11 @@ export const SCENE_DEPTH: Record<string, number> = {
   tech_interview: 2,
   incident_postmortem: 2,
   design_review: 2,
+  // Los dos escenarios que además DECLARAN presupuesto largo a propósito (10)
+  // en MAX_TURNS_BY_SCENARIO. El resto del catálogo no declara nada y cae al
+  // default: ahí una escena de cinco turnos es la verdad, no un recorte.
+  retrospective: 2,
+  architecture_pitch: 2,
 };
 
 export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
@@ -657,6 +662,20 @@ export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
       reaskMarkers: /\bcost\b|\beffort\b|\bgive up\b|\brisks?\b/i,
       answerMarkers: /\bit (?:costs|takes)\b|\bweeks?\b|\bwe(?:'d| would) (?:lose|need)\b|\btrade.?off\b|\brisk\b/i,
     },
+    {
+      id: "objection",
+      ask: "how they answer the strongest objection to it",
+      reaskMarkers: /\bobjection\b|\bwhat if (?:i|we) said\b|\bpush ?back\b|\bconvince me\b|\bwhy not just\b/i,
+      answerMarkers:
+        /\bfair (?:point|enough)\b|\bi(?:'d| would) argue\b|\bthat(?:'s| is) true, but\b|\bthe difference is\b|\bwe already\b/i,
+    },
+    {
+      id: "first_step",
+      ask: "the smallest first step they want approved today",
+      reaskMarkers: /\bfirst step\b|\bwhat do you need\b|\bstart (?:with|small)\b|\bwhat are you asking\b/i,
+      answerMarkers:
+        /\bstart (?:with|by)\b|\ba (?:spike|prototype|pilot|proof)\b|\bone (?:service|team|module)\b|\btwo weeks\b|\bi(?:'m| am) asking for\b/i,
+    },
   ],
   multi_team_sync: [
     {
@@ -710,6 +729,20 @@ export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
       ask: "what did not work",
       reaskMarkers: /\bdidn(?:'t| not) (?:work|go)\b|\bwent (?:badly|wrong)\b|\bproblems?\b/i,
       answerMarkers: /\bdidn(?:'t| not) work\b|\bwe struggled\b|\bthe problem was\b|\btoo (?:many|much)\b|\bwent wrong\b/i,
+    },
+    {
+      id: "cause",
+      ask: "why they think it went that way",
+      reaskMarkers: /\bwhy do you think\b|\bwhat caused\b|\breason\b|\bbehind (?:it|that)\b/i,
+      answerMarkers:
+        /\bbecause\b|\bthe reason\b|\bwe (?:under ?estimated|assumed|forgot)\b|\bit happened when\b|\bmostly\b/i,
+    },
+    {
+      id: "own_part",
+      ask: "their own part in it, not just the team's",
+      reaskMarkers: /\byour (?:part|side)\b|\bwhat about you\b|\byou personally\b|\bfrom your side\b/i,
+      answerMarkers:
+        /\bi (?:should have|could have|didn'?t|took|missed|kept)\b|\bmy (?:part|side|fault)\b|\bon my end\b|\bpersonally\b/i,
     },
     {
       id: "action",
