@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Espejo en GitHub de la ruta SDD: los artefactos VIVEN en `specs/` (decisión
- * `tracker.artifactsIn: "repo"`, la verifica artifacts-check); las issues son lo
- * que un archivo no da — asignables, con estado propio y visibles sin clonar.
+ * Ruta SDD en GitHub: los artefactos VIVEN en las issues (decisión
+ * `tracker.artifactsIn: "tracker"`, la verifica artifacts-check: nada de `specs/`
+ * en el repo). El spec y el tasks son borradores temporales — se suben acá y la
+ * issue queda como el registro: asignable, con estado propio y visible sin clonar.
  *
  * Forma en GitHub (una feature = un árbol de issues):
  *
@@ -12,8 +13,8 @@
  *
  * Subcomandos:
  *
- *   node scripts/sdd-github.mjs new <specs/<feature>/spec.md>       abre la issue madre
- *   node scripts/sdd-github.mjs tasks <issue> <specs/<feature>/tasks.md>  issues de tarea
+ *   node scripts/sdd-github.mjs new <borrador/<feature>/spec.md>    abre la issue madre
+ *   node scripts/sdd-github.mjs tasks <issue> <borrador/<feature>/tasks.md>  issues de tarea
  *   node scripts/sdd-github.mjs status                              qué hay abierto, por feature
  *   node scripts/sdd-github.mjs mirror-docs [--apply]               espeja gotchas y ADRs (no borra archivos)
  *
@@ -166,10 +167,13 @@ function nuevaFeature(archivo) {
   const md = fs.readFileSync(archivo, "utf8");
   asegurarLabelsBase();
 
-  // El nombre de la feature es el directorio bajo specs/: `specs/<feature>/spec.md`.
+  // El nombre de la feature es el directorio que contiene el borrador:
+  // `<cualquier-ruta>/<feature>/spec.md`.
   const feature = path.basename(path.dirname(path.resolve(archivo)));
-  if (!feature || feature === "specs" || feature === ".") {
-    console.error("El spec tiene que vivir en `specs/<feature>/spec.md`: el nombre del directorio es el nombre de la feature.");
+  if (!feature || feature === "specs" || feature === "." || feature === "/") {
+    console.error(
+      "El borrador tiene que estar en `<ruta>/<feature>/spec.md`: el nombre del directorio es el nombre de la feature.",
+    );
     process.exit(1);
   }
 
@@ -181,14 +185,14 @@ function nuevaFeature(archivo) {
       [
         `La feature \`${feature}\` ya está espejada: existe la etiqueta \`${gh.featureLabelPrefix}${feature}\` en ${gh.repo}.`,
         `Usadas: ${usadas.sort().join(", ")}.`,
-        "Si es la misma feature, trabajá sobre su issue madre; si es otra, renombrá el directorio en specs/.",
+        "Si es la misma feature, trabajá sobre su issue madre; si es otra, renombrá el directorio del borrador.",
       ].join("\n"),
     );
     process.exit(1);
   }
 
   const labelFeature = `${gh.featureLabelPrefix}${feature}`;
-  asegurarLabel(labelFeature, `Feature SDD ${feature} (specs/${feature}/)`);
+  asegurarLabel(labelFeature, `Feature SDD ${feature}`);
   const titulo = `[sdd] ${feature} — ${tituloDe(md, feature)}`;
   const url = ghCli([
     "issue",
@@ -196,7 +200,7 @@ function nuevaFeature(archivo) {
     "--title",
     titulo,
     "--body",
-    [`Espejo de \`specs/${feature}/spec.md\` (el archivo manda y viaja con el clon).`, "", md].join("\n"),
+    [`Spec de la feature \`${feature}\`. Esta issue es el registro: no hay copia en el repo.`, "", md].join("\n"),
     "--label",
     [gh.featureLabel, labelFeature].join(","),
   ]);
