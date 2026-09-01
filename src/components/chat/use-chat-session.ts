@@ -303,10 +303,20 @@ export function useChatSession(d: Deps) {
       const askElaboration =
         contributes && needsElaboration(clean, level) && elaborationAskedFor.current !== currentItem;
       if (askElaboration) elaborationAskedFor.current = currentItem;
-      // Observe: el mensaje del aprendiz actualiza el checklist ANTES de decidir.
-      // Mientras se pide elaboración el ítem sigue pendiente: aún no está contado.
-      if (sceneState.current && contributes && !askElaboration) {
-        sceneState.current = advanceScene(sceneState.current, clean);
+      // Observe: el mensaje del aprendiz actualiza el checklist ANTES de decidir,
+      // y lo hace TAMBIÉN cuando se va a pedir más detalle.
+      //
+      // El "why" (incidente): pedir elaboración dejaba el ítem pendiente, así
+      // que una respuesta correcta («Yesterday I finished the login page.») no
+      // se registraba, seguía a la cabeza de la cola y el siguiente mensaje —
+      // sobre otro tema— terminaba ocupándola. Profundizar es un matiz de la
+      // conversación, no un motivo para olvidar lo que el aprendiz ya contó.
+      if (sceneState.current && contributes) {
+        // La pregunta que este mensaje contesta: sin ella, un mensaje sin
+        // señales propias no puede atribuirse a ningún objetivo.
+        const lastAgentLine =
+          [...prior].reverse().find((m) => m.role === "assistant")?.content ?? "";
+        sceneState.current = advanceScene(sceneState.current, clean, { lastAgentLine });
         setSceneGoals(sceneProgress(sceneState.current));
       }
       // Si el checklist quedó completo, la respuesta que viene es el CIERRE de

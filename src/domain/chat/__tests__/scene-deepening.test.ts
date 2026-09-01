@@ -48,8 +48,8 @@ describe("sceneDirective — reaccionar antes de preguntar", () => {
 
   it("con `deepen` profundiza en lo contado en vez de cerrar", () => {
     const directive = sceneDirective(fullyCovered(), { deepen: true });
-    expect(directive.toLowerCase()).toContain("do not close");
-    expect(directive.toLowerCase()).toMatch(/follow-up|more detail/);
+    expect(directive.toLowerCase()).toContain("scene is not over");
+    expect(directive.toLowerCase()).toMatch(/concrete detail/);
     // Se apoya en un hecho ya dado por el aprendiz.
     expect(directive).toContain("DBA");
   });
@@ -65,14 +65,10 @@ describe("sceneDirective — reaccionar antes de preguntar", () => {
 describe("sceneDirective — profundizar necesita un hecho con contenido", () => {
   function coveredEndingInNegative() {
     let state = standup();
-    for (const line of [
-      "yesterday i finished the retry logic.",
-      "today i plan to run the load test.",
-      "Nothing",
-    ]) {
-      state = advanceScene(state, line);
-    }
-    return state;
+    state = advanceScene(state, "yesterday i finished the retry logic.");
+    state = advanceScene(state, "today i plan to run the load test.");
+    // La negación sólo cuenta anclada a la pregunta que la provocó.
+    return advanceScene(state, "Nothing", { lastAgentLine: "Anything blocking you?" });
   }
 
   it("no propone profundizar sobre una negación cerrada", () => {
@@ -85,19 +81,35 @@ describe("sceneDirective — profundizar necesita un hecho con contenido", () =>
     expect(directive).toContain("load test");
   });
 
+  it("tampoco profundiza sobre una negación mal escrita, que sí pasa el filtro de contenido", () => {
+    let state = standup();
+    state = advanceScene(state, "yesterday i finished the retry logic.");
+    state = advanceScene(state, "today i plan to run the load test.");
+    state = advanceScene(state, "Nathing for now", { lastAgentLine: "Anything blocking you?" });
+    const directive = sceneDirective(state, { deepen: true });
+    expect(directive).not.toMatch(/told you: "Nathing for now"/);
+    expect(directive).toContain("load test");
+  });
+
   it("sigue sin cerrar la escena", () => {
     expect(sceneDirective(coveredEndingInNegative(), { deepen: true }).toLowerCase()).toContain(
-      "do not close",
+      "scene is not over",
     );
   });
 
   it("sin ningún hecho con contenido da una orden cumplible, no una cita vacía", () => {
     let state = standup();
-    for (const line of ["No", "Nothing", "nope"]) state = advanceScene(state, line);
+    for (const [linea, pregunta] of [
+      ["No", "What did you do yesterday?"],
+      ["Nothing", "What are you working on today?"],
+      ["nope", "Anything blocking you?"],
+    ]) {
+      state = advanceScene(state, linea, { lastAgentLine: pregunta });
+    }
     const directive = sceneDirective(state, { deepen: true });
-    expect(directive.toLowerCase()).toContain("do not close");
-    expect(directive.toLowerCase()).toMatch(/ask (?:them )?one/);
-    expect(directive).not.toMatch(/"\s*"/);
+    expect(directive.toLowerCase()).toContain("scene is not over");
+    expect(directive.toLowerCase()).toMatch(/one short line/);
+    expect(directive).not.toMatch(/told you: ""/);
   });
 });
 

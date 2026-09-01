@@ -39,9 +39,11 @@ function knownFacts(state: SceneState | null): string {
   return `You already know — ${known}. Do NOT ask about those again. `;
 }
 
-const ELABORATE_CUE =
-  "React to their last answer and ask ONE specific follow-up for a concrete " +
-  "detail about that same thing. Do NOT move to a new topic yet.";
+import { buildElaborationCue } from "./elaboration";
+
+// Una sola redacción de la orden de profundizar (vivía duplicada aquí y en
+// `elaboration.ts`, y sólo se arreglaba una de las dos copias).
+const ELABORATE_CUE = buildElaborationCue();
 
 export function buildTurnDirective(input: TurnDirectiveInput): string {
   const { state, elaborate, deepen, wrapUp, recastCue, intent = "in-scene" } = input;

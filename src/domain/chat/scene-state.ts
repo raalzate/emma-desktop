@@ -63,8 +63,12 @@ export function isSubstantive(message: string): boolean {
  * aprendiz acababa de negar, contradiciéndose en la misma línea ("so you are not
  * blocked. What is the blocker…?").
  */
+// La familia de "nothing" se reconoce con tolerancia a la falta de ortografía
+// (`n[ao]t?[th]ing`): el aprendiz escribió «Nathing for now» y, al no matchear
+// la palabra exacta, la escena la trató como una respuesta con contenido —
+// llegó a proponerla como el hecho sobre el que profundizar.
 const CLOSED_NEGATIVE =
-  /^(?:no|not|nope|nah|none|nothing|neither)(?:\s+(?:really|much|else|at all|for now|yet|blockers?))?[.!]?$/i;
+  /^(?:no|not|nope|nah|none|n[ao]t?[th]ing|neither)(?:\s+(?:really|much|else|at all|for now|right now|yet|blockers?))?[.!]?$/i;
 
 export function isClosedNegative(message: string): boolean {
   return CLOSED_NEGATIVE.test(message.trim().replace(/\s+/g, " "));
@@ -77,24 +81,63 @@ export function createSceneState(scenarioType: string): SceneState | null {
   return { scenarioType, covered: [], pending: [...items] };
 }
 
+export interface AdvanceContext {
+  /**
+   * Última línea de la persona. Es la única evidencia de QUÉ se preguntó, y sin
+   * ella un mensaje sin señales propias no puede atribuirse a nada.
+   */
+  lastAgentLine?: string;
+}
+
 /**
- * Observe: atribuye el mensaje del aprendiz al ítem que de verdad contesta —
- * el primer pendiente cuyas señales de contenido aparezcan en el mensaje— y si
- * ninguna coincide, al ítem que se acababa de preguntar. Sustantivo → lo cubre y
- * captura el hecho; relleno/smalltalk → el estado no cambia.
+ * Observe: atribuye el mensaje del aprendiz al ítem que de verdad contesta.
+ *
+ * Dos evidencias, en este orden: las señales de contenido del propio mensaje
+ * (mandan siempre), o —si no hay ninguna— el ítem que la persona ACABA de
+ * preguntar, comprobado contra su última línea.
+ *
+ * El "why" (incidente): antes, sin señales, el mensaje caía al primer pendiente
+ * de la cola. Como el aprendiz contesta en su orden y no en el nuestro, eso
+ * asignaba «Nathing for now» al objetivo «yesterday» y «I spent most of
+ * yesterday on the login API» al objetivo «blockers». Esos hechos inventados
+ * viajaban al prompt bajo «You already know —»: el modelo recibía una versión
+ * falsa de su propia conversación y respondía torpe, como era de esperar.
+ *
+ * Sin evidencia no se cubre nada. Que la escena tarde un turno más es mucho
+ * más barato que mentirle al modelo sobre lo que se dijo.
  */
-export function advanceScene(state: SceneState, userMessage: string): SceneState {
+export function advanceScene(
+  state: SceneState,
+  userMessage: string,
+  context: AdvanceContext = {},
+): SceneState {
   if (state.pending.length === 0) return state;
   // Una negación breve zanja el objetivo igual que una respuesta con contenido.
   if (!isSubstantive(userMessage) && !isClosedNegative(userMessage)) return state;
-  const matched = state.pending.findIndex((i) => i.answerMarkers?.test(userMessage));
-  const index = matched >= 0 ? matched : 0;
+  const index = attributionIndex(state, userMessage, context);
+  if (index < 0) return state;
   const target = state.pending[index];
   return {
     ...state,
     covered: [...state.covered, { ...target, fact: userMessage.trim() }],
     pending: state.pending.filter((_, i) => i !== index),
   };
+}
+
+/** Índice del ítem que este mensaje contesta, o -1 si no hay evidencia. */
+function attributionIndex(
+  state: SceneState,
+  userMessage: string,
+  context: AdvanceContext,
+): number {
+  const byMarkers = state.pending.findIndex((i) => i.answerMarkers?.test(userMessage));
+  if (byMarkers >= 0) return byMarkers;
+  const asked = context.lastAgentLine;
+  if (!asked) return -1;
+  // El ítem que la persona preguntó, reconocido por sus propias señales de
+  // re-pregunta. Sólo cuenta si sigue pendiente: una pregunta vieja sobre algo
+  // ya cubierto no puede volver a consumir un objetivo.
+  return state.pending.findIndex((i) => i.reaskMarkers.test(asked));
 }
 
 /**
@@ -117,22 +160,25 @@ export function sceneDirective(state: SceneState, opts?: { deepen?: boolean }): 
   const next = state.pending[0];
   if (!next) {
     if (opts?.deepen) {
-      // El hecho para profundizar tiene que TENER contenido. Con «Nothing» como
-      // último hecho la orden era «pedí más detalle sobre: "Nothing"»: imposible
-      // de cumplir, las dos generaciones salían basura y la escena caía en la
-      // línea de recuperación ("Sorry, I lost my train of thought"). Se busca
-      // hacia atrás el último hecho sustantivo; si no hay ninguno, la orden no
-      // cita nada y sigue siendo cumplible.
-      const lastFact = [...state.covered].reverse().find((c) => isSubstantive(c.fact))?.fact;
+      // El hecho para profundizar tiene que TENER algo que contar. Con «Nothing»
+      // la orden era «pedí más detalle sobre: "Nothing"»: imposible de cumplir,
+      // las dos generaciones salían basura y la escena caía en la línea de
+      // recuperación ("Sorry, I lost my train of thought"). No alcanza con
+      // `isSubstantive`: «Nathing for now» tiene dos palabras de contenido y la
+      // pasaba. Una negación nunca es material para profundizar.
+      const lastFact = [...state.covered]
+        .reverse()
+        .find((c) => isSubstantive(c.fact) && !isClosedNegative(c.fact))?.fact;
       if (!lastFact) {
         return (
-          `${knownLine}Do NOT close the scene yet. Ask them one natural, curious ` +
-          "question about their work today, in character."
+          `${knownLine}The scene is not over. Say one short line that shows real ` +
+          'interest in their day — like "How is the sprint treating you so far?"'
         );
       }
       return (
-        `${knownLine}Do NOT close the scene yet. React to their last answer and ask ONE ` +
-        `curious follow-up to get more detail about something they told you: "${lastFact}"`
+        `${knownLine}The scene is not over. You are curious about this, which they ` +
+        `already told you: "${lastFact}". Say one short line asking for the concrete ` +
+        'detail — like "How did that go in the end?"'
       );
     }
     return `${knownLine}All topics are covered: summarize their update in one line and close the scene in character.`;

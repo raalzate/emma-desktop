@@ -81,9 +81,10 @@ export function isSceneContribution(message: string): boolean {
  * la palabra. Así el aprendiz recibe ayuda sin que se rompa la ficción.
  */
 export const REPAIR_CUE =
-  "The learner did not follow you or slipped out of English. Do NOT teach or " +
-  "explain grammar, and do NOT switch language: stay in character, say the same " +
-  "thing again in simpler words, and give them an easy way back in.";
+  "They did not follow you, or slipped out of English. Say the same thing again " +
+  'in simpler words and hand them an easy way in — like "Sorry, let me put it ' +
+  'another way: what are you picking up today?" Do not teach grammar and do not ' +
+  "switch language: you are a colleague, not a teacher.";
 
 /** Directiva del turno social: se devuelve el saludo antes de entrar en materia. */
 export const GREETING_CUE =

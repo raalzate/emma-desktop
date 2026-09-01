@@ -17,7 +17,8 @@ describe("sceneProgress", () => {
     let state = createSceneState("daily_standup")!;
     state = advanceScene(state, "yesterday i merged the PR.");
     state = advanceScene(state, "today i plan to run the load test.");
-    state = advanceScene(state, "Nothing");
+    // "Nothing" no trae señales: lo ancla la pregunta que se acaba de hacer.
+    state = advanceScene(state, "Nothing", { lastAgentLine: "Anything blocking you?" });
     expect(sceneProgress(state)).toEqual({ done: 3, total: 3 });
   });
 
