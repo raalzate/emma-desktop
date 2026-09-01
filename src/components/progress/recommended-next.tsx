@@ -1,9 +1,14 @@
 "use client";
 
-/** Callout del próximo escenario recomendado, con el motivo de la sugerencia. */
+/**
+ * Tarjeta «Recomendado para hoy» (FR-028): fondo azul suave del tema, tag
+ * técnico en font-code y, cuando la vista pasa `onPractice`, el par de CTA
+ * (primario para entrar a la escena, secundario con borde hacia el progreso).
+ */
 
-import { Sparkles } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   RecommendationReason,
   type NextScenarioRecommendation,
@@ -17,20 +22,35 @@ const REASON_LABEL: Record<string, string> = {
 
 export function RecommendedNext({
   recommendation,
+  onPractice,
 }: {
   recommendation: NextScenarioRecommendation | null;
+  /** Si se pasa, la tarjeta muestra los CTA de práctica (contexto: home). */
+  onPractice?: (scenarioType: string) => void;
 }) {
   if (!recommendation) return null;
   return (
-    <Card className="border-primary/40 bg-primary/5">
-      <CardContent className="flex items-start gap-3 p-4">
-        <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+    <section className="rounded-bubble bg-primary-soft p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Recomendado ahora</p>
-          <p className="text-sm font-semibold">{recommendation.title}</p>
-          <p className="text-xs text-muted-foreground">{REASON_LABEL[recommendation.reason]}</p>
+          <p className="font-code text-[11px] uppercase tracking-widest text-primary">
+            Recomendado para hoy
+          </p>
+          <p className="font-headline text-xl font-bold">{recommendation.title}</p>
+          <p className="text-sm text-muted-foreground">{REASON_LABEL[recommendation.reason]}</p>
         </div>
-      </CardContent>
-    </Card>
+        {onPractice && (
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <Button asChild variant="outline">
+              <Link href="/progress/">Ver mi progreso</Link>
+            </Button>
+            <Button className="gap-2" onClick={() => onPractice(recommendation.scenarioType)}>
+              Practicar ahora
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }

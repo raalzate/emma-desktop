@@ -9,16 +9,20 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEmma } from "@/interface/emma-context";
+import { AppShell } from "@/components/nav/app-shell";
 import { ChatView } from "@/components/chat/chat-view";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// El esqueleto de carga vive dentro del shell: la navegación no parpadea.
 function Loading() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-8">
-      <Skeleton className="h-10 w-48" />
-      <Skeleton className="h-24 w-full max-w-md" />
-      <span className="text-xs text-muted-foreground">Preparando la escena…</span>
-    </main>
+    <AppShell>
+      <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-24 w-full max-w-md" />
+        <span className="text-xs text-muted-foreground">Preparando la escena…</span>
+      </div>
+    </AppShell>
   );
 }
 

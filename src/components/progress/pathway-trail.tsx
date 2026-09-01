@@ -6,15 +6,16 @@
  * El "why" del lenguaje visual: la mecánica de "camino con nodos" hace legible
  * de un vistazo dónde estás y qué sigue, pero el método del libro rechaza la
  * gamificación (§0.2: motivación interna, resultados medibles — sin premios).
- * Así que el camino no se dibuja como un juego sino como lo que un ingeniero ya
- * sabe leer: un grafo de ramas, con la escena actual marcada `HEAD`, el tramo
- * recorrido en línea sólida y lo pendiente en línea punteada.
+ * El rediseño «Café sereno» (FR-026) lo cuenta con 4 estados: completada
+ * (círculo primary + check), en curso (accent con halo), siguiente (contorno)
+ * y bloqueada (apagada con candado); los conectores van sólidos hacia nodos
+ * alcanzables y punteados hacia los bloqueados.
  *
  * Dos ejes independientes: el COLOR y el ICONO dicen de qué va la escena
- * (categoría); la FORMA dice en qué punto estás (superado / actual / pendiente).
+ * (categoría); la FORMA dice en qué punto estás (estado del nodo).
  */
 
-import { Check } from "lucide-react";
+import { Check, Lock, Play } from "lucide-react";
 import { isPathwayItemPassed, type PathwayItem } from "@/domain/pathway/pathway-item";
 import type { Pathway } from "@/domain/pathway/pathway";
 import { getScenario } from "@/domain/scenarios/scenario-catalog";
@@ -43,18 +44,43 @@ function segmentPath(from: number, to: number): string {
   return `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
 }
 
-type NodeState = "passed" | "current" | "pending";
+type NodeState = "completed" | "current" | "next" | "locked";
 
-function stateOf(item: PathwayItem, recommendedType?: string | null): NodeState {
-  if (isPathwayItemPassed(item)) return "passed";
-  return item.scenarioType === recommendedType ? "current" : "pending";
+/**
+ * Estado de cada nodo: superadas → completada; la recomendada → en curso; la
+ * primera pendiente restante → siguiente; el resto → bloqueada (solo visual:
+ * cualquier escena sigue siendo clicable, el orden es una sugerencia).
+ */
+function trailStates(items: PathwayItem[], recommendedType?: string | null): NodeState[] {
+  let nextTaken = false;
+  return items.map((item) => {
+    if (isPathwayItemPassed(item)) return "completed";
+    if (item.scenarioType === recommendedType) return "current";
+    if (!nextTaken) {
+      nextTaken = true;
+      return "next";
+    }
+    return "locked";
+  });
 }
 
 const STATE_LABEL: Record<NodeState, string> = {
-  passed: "Superado",
-  current: "Siguiente",
-  pending: "Pendiente",
+  completed: "Completada",
+  current: "En curso",
+  next: "Siguiente",
+  locked: "Bloqueada",
 };
+
+/** Forma del nodo según su estado (el color de categoría solo tiñe «siguiente»). */
+function shapeClass(state: NodeState, categoryText: string): string {
+  return cn(
+    "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2",
+    state === "completed" && "border-primary bg-primary text-primary-foreground",
+    state === "current" && "border-accent bg-accent text-accent-foreground ring-4 ring-accent-soft",
+    state === "next" && cn("border-border bg-card", categoryText),
+    state === "locked" && "border-transparent bg-secondary text-muted-foreground",
+  );
+}
 
 export function PathwayTrail({
   pathway,
@@ -71,7 +97,7 @@ export function PathwayTrail({
     return <p className="text-sm text-muted-foreground">Este nivel aún no tiene escenarios.</p>;
   }
   const height = yAt(items.length - 1) + TOP_PAD;
-  const states = items.map((item) => stateOf(item, recommendedType));
+  const states = trailStates(items, recommendedType);
   const visuals = items.map((item) => visualFor(getScenario(item.scenarioType)?.category));
   // Solo se listan en la leyenda las categorías que aparecen en este nivel.
   const legend = Object.entries(CATEGORY_VISUALS).filter(([key]) =>
@@ -88,8 +114,9 @@ export function PathwayTrail({
           aria-hidden
         >
           {items.slice(0, -1).map((item, i) => {
-            // El tramo se dibuja "recorrido" mientras el nodo de origen esté superado.
-            const walked = states[i] === "passed";
+            // Sólido hacia nodos alcanzables; punteado solo hacia bloqueados (FR-026).
+            const toLocked = states[i + 1] === "locked";
+            const walked = states[i + 1] === "completed" || states[i + 1] === "current";
             return (
               <path
                 key={item.scenarioType}
@@ -98,7 +125,7 @@ export function PathwayTrail({
                 vectorEffect="non-scaling-stroke"
                 strokeWidth={2}
                 strokeLinecap="round"
-                strokeDasharray={walked ? undefined : "2 6"}
+                strokeDasharray={toLocked ? "2 6" : undefined}
                 className={walked ? visuals[i].stroke : "stroke-border"}
               />
             );
@@ -112,18 +139,16 @@ export function PathwayTrail({
           const labelLeft = xAt(i) > CENTER_X;
           const face = (
             <>
-              {state === "passed" ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+              {state === "completed" && <Check className="h-5 w-5" />}
+              {state === "current" && <Play className="h-5 w-5" />}
+              {state === "next" && <Icon className="h-5 w-5" />}
+              {state === "locked" && <Lock className="h-4 w-4" />}
               <span className="sr-only">
                 {item.title} — {visual.label} — {STATE_LABEL[state]}
               </span>
             </>
           );
-          const shape = cn(
-            "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 bg-background",
-            state === "passed" && cn(visual.border, visual.fill),
-            state === "current" && cn(visual.border, visual.text, "ring-4", visual.ring, "motion-safe:animate-pulse"),
-            state === "pending" && cn("border-dashed border-border", visual.text, "opacity-60"),
-          );
+          const shape = shapeClass(state, visual.text);
           return (
             <div
               key={item.scenarioType}
@@ -148,7 +173,7 @@ export function PathwayTrail({
                 <span
                   className={cn(
                     "block truncate text-xs font-medium",
-                    state === "pending" && "text-muted-foreground",
+                    state === "locked" && "text-muted-foreground",
                   )}
                   title={item.title}
                 >
@@ -156,11 +181,11 @@ export function PathwayTrail({
                 </span>
                 <span
                   className={cn(
-                    "block font-mono text-[10px] uppercase tracking-wide",
-                    state === "current" ? visual.text : "text-muted-foreground",
+                    "block font-code text-[10px] uppercase tracking-wide",
+                    state === "current" ? "text-accent" : "text-muted-foreground",
                   )}
                 >
-                  {state === "current" ? "HEAD · siguiente" : STATE_LABEL[state]}
+                  {STATE_LABEL[state]}
                 </span>
               </span>
             </div>

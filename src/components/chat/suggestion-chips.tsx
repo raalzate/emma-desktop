@@ -11,10 +11,12 @@
 
 import type { ReplySuggestion } from "@/domain/coaching/reply-suggestion";
 
-const HINT_STYLE: Record<string, string> = {
-  easy: "border-emerald-500/40 text-emerald-600 dark:text-emerald-400",
-  mid: "border-amber-500/40 text-amber-600 dark:text-amber-400",
-  advanced: "border-rose-500/40 text-rose-600 dark:text-rose-400",
+// Clases LITERALES completas (el purge de Tailwind no ve clases compuestas):
+// semáforo del andamiaje con los tokens scaffold (FR-019).
+const HINT_STYLE: Record<string, { chip: string; dot: string }> = {
+  easy: { chip: "bg-scaffold-easy-bg text-scaffold-easy", dot: "bg-scaffold-easy" },
+  mid: { chip: "bg-scaffold-mid-bg text-scaffold-mid", dot: "bg-scaffold-mid" },
+  advanced: { chip: "bg-scaffold-hard-bg text-scaffold-hard", dot: "bg-scaffold-hard" },
 };
 
 // Globo de ayuda en español (andamiaje); la sugerencia en sí queda en inglés (inmersión).
@@ -26,14 +28,20 @@ const HINT_TOOLTIP: Record<string, string> = {
 
 export function SuggestionChips({ suggestions }: { suggestions: ReplySuggestion[] }) {
   if (!suggestions.length) return null;
+  const style = (hint: string) => HINT_STYLE[hint] ?? { chip: "", dot: "bg-border" };
   return (
-    <div className="mb-2 flex flex-wrap gap-2" aria-label="Ejemplos de respuesta">
+    <div className="mb-2 flex flex-wrap items-center gap-2" aria-label="Ejemplos de respuesta">
+      {/* Tag del grupo: marca visible de que esto es andamiaje, en español (FR-020). */}
+      <span className="rounded-md border border-dashed border-border px-2 py-0.5 font-code text-[10px] tracking-[0.15em] text-muted-foreground">
+        ANDAMIAJE · ES
+      </span>
       {suggestions.map((s) => (
         <span
           key={s.levelHint}
-          className={`select-text rounded-full border px-3 py-1 text-left text-xs ${HINT_STYLE[s.levelHint] ?? ""}`}
+          className={`flex select-text items-center gap-1.5 rounded-full px-3 py-1.5 text-left text-xs ${style(s.levelHint).chip}`}
           title={HINT_TOOLTIP[s.levelHint]}
         >
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style(s.levelHint).dot}`} aria-hidden />
           {s.text}
         </span>
       ))}

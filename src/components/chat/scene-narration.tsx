@@ -67,9 +67,15 @@ export function SceneNarration({ scenario, situation, animate = true, onDone }: 
     if (done) onDone?.();
   }, [done, onDone]);
 
+  // Franja de escena (FR-014): la narración vive en una banda ámbar suave con
+  // tag mono «ESCENA»; el texto de la ficción va en itálica y sigue en inglés.
   return (
-    <div className="mx-auto w-full max-w-xl space-y-2 py-2">
-      {visible.map((text, i) => {
+    <div className="mx-auto w-full max-w-xl py-2">
+      <div className="space-y-2 rounded-[12px] bg-accent-soft px-4 py-3">
+        <span className="block font-code text-[10px] font-medium tracking-[0.15em] text-accent-foreground">
+          ESCENA
+        </span>
+        {visible.map((text, i) => {
         const beat = beats[i];
         const Icon = ICON_BY_KIND[beat.kind];
         const typing = !done && i === visible.length - 1;
@@ -81,37 +87,36 @@ export function SceneNarration({ scenario, situation, animate = true, onDone }: 
               beat.kind === "mission" && "pl-4",
             )}
           >
-            <Icon
-              className={cn(
-                "mt-0.5 h-3.5 w-3.5 shrink-0",
-                beat.kind === "mission"
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-muted-foreground",
-              )}
-            />
-            <p
-              className={cn(
-                "text-sm leading-relaxed",
-                beat.kind === "setting" && i === 0
-                  ? "font-semibold tracking-tight"
-                  : "text-muted-foreground",
-              )}
-            >
-              {text}
-              {typing && <Caret />}
-            </p>
-          </div>
-        );
-      })}
-      {!done && (
-        <button
-          type="button"
-          onClick={skip}
-          className="ml-6 text-xs text-muted-foreground/70 underline-offset-2 hover:underline"
-        >
-          Saltar la introducción
-        </button>
-      )}
+              <Icon
+                className={cn(
+                  "mt-0.5 h-3.5 w-3.5 shrink-0",
+                  beat.kind === "mission" ? "text-scaffold-easy" : "text-muted-foreground",
+                )}
+              />
+              <p
+                className={cn(
+                  "text-sm italic leading-relaxed",
+                  beat.kind === "setting" && i === 0
+                    ? "font-semibold tracking-tight text-foreground"
+                    : "text-foreground/75",
+                )}
+              >
+                {text}
+                {typing && <Caret />}
+              </p>
+            </div>
+          );
+        })}
+        {!done && (
+          <button
+            type="button"
+            onClick={skip}
+            className="ml-6 text-xs text-muted-foreground/70 underline-offset-2 hover:underline"
+          >
+            Saltar la introducción
+          </button>
+        )}
+      </div>
     </div>
   );
 }
