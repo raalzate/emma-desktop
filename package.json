@@ -1,6 +1,6 @@
 {
   "name": "emma-desktop",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "license": "Apache-2.0",
   "description": "EMMA Desktop — tutora de inglés conversacional local-first (Electron + Next.js) con IA local (Gemma/LiteRT-LM en WebGPU) e híbrida (nube opcional).",
