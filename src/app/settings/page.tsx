@@ -13,6 +13,7 @@ import { PersonaTuningForm } from "@/components/settings/persona-tuning-form";
 import { ModelManager } from "@/components/settings/model-manager";
 import { RemoteAiConfig } from "@/components/settings/remote-ai-config";
 import { SystemInfoCard } from "@/components/settings/system-info-card";
+import { UpdatesCard } from "@/components/settings/updates-card";
 import { DataManagementCard } from "@/components/settings/data-management-card";
 import { PageHeader } from "@/components/nav/page-header";
 
@@ -53,6 +54,8 @@ export default function SettingsPage() {
         </TabsContent>
         <TabsContent value="system">
           <SystemInfoCard />
+
+          <UpdatesCard />
         </TabsContent>
         <TabsContent value="data">
           <DataManagementCard />

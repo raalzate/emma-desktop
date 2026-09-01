@@ -33,6 +33,18 @@ contextBridge.exposeInMainWorld('emmaAPI', {
     system?: string;
   }): Promise<string> => ipcRenderer.invoke('ai-remote-generate', args),
 
+  // --- Actualizaciones (spec #137) ---
+  updatesCheck: (): Promise<void> => ipcRenderer.invoke('updates-check'),
+  updatesDownload: (): Promise<void> => ipcRenderer.invoke('updates-download'),
+  updatesInstall: (): Promise<void> => ipcRenderer.invoke('updates-install'),
+  updatesOpenDownload: (): Promise<void> => ipcRenderer.invoke('updates-open-download'),
+  updatesCurrentVersion: (): Promise<string> => ipcRenderer.invoke('updates-current-version'),
+  onUpdateStatus: (callback: (status: unknown) => void) => {
+    const listener = (_e: any, status: unknown) => callback(status);
+    ipcRenderer.on('update-status', listener);
+    return () => ipcRenderer.removeListener('update-status', listener);
+  },
+
   // --- Info del sistema ---
   systemInfo: (): Promise<any> => ipcRenderer.invoke('system-info'),
 

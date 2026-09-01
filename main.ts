@@ -6,6 +6,7 @@ import { setupProdLogger } from './main/logger';
 import { registerPrivilegedSchemes } from './main/schemes';
 import { createMainWindow } from './main/window';
 import { registerIpcHandlers } from './main/ipc';
+import { scheduleStartupCheck } from './main/services/auto-update';
 
 // Schemes privilegiados. electron-serve encola SU registro (solo 'app') en un
 // `queueMicrotask` al importarse, así que una llamada síncrona nuestra quedaría
@@ -36,6 +37,8 @@ app.whenReady().then(() => {
 
   registerIpcHandlers();
   createMainWindow();
+  // Chequeo de update diferido: nunca compite con la carga de la IA local.
+  scheduleStartupCheck();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
