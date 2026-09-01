@@ -13,10 +13,11 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { SCENE_CHECKLISTS } from "@/lib/scene-checklists";
+import { SCENE_CHECKLISTS, SCENE_DEPTH, MIN_ITEMS_FOR_DEPTH } from "@/lib/scene-checklists";
 import {
   MAX_TURNS_BY_SCENARIO,
   TURNS_AROUND_CHECKLIST,
+  depthFor,
   maxTurnsFor,
   turnsToGradeFor,
 } from "../simulation-session";
@@ -32,7 +33,9 @@ describe("maxTurnsFor — el presupuesto lo sostiene el checklist", () => {
   for (const scenarioType of CON_CHECKLIST) {
     it(`${scenarioType}: no promete más conversación de la que tiene guion`, () => {
       const objetivos = SCENE_CHECKLISTS[scenarioType].length;
-      expect(maxTurnsFor(scenarioType)).toBeLessThanOrEqual(objetivos + TURNS_AROUND_CHECKLIST);
+      expect(maxTurnsFor(scenarioType)).toBeLessThanOrEqual(
+        objetivos * depthFor(scenarioType) + TURNS_AROUND_CHECKLIST,
+      );
     });
   }
 
@@ -54,6 +57,37 @@ describe("maxTurnsFor — el presupuesto lo sostiene el checklist", () => {
   it("un escenario desconocido no revienta", () => {
     expect(maxTurnsFor("no_existe")).toBeGreaterThan(0);
     expect(maxTurnsFor(null)).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * La profundidad (dos turnos por objetivo: preguntar y repreguntar por el
+ * detalle) es lo que sostiene una entrevista o un postmortem de 12 turnos. Y es
+ * exactamente la puerta por la que volvería el relleno si se pudiera declarar
+ * sobre un guion de tres ítems: el freno la ata a tener contenido de verdad.
+ */
+describe("depthFor — la profundidad exige guion que la sostenga", () => {
+  it("por defecto un objetivo se conversa en un turno", () => {
+    expect(depthFor("morning_greeting")).toBe(1);
+    expect(depthFor("no_existe")).toBe(1);
+  });
+
+  it("ningún escenario declara profundidad sin objetivos suficientes", () => {
+    for (const [scenarioType, depth] of Object.entries(SCENE_DEPTH)) {
+      if (depth <= 1) continue;
+      expect(SCENE_CHECKLISTS[scenarioType], `${scenarioType} declara profundidad sin checklist`)
+        .toBeDefined();
+      expect(
+        SCENE_CHECKLISTS[scenarioType].length,
+        `${scenarioType} declara profundidad ${depth} con sólo ${SCENE_CHECKLISTS[scenarioType].length} objetivos`,
+      ).toBeGreaterThanOrEqual(MIN_ITEMS_FOR_DEPTH);
+    }
+  });
+
+  it("los escenarios profundos conservan su presupuesto largo", () => {
+    for (const scenarioType of ["code_review", "tech_interview", "incident_postmortem", "design_review"]) {
+      expect(maxTurnsFor(scenarioType), scenarioType).toBe(MAX_TURNS_BY_SCENARIO[scenarioType]);
+    }
   });
 });
 

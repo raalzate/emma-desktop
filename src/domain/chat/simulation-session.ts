@@ -7,7 +7,7 @@
 
 import { MAX_HISTORY_TURNS } from "@/config/session-config";
 import { MIN_TURNS_TO_COUNT } from "@/domain/progression/promotion-policy";
-import { SCENE_CHECKLISTS } from "@/lib/scene-checklists";
+import { SCENE_CHECKLISTS, SCENE_DEPTH } from "@/lib/scene-checklists";
 import type { SilentError } from "./silent-error";
 
 export type { SilentError };
@@ -57,7 +57,13 @@ export function maxTurnsFor(scenarioType: string | null | undefined): number {
   const declarado = MAX_TURNS_BY_SCENARIO[scenarioType] ?? DEFAULT_MAX_TURNS;
   const objetivos = SCENE_CHECKLISTS[scenarioType]?.length;
   if (objetivos === undefined) return declarado;
-  return Math.min(declarado, objetivos + TURNS_AROUND_CHECKLIST);
+  return Math.min(declarado, objetivos * depthFor(scenarioType) + TURNS_AROUND_CHECKLIST);
+}
+
+/** Turnos que merece cada objetivo en este escenario (ver SCENE_DEPTH). */
+export function depthFor(scenarioType: string | null | undefined): number {
+  if (!scenarioType) return 1;
+  return SCENE_DEPTH[scenarioType] ?? 1;
 }
 
 /**
