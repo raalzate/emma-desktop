@@ -20,23 +20,38 @@ import {
 import { unitForSession } from "@/domain/curriculum/unit-catalog";
 import { situationForScenario } from "@/domain/curriculum/scenario-situation-map";
 import { phrasesForSituation } from "@/domain/reference/phrase-bank-catalog";
+import { rankByRelevance } from "@/domain/coaching/suggestion-context";
 
-const MAX_FOCUS_CHUNKS = 4;
-const MAX_FOCUS_PHRASES = 4;
+const MAX_FOCUS_CHUNKS = 3;
+const MAX_FOCUS_PHRASES = 3;
 
 /**
- * Hasta 4 chunks de la unidad de la sesión + 4 frases del banco relevantes al
- * escenario: ancla las sugerencias al material del libro que se está practicando.
- * Retrocompatible: sin scenarioType (o sin unidad/situación asociada) es "".
+ * Chunks de la unidad de la sesión + frases del banco, elegidos por RELEVANCIA
+ * contra lo que la persona acaba de decir.
+ *
+ * Antes era un `slice(0, 4)` del catálogo: salían siempre las mismas frases de
+ * la unidad, sin relación con la pregunta en curso, y competían con el contexto
+ * real de la escena. Retrocompatible: sin scenarioType (o sin unidad/situación
+ * asociada) es "".
  */
-function sessionFocusHint(scenarioType: string | undefined, level: CefrLevel): string {
+function sessionFocusHint(
+  scenarioType: string | undefined,
+  level: CefrLevel,
+  context: string,
+): string {
   if (!scenarioType) return "";
   const unit = unitForSession(scenarioType, level);
-  const chunks = unit?.chunks.slice(0, MAX_FOCUS_CHUNKS).map((c) => c.text) ?? [];
+  const chunks = rankByRelevance(
+    unit?.chunks.map((c) => c.text) ?? [],
+    context,
+    MAX_FOCUS_CHUNKS,
+  );
   const situation = situationForScenario(scenarioType);
-  const phrases = phrasesForSituation(situation)
-    .slice(0, MAX_FOCUS_PHRASES)
-    .map((p) => p.phrase);
+  const phrases = rankByRelevance(
+    phrasesForSituation(situation).map((p) => p.phrase),
+    context,
+    MAX_FOCUS_PHRASES,
+  );
   const lines = [...chunks, ...phrases];
   if (lines.length === 0) return "";
   return `Useful phrases for this session:\n${lines.map((l) => `- ${l}`).join("\n")}`;
@@ -62,11 +77,18 @@ export async function suggestReplies(args: {
   draft?: string;
   /** Escenario de la sesión activa: ancla las sugerencias a su unidad del libro. */
   scenarioType?: string;
+  /**
+   * Sólo la última línea del agente, para el filtro anti-eco. Va aparte de
+   * `context` a propósito: desde que el contexto incluye la escena y lo que el
+   * aprendiz ya dijo, medir el eco contra TODO descartaba sugerencias buenas
+   * por solaparse con las palabras del propio aprendiz.
+   */
+  agentLine?: string;
 }): Promise<ReplySuggestion[]> {
   const hasDraft = Boolean(args.draft?.trim());
   const base = SUGGEST_REPLIES_SYSTEM_PROMPT + SUGGEST_REPLIES_ANSWER_RULES;
   const system = hasDraft ? base + SUGGEST_REPLIES_WITH_DRAFT_APPENDIX : base;
-  const focusHint = sessionFocusHint(args.scenarioType, args.level);
+  const focusHint = sessionFocusHint(args.scenarioType, args.level, args.context);
   const prompt = buildSuggestRepliesPrompt(args.context, args.level, args.draft);
   const raw = await args.llm({
     prompt: focusHint ? `${prompt}\n${focusHint}` : prompt,
@@ -74,5 +96,6 @@ export async function suggestReplies(args: {
     maxTokens: REPLIES_MAX_TOKENS,
   });
   // El filtro anti-eco descarta chips que solo repiten al agente (BUG-001).
-  return parseSuggestions(raw).filter((s) => !isEchoOfAgent(s.text, args.context));
+  const agentLine = args.agentLine ?? args.context;
+  return parseSuggestions(raw).filter((s) => !isEchoOfAgent(s.text, agentLine));
 }

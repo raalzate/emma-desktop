@@ -85,4 +85,39 @@ describe("buildTurnDirective", () => {
     expect(buildTurnDirective(base)).toBe("");
     expect(buildTurnDirective({ ...base, elaborate: true }).toLowerCase()).toMatch(/follow-up/);
   });
+
+  it("ante una duda de idioma repara en personaje y NO avanza el tema", () => {
+    const d = buildTurnDirective({
+      ...base,
+      state: standupAfterFirstAnswer(),
+      intent: "meta",
+    });
+    expect(d.toLowerCase()).toContain("simpler words");
+    expect(d).not.toContain("ask ONLY about");
+  });
+
+  it("la reparación manda sobre el cierre: cortar a alguien perdido es peor", () => {
+    const d = buildTurnDirective({
+      ...base,
+      state: standupAfterFirstAnswer(),
+      intent: "meta",
+      wrapUp: true,
+    });
+    expect(d.toLowerCase()).toContain("simpler words");
+    expect(d.toLowerCase()).not.toContain("do not ask any further questions");
+  });
+
+  it("ante un saludo devuelve el saludo antes de entrar en materia", () => {
+    const d = buildTurnDirective({ ...base, state: standupAfterFirstAnswer(), intent: "greeting" });
+    expect(d.toLowerCase()).toContain("greet them back");
+  });
+
+  it("sigue conservando los hechos ya sabidos al reparar", () => {
+    const d = buildTurnDirective({
+      ...base,
+      state: standupAfterFirstAnswer(),
+      intent: "meta",
+    });
+    expect(d).toContain("You already know");
+  });
 });

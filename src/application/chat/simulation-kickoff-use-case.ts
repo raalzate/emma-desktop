@@ -7,7 +7,7 @@
  * con historial vacío. Devuelve el texto recortado (el original hace .strip()).
  */
 
-import { KICKOFF_CUE } from "@/domain/chat/simulation-prompt-text";
+import { kickoffCue } from "@/domain/chat/simulation-prompt-text";
 import { runChatTurn } from "./run-chat-turn-use-case";
 import type { LlmGenerate } from "@/domain/ai/llm-port";
 
@@ -16,16 +16,18 @@ export interface RunKickoffArgs {
   system: string;
   /** Mismo sessionId que los turnos siguientes: la apertura queda en la memoria viva. */
   sessionId?: string;
+  /** Nombre del aprendiz: la persona abre saludándolo, no preguntando en seco. */
+  learnerName?: string;
   onToken?: (chunk: string) => void;
 }
 
-/** Emite el turno de apertura de EMMA (el mensaje que invita a empezar). */
+/** Emite el turno de apertura de EMMA (el saludo que abre la escena). */
 export async function runKickoff(args: RunKickoffArgs): Promise<string> {
   const text = await runChatTurn({
     llm: args.llm,
     system: args.system,
     history: [],
-    userMessage: KICKOFF_CUE,
+    userMessage: kickoffCue(args.learnerName),
     sessionId: args.sessionId,
     onToken: args.onToken,
   });

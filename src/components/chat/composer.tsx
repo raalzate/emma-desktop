@@ -20,18 +20,25 @@ import { useVoiceInput } from "./use-voice-input";
 interface Props {
   onSend: (text: string, audioUrl?: string) => void;
   busy: boolean;
+  /** Última línea de la persona: es lo que el aprendiz tiene que responder. */
   context: string;
+  /**
+   * Contexto de escena para las sugerencias (persona, situación, tema pendiente
+   * y lo ya dicho). Sin él las 3 sugerencias salían genéricas.
+   */
+  sceneContext: string;
   level: CefrLevel;
   /** Escenario de la escena activa: ancla las sugerencias a su unidad del libro. */
   scenarioType: string;
 }
 
-export function Composer({ onSend, busy, context, level, scenarioType }: Props) {
+export function Composer({ onSend, busy, context, sceneContext, level, scenarioType }: Props) {
   const { runtime } = useEmma();
   const [text, setText] = useState("");
   const suggestions = useSuggestions({
     runtime: runtime!,
-    context,
+    context: sceneContext,
+    agentLine: context,
     level,
     busy,
     draft: text,

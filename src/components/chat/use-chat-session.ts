@@ -31,10 +31,15 @@ import { resolveSceneClose, shouldWrapUp } from "@/domain/chat/scene-closing";
 import { buildRecastCue } from "@/domain/chat/recast";
 import { needsElaboration } from "@/domain/chat/elaboration";
 import { buildTurnDirective } from "@/domain/chat/turn-directive";
+import { classifyLearnerIntent } from "@/domain/chat/learner-intent";
+import { buildSuggestionContext } from "@/domain/coaching/suggestion-context";
+import { personaFor } from "@/domain/personas/protopersona";
 import { MIN_TURNS_TO_COUNT } from "@/domain/progression/promotion-policy";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
 import { isActionableCorrection } from "@/domain/chat/silent-error";
 import type { ChatConversation } from "@/domain/chat/chat-conversation";
+import { readStoredLesson } from "@/domain/chat/chat-conversation";
+import type { SessionLesson } from "@/domain/feedback/session-lesson";
 
 export interface SessionSnapshot {
   scenarioType: string;
@@ -44,6 +49,8 @@ export interface SessionSnapshot {
   turnCount: number;
   /** La escena se completó (persiste para bloquear la sesión al reabrirla). */
   completed: boolean;
+  /** Lección de cierre ya entregada: viaja al histórico para no regenerarla. */
+  lesson?: SessionLesson;
 }
 
 interface Deps {
@@ -85,7 +92,7 @@ async function openScenario(
     scenario, situation, settings: d.settings, profile: d.profile, level, personaTuning, sceneFacts,
     weakErrorCategories,
   });
-  const opening = await rt.kickoff(system, sessionId);
+  const opening = await rt.kickoff(system, sessionId, d.profile.name);
   return { system, opening };
 }
 
@@ -147,6 +154,9 @@ export function useChatSession(d: Deps) {
   const elaborationAskedFor = useRef<string | null>(null);
   // Objetivos cubiertos de la escena, para que la UI muestre el avance.
   const [sceneGoals, setSceneGoals] = useState<{ done: number; total: number } | null>(null);
+  // Lección de cierre ya entregada (guardada con la conversación). Al reabrir
+  // una sesión terminada se revisa esta, no una generación nueva.
+  const [lesson, setLesson] = useState<SessionLesson | null>(() => readStoredLesson(restore));
 
   // Monta la sesión: reanuda `restore` (sin kickoff) o prepara la escena nueva.
   useEffect(() => {
@@ -282,15 +292,20 @@ export function useChatSession(d: Deps) {
       setTurnCount(turn);
       setBusy(true);
       const grammarCheck = bufferGrammar(clean, turn);
+      // Qué hizo el aprendiz: jugar la escena, saludar o pedir ayuda con el
+      // idioma. Un "what does blocker mean?" NO es una respuesta al objetivo —
+      // darlo por respondido daba la escena por avanzada sin que se dijera nada.
+      const intent = classifyLearnerIntent(clean);
+      const contributes = intent === "in-scene";
       // Respuesta mínima: se pide un detalle antes de pasar de tema, UNA vez por
       // ítem (insistir trabaría la escena si el aprendiz responde siempre corto).
       const currentItem = sceneState.current?.pending[0]?.id ?? "free";
       const askElaboration =
-        needsElaboration(clean, level) && elaborationAskedFor.current !== currentItem;
+        contributes && needsElaboration(clean, level) && elaborationAskedFor.current !== currentItem;
       if (askElaboration) elaborationAskedFor.current = currentItem;
       // Observe: el mensaje del aprendiz actualiza el checklist ANTES de decidir.
       // Mientras se pide elaboración el ítem sigue pendiente: aún no está contado.
-      if (sceneState.current && !askElaboration) {
+      if (sceneState.current && contributes && !askElaboration) {
         sceneState.current = advanceScene(sceneState.current, clean);
         setSceneGoals(sceneProgress(sceneState.current));
       }
@@ -313,6 +328,7 @@ export function useChatSession(d: Deps) {
       // apilarlas producía instrucciones contradictorias y respuestas vacías.
       const directive = buildTurnDirective({
         state: sceneState.current,
+        intent,
         elaborate: askElaboration,
         deepen,
         wrapUp: shouldWrapUp(turn, maxTurns) && !deepen,
@@ -360,15 +376,40 @@ export function useChatSession(d: Deps) {
       messages,
       turnCount,
       completed: sceneComplete,
+      lesson: lesson ?? undefined,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, turnCount, sceneComplete]);
+  }, [messages, turnCount, sceneComplete, lesson]);
+
+  // Guardar la lección cierra la sesión: se entregó el feedback, no se sigue
+  // conversando. Así el banner y el bloqueo del composer valen también cuando
+  // el aprendiz cerró a mano antes de completar el checklist.
+  const saveLesson = useCallback((entregada: SessionLesson) => {
+    setLesson(entregada);
+    setSceneComplete(true);
+  }, []);
 
   const maxTurns = maxTurnsFor(scenario.scenarioType);
   const lastEmma = useMemo(
     () => [...messages].reverse().find((m) => m.role === "assistant")?.content ?? "",
     [messages],
   );
+  // Contexto de escena para las sugerencias del composer: con quién habla, en
+  // qué situación, qué tema está pidiendo la persona y qué ya contó el
+  // aprendiz. Con sólo `lastEmma` las 3 sugerencias salían genéricas.
+  const suggestionContext = useMemo(() => {
+    const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
+    return buildSuggestionContext({
+      lastAgentLine: lastEmma,
+      personaName: persona.name,
+      personaRole: persona.role,
+      situationTitle: situation?.title,
+      saidSoFar: messages.filter((m) => m.role === "user").map((m) => m.content),
+      pendingAsk: sceneState.current?.pending[0]?.ask,
+    });
+    // `sceneState` es una ref: el avance del checklist se refleja al cambiar
+    // `messages`, que es lo que dispara este cálculo.
+  }, [lastEmma, messages, situation?.title, scenario.scenarioType, scenario.emmaRole]);
   return {
     situation, level, phase, begin,
     // Contrato de escena: la antesala muestra la narrativa y el botón espera.
@@ -378,8 +419,10 @@ export function useChatSession(d: Deps) {
     sceneComplete,
     // Sesión reabierta que YA terminó: solo lectura, sin re-disparar la lección.
     restoredComplete: !!restore?.completed,
+    // Lección de cierre guardada (null hasta que Emma la entrega).
+    lesson, saveLesson,
     // Objetivos de la escena cubiertos/total (null si el escenario es libre).
     sceneGoals,
-    messages, streaming, busy, turnCount, maxTurns, errors, send, lastEmma,
+    messages, streaming, busy, turnCount, maxTurns, errors, send, lastEmma, suggestionContext,
   };
 }

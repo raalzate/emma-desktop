@@ -11,10 +11,17 @@
  */
 
 import { WRAP_UP_CUE } from "./scene-closing";
+import { GREETING_CUE, REPAIR_CUE, type LearnerIntent } from "./learner-intent";
 import { sceneDirective, type SceneState } from "./scene-state";
 
 export interface TurnDirectiveInput {
   state: SceneState | null;
+  /**
+   * Qué hizo el aprendiz en su mensaje. Manda sobre todo lo demás: cerrar la
+   * escena o cambiar de tema mientras alguien dice "no te entendí" es
+   * exactamente lo que hace que el chat no se sienta una conversación.
+   */
+  intent?: LearnerIntent;
   /** La respuesta fue mínima: toca pedir un detalle antes de avanzar. */
   elaborate: boolean;
   /** Checklist cubierto demasiado pronto: profundizar en vez de cerrar. */
@@ -37,8 +44,10 @@ const ELABORATE_CUE =
   "detail about that same thing. Do NOT move to a new topic yet.";
 
 export function buildTurnDirective(input: TurnDirectiveInput): string {
-  const { state, elaborate, deepen, wrapUp, recastCue } = input;
+  const { state, elaborate, deepen, wrapUp, recastCue, intent = "in-scene" } = input;
   const order = (() => {
+    if (intent === "meta") return `${knownFacts(state)}${REPAIR_CUE}`;
+    if (intent === "greeting") return `${knownFacts(state)}${GREETING_CUE}`;
     if (wrapUp) return `${knownFacts(state)}${WRAP_UP_CUE}`;
     if (elaborate) return `${knownFacts(state)}${ELABORATE_CUE}`;
     if (state) return sceneDirective(state, { deepen });

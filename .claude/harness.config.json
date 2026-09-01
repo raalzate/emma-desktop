@@ -398,7 +398,7 @@
       "enhancement": "enhancement",
       "docs": "documentation"
     },
-    "artifactsIn": "repo",
+    "artifactsIn": "tracker",
     "specsDir": "specs",
     "allowedInRepo": []
   },

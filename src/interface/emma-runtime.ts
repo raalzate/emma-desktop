@@ -68,7 +68,7 @@ export interface EmmaRuntime {
     weakErrorCategories?: string[];
   }): string;
   chatTurn(a: { system: string; history: ChatTurn[]; userMessage: string; sessionId?: string; characterAnchor?: string; sceneCue?: string; validateReply?: (reply: string) => boolean; onToken?: (c: string) => void }): Promise<string>;
-  kickoff(system: string, sessionId?: string): Promise<string>;
+  kickoff(system: string, sessionId?: string, learnerName?: string): Promise<string>;
   /**
    * Contrato de escena: hechos fijos EN (guardrail del system) + narrativa ES
    * para la antesala. Prerequisito del kickoff: el botón de comenzar lo espera.
@@ -80,6 +80,8 @@ export interface EmmaRuntime {
     level: CefrLevel,
     draft?: string,
     scenarioType?: string,
+    /** Última línea del agente para el filtro anti-eco (ver suggestReplies). */
+    agentLine?: string,
   ): ReturnType<typeof suggestReplies>;
   complete(context: string, partial: string): Promise<string>;
   translate(text: string, targetLang: string): ReturnType<typeof translate>;
@@ -168,11 +170,12 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
       return awareness ? `${system}\n\n${awareness}` : system;
     },
     chatTurn: (a) => runChatTurn({ llm, ...a }),
-    kickoff: (system, sessionId) => runKickoff({ llm, system, sessionId }),
+    kickoff: (system, sessionId, learnerName) =>
+      runKickoff({ llm, system, sessionId, learnerName }),
     sceneContract: (a) => createSceneContract({ llm, ...a }),
     teach: (a) => teach({ llm, ...a }),
-    suggest: (context, level, draft, scenarioType) =>
-      suggestReplies({ llm, context, level, draft, scenarioType }),
+    suggest: (context, level, draft, scenarioType, agentLine) =>
+      suggestReplies({ llm, context, level, draft, scenarioType, agentLine }),
     complete: (context, partial) => completePartialReply({ llm, context, partial }),
     translate: (text, targetLang) => translate({ llm, text, targetLang }),
     async welcome(profile) {

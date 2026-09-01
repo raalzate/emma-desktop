@@ -12,7 +12,7 @@ import type { VoiceGender } from "@/domain/chat-settings/chat-settings";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { Protopersona } from "@/domain/personas/protopersona";
-import { SceneContext } from "./scene-context";
+import { SceneNarration } from "./scene-narration";
 
 interface Props {
   messages: ChatTurn[];
@@ -23,11 +23,15 @@ interface Props {
   persona?: Protopersona;
   scenario?: Scenario;
   situation?: SituationVariant | null;
+  /** Escena recién empezada: la narración se teclea. Falso al reabrir del histórico. */
+  narrate?: boolean;
   onTeach: (text: string) => void;
   onTranslate: (text: string) => void;
 }
 
-export function MessageList({ messages, typing, gender, persona, scenario, situation, onTeach, onTranslate }: Props) {
+export function MessageList({
+  messages, typing, gender, persona, scenario, situation, narrate = true, onTeach, onTranslate,
+}: Props) {
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" });
@@ -36,7 +40,9 @@ export function MessageList({ messages, typing, gender, persona, scenario, situa
   return (
     <ScrollArea className="flex-1">
       <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-6">
-        {scenario && <SceneContext scenario={scenario} situation={situation} />}
+        {scenario && (
+          <SceneNarration scenario={scenario} situation={situation} animate={narrate} />
+        )}
         {messages.map((m, i) =>
           m.role === "assistant" ? (
             <EmmaBubble

@@ -31,9 +31,18 @@ describe("andamiaje de producto en español (Artículo 9)", () => {
     }
   });
 
-  it("el banner de escena y la cabecera del chat siguen en español", () => {
-    expect(leer("scene-context.tsx")).toContain("Escenario");
-    expect(leer("scene-context.tsx")).toContain("Hablas con:");
+  it("la narración de escena es contenido en inglés; su único control va en español", () => {
+    const src = leer("scene-narration.tsx");
+    // Lo que se narra es la ficción: en inglés, sin andamiaje traducido dentro.
+    expect(src).not.toMatch(/"[^"]*\b(Escenario|Hablas con|Tu objetivo)\b[^"]*"/);
+    // El control que sí es producto (saltar la animación) se queda en español.
+    expect(src).toContain("Saltar la introducción");
+  });
+
+  it("la cabecera y el cierre del chat siguen en español", () => {
     expect(leer("chat-header.tsx")).toContain("Con ");
+    expect(leer("chat-header.tsx")).toContain("Terminar antes y ver tu lección");
+    expect(leer("chat-pane.tsx")).toContain("Finalizar y ver lección");
+    expect(leer("chat-pane.tsx")).toContain("Ver tu lección");
   });
 });
