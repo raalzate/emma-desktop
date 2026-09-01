@@ -31,6 +31,14 @@ export interface EmmaApi {
 
   systemInfo(): Promise<Record<string, unknown>>;
 
+  // Actualizaciones (spec #137): el estado llega por onUpdateStatus.
+  updatesCheck(): Promise<void>;
+  updatesDownload(): Promise<void>;
+  updatesInstall(): Promise<void>;
+  updatesOpenDownload(): Promise<void>;
+  updatesCurrentVersion(): Promise<string>;
+  onUpdateStatus(callback: (status: unknown) => void): () => void;
+
   ttsSynthesize(
     text: string,
     voice?: string,

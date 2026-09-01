@@ -14,6 +14,13 @@ import {
   type RemoteGenerateArgs,
 } from './services/ai-remote';
 import { getSystemInfo } from './services/system-info';
+import {
+  checkForUpdates,
+  currentVersion,
+  downloadUpdate,
+  installUpdate,
+  openDownloadPage,
+} from './services/auto-update';
 import { storeGet, storeSet } from './services/store';
 import { synthesizeTts } from './services/tts';
 
