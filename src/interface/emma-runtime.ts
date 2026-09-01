@@ -25,6 +25,7 @@ import type { PracticeRecommendation } from "@/domain/tutor/practice-recommender
 import { isCefrLevel } from "@/domain/cefr/cefr-ladder";
 import { runChatTurn } from "@/application/chat/run-chat-turn-use-case";
 import { runKickoff } from "@/application/chat/simulation-kickoff-use-case";
+import { observeTurn, type ObserveTurnArgs } from "@/application/chat/observe-turn-use-case";
 import { teach, type TeachArgs } from "@/application/english-teacher/teach-use-case";
 import { suggestReplies } from "@/application/coaching/suggest-replies-use-case";
 import { completePartialReply } from "@/application/coaching/complete-partial-reply-use-case";
@@ -68,7 +69,9 @@ export interface EmmaRuntime {
     weakErrorCategories?: string[];
   }): string;
   chatTurn(a: { system: string; history: ChatTurn[]; userMessage: string; sessionId?: string; characterAnchor?: string; sceneCue?: string; validateReply?: (reply: string) => boolean; onToken?: (c: string) => void }): Promise<string>;
-  kickoff(system: string, sessionId?: string): Promise<string>;
+  kickoff(system: string, sessionId?: string, learnerName?: string): Promise<string>;
+  /** Observa el turno del aprendiz: el LLM etiqueta, el código decide. */
+  observeTurn(a: Omit<ObserveTurnArgs, "llm">): ReturnType<typeof observeTurn>;
   /**
    * Contrato de escena: hechos fijos EN (guardrail del system) + narrativa ES
    * para la antesala. Prerequisito del kickoff: el botón de comenzar lo espera.
@@ -80,6 +83,8 @@ export interface EmmaRuntime {
     level: CefrLevel,
     draft?: string,
     scenarioType?: string,
+    /** Última línea del agente para el filtro anti-eco (ver suggestReplies). */
+    agentLine?: string,
   ): ReturnType<typeof suggestReplies>;
   complete(context: string, partial: string): Promise<string>;
   translate(text: string, targetLang: string): ReturnType<typeof translate>;
@@ -168,11 +173,13 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
       return awareness ? `${system}\n\n${awareness}` : system;
     },
     chatTurn: (a) => runChatTurn({ llm, ...a }),
-    kickoff: (system, sessionId) => runKickoff({ llm, system, sessionId }),
+    kickoff: (system, sessionId, learnerName) =>
+      runKickoff({ llm, system, sessionId, learnerName }),
+    observeTurn: (a) => observeTurn({ llm, ...a }),
     sceneContract: (a) => createSceneContract({ llm, ...a }),
     teach: (a) => teach({ llm, ...a }),
-    suggest: (context, level, draft, scenarioType) =>
-      suggestReplies({ llm, context, level, draft, scenarioType }),
+    suggest: (context, level, draft, scenarioType, agentLine) =>
+      suggestReplies({ llm, context, level, draft, scenarioType, agentLine }),
     complete: (context, partial) => completePartialReply({ llm, context, partial }),
     translate: (text, targetLang) => translate({ llm, text, targetLang }),
     async welcome(profile) {

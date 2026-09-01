@@ -44,4 +44,28 @@ describe("layerHistory — capas de contexto (BUG-001)", () => {
     expect(contents).toContain("yeah");
     expect(contents).toContain("ok");
   });
+
+  it("acota los turnos viejos: el prompt no puede crecer con la escena", () => {
+    const largo = Array.from({ length: 40 }, (_, i) =>
+      t(i % 2 === 0 ? "assistant" : "user", `Substantive work detail number ${i}.`),
+    );
+    const layered = layerHistory(largo);
+    expect(layered.turns.length).toBeLessThanOrEqual(8);
+  });
+
+  it("al recortar por tope conserva los turnos viejos MÁS RECIENTES", () => {
+    const largo = Array.from({ length: 40 }, (_, i) =>
+      t(i % 2 === 0 ? "assistant" : "user", `Substantive work detail number ${i}.`),
+    );
+    const contents = layerHistory(largo).turns.map((x) => x.content);
+    expect(contents).toContain("Substantive work detail number 39.");
+    expect(contents).not.toContain("Substantive work detail number 0.");
+  });
+
+  it("avisa cuando se recortó por tope, no sólo por smalltalk", () => {
+    const largo = Array.from({ length: 40 }, (_, i) =>
+      t(i % 2 === 0 ? "assistant" : "user", `Substantive work detail number ${i}.`),
+    );
+    expect(layerHistory(largo).note).toBeTruthy();
+  });
 });

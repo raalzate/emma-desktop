@@ -10,6 +10,8 @@ export const LLM_CONTEXT_WINDOW = 8192;
 export const LLM_DEFAULT_MAX_TOKENS = 500;
 
 export const CHAT_MAX_TOKENS = 512;
+/** Etiqueta del turno del aprendiz (JSON de una línea): LLM juzga, código decide. */
+export const OBSERVE_MAX_TOKENS = 80;
 export const WELCOME_MAX_TOKENS = 150;
 export const COMPREHEND_MAX_TOKENS = 50;
 /** Un solo turno de onboarding: mensaje corto + línea DATA final. */

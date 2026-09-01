@@ -10,7 +10,7 @@
  */
 
 import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
-import { contentWordCount } from "./scene-state";
+import { contentWordCount, isClosedNegative } from "./scene-state";
 
 /**
  * Palabras de contenido esperadas antes de dar la respuesta por desarrollada.
@@ -28,22 +28,37 @@ const MIN_CONTENT_WORDS: Record<CefrLevel, number> = {
   C1: 7,
 };
 
-// Respuestas cerradas legítimas: perseguir un "no blockers" suena a interrogatorio.
-const CLOSED_ANSWER = /\bno blockers?\b|\bnothing (?:is )?block|\bnot really\b|\ball good\b|\bno issues?\b/i;
+/**
+ * Respuestas cerradas legítimas: perseguir un "no blockers" suena a
+ * interrogatorio. Las negaciones escuetas (incluidas las mal escritas) las
+ * reconoce `isClosedNegative`, que es la MISMA noción que usa el checklist —
+ * tenerla duplicada aquí significaba que sólo se arreglaba una de las dos.
+ */
+const CLOSED_ANSWER =
+  /\bno blockers?\b|\bnothing (?:is )?block|\bnot really\b|\ball good\b|\bno issues?\b/i;
 
 /** Umbral inferior: por debajo es relleno, y de eso ya se ocupa el checklist. */
 const FILLER_FLOOR = 2;
 
 export function needsElaboration(message: string, level: CefrLevel): boolean {
-  if (CLOSED_ANSWER.test(message)) return false;
+  if (CLOSED_ANSWER.test(message) || isClosedNegative(message)) return false;
   const words = contentWordCount(message);
   return words >= FILLER_FLOOR && words < MIN_CONTENT_WORDS[level];
 }
 
-/** Directiva: un detalle concreto sobre lo mismo, sin cambiar de tema. */
+/**
+ * Directiva: un detalle concreto sobre lo mismo, sin cambiar de tema.
+ *
+ * Escrita como lo que la PERSONA quiere, con un ejemplo de línea hablada. La
+ * versión anterior describía el acto de habla en jerga de asistente («ask ONE
+ * specific follow-up for a concrete detail») y el modelo devolvía esa misma
+ * jerga: «I'd like to know more about the specific technical challenge you are
+ * facing». Mostrar la línea funciona donde prohibir no llegaba.
+ */
 export function buildElaborationCue(): string {
   return (
-    "Their answer was very short. Before moving on, ask ONE specific follow-up " +
-    "for a concrete detail about that same thing — in character, without changing the topic."
+    "They kept it short and you are curious about that same thing. Say one " +
+    'short line that asks for the concrete bit — like "Nice, which part took ' +
+    'you the longest?" Stay on their topic; do not open a new one.'
   );
 }

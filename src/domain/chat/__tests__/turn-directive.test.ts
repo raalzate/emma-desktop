@@ -29,7 +29,7 @@ describe("buildTurnDirective", () => {
 
   it("al pedir detalle NO ordena además cambiar de tema", () => {
     const d = buildTurnDirective({ ...base, state: standupAfterFirstAnswer(), elaborate: true });
-    expect(d.toLowerCase()).toMatch(/follow-up|more detail/);
+    expect(d.toLowerCase()).toMatch(/concrete bit/);
     expect(d).not.toContain("ask ONLY about");
     expect(d.toLowerCase()).not.toContain("their plan for today");
   });
@@ -48,7 +48,7 @@ describe("buildTurnDirective", () => {
       wrapUp: true,
     });
     expect(d.toLowerCase()).toContain("do not ask any further questions");
-    expect(d.toLowerCase()).not.toMatch(/ask one specific follow-up/);
+    expect(d.toLowerCase()).not.toMatch(/concrete bit/);
   });
 
   it("nunca emite dos órdenes de pregunta a la vez", () => {
@@ -60,11 +60,12 @@ describe("buildTurnDirective", () => {
     ];
     for (const c of combos) {
       const d = buildTurnDirective({ ...base, state: standupAfterFirstAnswer(), ...c });
-      // Marcadores exactos de cada orden. Ojo: "Do NOT ask about those again"
-      // pertenece a los hechos ya sabidos, no es una orden de pregunta.
+      // Marcadores exactos de cada orden, en la redacción en voz de personaje.
+      // Ojo: "Do NOT ask about those again" pertenece a los hechos ya sabidos,
+      // no es una orden de pregunta.
       const orders = [
         /ask ONLY about/.test(d),
-        /ask ONE specific follow-up/i.test(d),
+        /concrete bit/i.test(d),
         /do not ask any further questions/i.test(d),
       ];
       expect(orders.filter(Boolean), JSON.stringify(c)).toHaveLength(1);
@@ -83,6 +84,41 @@ describe("buildTurnDirective", () => {
 
   it("funciona en escenas sin checklist", () => {
     expect(buildTurnDirective(base)).toBe("");
-    expect(buildTurnDirective({ ...base, elaborate: true }).toLowerCase()).toMatch(/follow-up/);
+    expect(buildTurnDirective({ ...base, elaborate: true }).toLowerCase()).toMatch(/concrete bit/);
+  });
+
+  it("ante una duda de idioma repara en personaje y NO avanza el tema", () => {
+    const d = buildTurnDirective({
+      ...base,
+      state: standupAfterFirstAnswer(),
+      intent: "meta",
+    });
+    expect(d.toLowerCase()).toContain("simpler words");
+    expect(d).not.toContain("ask ONLY about");
+  });
+
+  it("la reparación manda sobre el cierre: cortar a alguien perdido es peor", () => {
+    const d = buildTurnDirective({
+      ...base,
+      state: standupAfterFirstAnswer(),
+      intent: "meta",
+      wrapUp: true,
+    });
+    expect(d.toLowerCase()).toContain("simpler words");
+    expect(d.toLowerCase()).not.toContain("do not ask any further questions");
+  });
+
+  it("ante un saludo devuelve el saludo antes de entrar en materia", () => {
+    const d = buildTurnDirective({ ...base, state: standupAfterFirstAnswer(), intent: "greeting" });
+    expect(d.toLowerCase()).toContain("greet them back");
+  });
+
+  it("sigue conservando los hechos ya sabidos al reparar", () => {
+    const d = buildTurnDirective({
+      ...base,
+      state: standupAfterFirstAnswer(),
+      intent: "meta",
+    });
+    expect(d).toContain("You already know");
   });
 });

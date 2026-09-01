@@ -29,5 +29,7 @@ Produce, en este orden:
 - No escribas código de producción; tu salida es el spec.
 
 ## Entrega
-Documento de spec en `specs/<feature>/spec.md` y un resumen de
-FR/SC listos para que `tdd-engineer` los implemente en rojo→verde.
+Borrador de spec en un directorio temporal (`<tmp>/<feature>/spec.md`) — **nunca dentro
+del repo**: los artefactos viven en issues de GitHub y se suben con
+`pnpm sdd:new <ruta-del-borrador>`. Además, un resumen de FR/SC listos para que
+`tdd-engineer` los implemente en rojo→verde.

@@ -21,7 +21,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Self-test del arnés | `node scripts/harness-selftest.mjs` | verde — cada regla del config probada con una muestra que el freno bloquea |
 | Link-check de docs | `node scripts/docs-linkcheck.mjs` | verde — enlaces, rutas citadas, scripts npm/pnpm citados y honestidad BLOCKING de la constitución |
 | Lint de convenciones | `node scripts/repo-lint.mjs` | verde — PUREZA (domain/application/infrastructure), ANY, SECRETO, CONSOLE, ONLY, INCIDENTE |
-| Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en `specs/` |
+| Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en issues de GitHub; sin `specs/` en el repo |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
 | Tests | `pnpm test` | verde — 879 pruebas en 113 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
@@ -30,9 +30,11 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 Pre-commit instalado: sí (`core.hooksPath=.githooks`). CI corre el mismo gate: workflow
 `.github/workflows/ci.yml` (`pnpm gate`) en cada push/PR a `main`. Push directo a `main`
 bloqueado dos veces: `.githooks/pre-push` (local, antes de la red) y la protección de rama
-en GitHub (server-side, exige PR con el check `gate` verde). La ruta SDD se espeja en
+en GitHub (server-side, exige PR con el check `gate` verde). La ruta SDD vive en
 issues con `scripts/sdd-github.mjs` (`pnpm sdd:new · sdd:tasks · sdd:status · sdd:mirror`);
-los artefactos siguen viviendo en `specs/`. Releases: tag `v*` dispara
+el directorio `specs/` se eliminó el 2026-09-01 — los 14 specs y 70 tareas ya estaban
+espejados en issues (`sdd:feature` / `sdd:task`) y ahora las issues son el único registro.
+Releases: tag `v*` dispara
 `.github/workflows/release-build.yml` (dmg · exe · AppImage, borrador de release);
 el proceso está escrito en `docs/RELEASE.md`, las notas viven en `docs/releases/`
 (regla RELEASE del lint: sin notas de la versión no hay gate verde) y el primer

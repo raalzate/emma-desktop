@@ -11,8 +11,12 @@ import { advanceScene, createSceneState, isReaskingCovered } from "@/domain/chat
 function standupWithTwoItemsCovered() {
   const fresh = createSceneState("daily_standup");
   if (!fresh) throw new Error("daily_standup debe tener checklist");
-  const afterYesterday = advanceScene(fresh, "i am working on the final testing phase for the new module.");
-  return advanceScene(afterYesterday, "my plan is to finish the issues login");
+  const afterToday = advanceScene(fresh, "i am working on the final testing phase for the new module.");
+  // Sin señales propias de "yesterday", la evidencia es la pregunta que la
+  // persona acaba de hacer (ver scene-attribution-honesta).
+  return advanceScene(afterToday, "my plan is to finish the issues login", {
+    lastAgentLine: "What did you do yesterday?",
+  });
 }
 
 describe("guardia de re-preguntas en el stand-up", () => {

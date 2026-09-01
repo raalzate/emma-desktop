@@ -3,7 +3,7 @@
 /** Cabecera del chat: selector de escenario, badge de nivel y progreso de turnos. */
 
 import Link from "next/link";
-import { ArrowLeft, BarChart3, BookOpenCheck, ChevronDown, Settings } from "lucide-react";
+import { ArrowLeft, BarChart3, BookOpenCheck, ChevronDown, Flag, Settings } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,10 +26,18 @@ interface Props {
   maxTurns: number;
   /** Objetivos de la escena cubiertos/total; null si el escenario es de flujo libre. */
   sceneGoals?: { done: number; total: number } | null;
+  /**
+   * Salida para cortar la escena antes de tiempo. Discreta a propósito: el
+   * cierre normal vive al final de la conversación, no arriba compitiendo con
+   * el hilo. Sin handler el icono no se pinta (escena ya cerrada o en antesala).
+   */
+  onFinishEarly?: () => void;
+  finishEarlyDisabled?: boolean;
 }
 
 export function ChatHeader({
   scenarios, scenario, onSelect, level, situationTitle, turnCount, maxTurns, sceneGoals,
+  onFinishEarly, finishEarlyDisabled,
 }: Props) {
   const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
   return (
@@ -78,6 +86,19 @@ export function ChatHeader({
         {turnCount}/{maxTurns}
       </span>
       <Badge variant="secondary">{level}</Badge>
+      {onFinishEarly && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onFinishEarly}
+          disabled={finishEarlyDisabled}
+          aria-label="Terminar la escena antes"
+          title="Terminar antes y ver tu lección"
+        >
+          <Flag className="h-4 w-4" />
+        </Button>
+      )}
       <Button asChild variant="ghost" size="icon" className="h-8 w-8">
         <Link href="/progress" aria-label="Mi progreso">
           <BarChart3 className="h-4 w-4" />

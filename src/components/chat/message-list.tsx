@@ -2,7 +2,7 @@
 
 /** Lista desplazable de burbujas; auto-scroll al último mensaje o token. */
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EmmaBubble } from "./emma-bubble";
 import { UserBubble } from "./user-bubble";
@@ -12,7 +12,7 @@ import type { VoiceGender } from "@/domain/chat-settings/chat-settings";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { Protopersona } from "@/domain/personas/protopersona";
-import { SceneContext } from "./scene-context";
+import { SceneNarration } from "./scene-narration";
 
 interface Props {
   messages: ChatTurn[];
@@ -23,21 +23,39 @@ interface Props {
   persona?: Protopersona;
   scenario?: Scenario;
   situation?: SituationVariant | null;
+  /** Escena recién empezada: la narración se teclea. Falso al reabrir del histórico. */
+  narrate?: boolean;
   onTeach: (text: string) => void;
   onTranslate: (text: string) => void;
 }
 
-export function MessageList({ messages, typing, gender, persona, scenario, situation, onTeach, onTranslate }: Props) {
+export function MessageList({
+  messages, typing, gender, persona, scenario, situation, narrate = true, onTeach, onTranslate,
+}: Props) {
   const end = useRef<HTMLDivElement>(null);
+  // La escena se cuenta ANTES de que la persona hable: mientras la narración se
+  // teclea, ni las burbujas ni el "escribiendo…" aparecen debajo. Sin esto el
+  // kickoff (que genera en paralelo) se solapaba con el texto a medias.
+  // Sin escena que narrar no hay nada que esperar.
+  const [narrationDone, setNarrationDone] = useState(!scenario);
+  const onNarrationDone = useCallback(() => setNarrationDone(true), []);
+
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing]);
+  }, [messages, typing, narrationDone]);
 
   return (
     <ScrollArea className="flex-1">
       <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-6">
-        {scenario && <SceneContext scenario={scenario} situation={situation} />}
-        {messages.map((m, i) =>
+        {scenario && (
+          <SceneNarration
+            scenario={scenario}
+            situation={situation}
+            animate={narrate}
+            onDone={onNarrationDone}
+          />
+        )}
+        {narrationDone && messages.map((m, i) =>
           m.role === "assistant" ? (
             <EmmaBubble
               key={i}
@@ -52,7 +70,7 @@ export function MessageList({ messages, typing, gender, persona, scenario, situa
             <UserBubble key={i} text={m.content} at={m.at} audioUrl={m.audioUrl} />
           ),
         )}
-        {typing && <TypingIndicator />}
+        {narrationDone && typing && <TypingIndicator />}
         <div ref={end} />
       </div>
     </ScrollArea>

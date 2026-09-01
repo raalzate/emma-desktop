@@ -28,8 +28,10 @@ Documentos de referencia:
   `node scripts/repo-lint.mjs --rules` lista las reglas activas.
 - Pre-commit real: `git config core.hooksPath .githooks` (ya activado). Saltarse la
   verificación (`--no-verify`) está prohibido: si el gate estorba, se arregla el gate.
-- Trabajo de tamaño feature → flujo SDD; los artefactos viven en `specs/`
-  (ver `specs/README.md`). Saltarlo se **declara** en una línea, no se omite en silencio.
+- Trabajo de tamaño feature → flujo SDD; los artefactos viven en **issues de GitHub**
+  (labels `sdd:feature` / `sdd:task`), no en el repo: el borrador se sube con
+  `pnpm sdd:new` y `artifacts-check` falla si aparece un `specs/` local.
+  Saltar el flujo se **declara** en una línea, no se omite en silencio.
 - Un incidente que costó tiempo termina en `/lesson`: mecanismo más fuerte disponible
   (test > hook/lint > comando > markdown), validado con el gate. Registro en `docs/gotchas.md`.
 

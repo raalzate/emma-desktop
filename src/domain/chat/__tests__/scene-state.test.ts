@@ -76,7 +76,7 @@ describe("isReaskingCovered — veto de re-preguntas (Verify)", () => {
   it("detecta cuando la persona re-pregunta un ítem ya cubierto", () => {
     let state = createSceneState("daily_standup")!;
     state = advanceScene(state, "I finished the report for Project Alpha.");
-    state = advanceScene(state, "I need to finish the report by Friday.");
+    state = advanceScene(state, "I need to finish the report by Friday.", { lastAgentLine: "What is your plan for today?" });
     expect(
       isReaskingCovered("So far, the progress is good, but we need to know what the next step is!", state),
     ).toBe(true);
@@ -86,7 +86,7 @@ describe("isReaskingCovered — veto de re-preguntas (Verify)", () => {
   it("no veta la pregunta por el ítem PENDIENTE", () => {
     let state = createSceneState("daily_standup")!;
     state = advanceScene(state, "I finished the report for Project Alpha.");
-    state = advanceScene(state, "I need to finish the report by Friday.");
+    state = advanceScene(state, "I need to finish the report by Friday.", { lastAgentLine: "What is your plan for today?" });
     expect(isReaskingCovered("Got it — is anything blocking you?", state)).toBe(false);
   });
 

@@ -57,21 +57,20 @@ function personaBlock(scenario: Scenario): string {
  * ("here is the next step...") o a analizar el wording del aprendiz.
  */
 const META_GUARD =
-  "META GUARD — output ONLY your spoken line: no lists, no labels, no bracketed " +
-  "[notes] or (asides), no planning talk. Never analyse or comment on the " +
-  "learner's wording — react to the meaning, in character.";
+  "META GUARD — output ONLY your spoken line: no lists, labels, [notes], " +
+  "(asides) or planning talk. Never comment on their wording: react in " +
+  "character to what they meant.";
 
 /**
  * Objetivo explícito de la escena: sin esto, el agente conversa sin rumbo y no
- * "cumple" el escenario. Da al modelo la meta, el presupuesto de turnos y la
- * orden de avanzar cada turno hacia completarla y cerrar en personaje.
+ * "cumple" el escenario. Da la meta y el presupuesto de turnos; el "avanzá
+ * ahora hacia X" NO va aquí — llega cada turno en la directiva de escena
+ * (domain/chat/turn-directive), y repetirlo en el system era pagar el mismo
+ * contexto dos veces con el modelo pequeño.
  */
 function sceneGoalBlock(scenario: Scenario): string {
   const budget = maxTurnsFor(scenario.scenarioType);
-  return (
-    `SCENE GOAL — "${scenario.title}": ${scenario.description} ` +
-    `About ${budget} exchanges; move it forward every turn, then wrap up in character.`
-  );
+  return `SCENE GOAL — "${scenario.title}": ${scenario.description} About ${budget} exchanges.`;
 }
 
 /**

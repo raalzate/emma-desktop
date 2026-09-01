@@ -6,6 +6,8 @@
  */
 
 import { MAX_HISTORY_TURNS } from "@/config/session-config";
+import { MIN_TURNS_TO_COUNT } from "@/domain/progression/promotion-policy";
+import { SCENE_CHECKLISTS, SCENE_DEPTH } from "@/lib/scene-checklists";
 import type { SilentError } from "./silent-error";
 
 export type { SilentError };
@@ -34,10 +36,46 @@ export const MAX_TURNS_BY_SCENARIO: Record<string, number> = {
   design_review: 12,
 };
 
-/** Presupuesto de turnos para un scenarioType (default si no está mapeado). */
+/**
+ * Margen alrededor del checklist: un turno para abrir la escena y otro para
+ * cerrarla en personaje. Todo lo demás son los objetivos del guion.
+ */
+export const TURNS_AROUND_CHECKLIST = 2;
+
+/**
+ * Presupuesto de turnos de un escenario: el GUION manda.
+ *
+ * El "why" (RC-5 del incidente del agente torpe): el presupuesto se declaraba
+ * suelto en `MAX_TURNS_BY_SCENARIO` —entre 6 y 12 turnos— mientras todos los
+ * checklists tienen 3 objetivos. La escena prometía así entre 3 y 9 turnos de
+ * conversación que el guion no tenía, y `deepen` los rellenaba improvisando
+ * («pedile más detalle sobre lo último»), que es justo de donde salían las
+ * líneas robóticas. El valor declarado queda como TOPE, no como promesa.
+ */
 export function maxTurnsFor(scenarioType: string | null | undefined): number {
   if (!scenarioType) return DEFAULT_MAX_TURNS;
-  return MAX_TURNS_BY_SCENARIO[scenarioType] ?? DEFAULT_MAX_TURNS;
+  const declarado = MAX_TURNS_BY_SCENARIO[scenarioType] ?? DEFAULT_MAX_TURNS;
+  const objetivos = SCENE_CHECKLISTS[scenarioType]?.length;
+  if (objetivos === undefined) return declarado;
+  return Math.min(declarado, objetivos * depthFor(scenarioType) + TURNS_AROUND_CHECKLIST);
+}
+
+/** Turnos que merece cada objetivo en este escenario (ver SCENE_DEPTH). */
+export function depthFor(scenarioType: string | null | undefined): number {
+  if (!scenarioType) return 1;
+  return SCENE_DEPTH[scenarioType] ?? 1;
+}
+
+/**
+ * Turnos que esta escena necesita para poder calificarse.
+ *
+ * El mínimo general (`MIN_TURNS_TO_COUNT`) existe para no dar una nota con dos
+ * frases, pero exigírselo a una escena que dura menos la dejaba sin nota
+ * haciendo todo bien — y era el motivo por el que se improvisaban turnos de
+ * relleno. Una charla breve se califica por lo que dura.
+ */
+export function turnsToGradeFor(scenarioType: string | null | undefined): number {
+  return Math.min(MIN_TURNS_TO_COUNT, maxTurnsFor(scenarioType));
 }
 
 /** Un mensaje del historial de conversación. */

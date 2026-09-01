@@ -5,6 +5,7 @@
  * sí la transcripción, que es lo que la IA procesa.
  */
 
+import { isSessionLesson, type SessionLesson } from "@/domain/feedback/session-lesson";
 import type { ChatTurn } from "./simulation-session";
 
 export interface ChatConversation {
@@ -17,8 +18,23 @@ export interface ChatConversation {
   turnCount: number;
   /** La escena se completó y la lección fue entregada (sesión de solo lectura). */
   completed?: boolean;
+  /** Lección de cierre tal como Emma la entregó (no se regenera al reabrir). */
+  lesson?: SessionLesson;
   createdAt: number;
   updatedAt: number;
+}
+
+/**
+ * Lección guardada de una conversación, validada en el borde: lo que viene del
+ * almacén JSON puede ser de una versión anterior o estar corrupto, y en ese caso
+ * la sesión debe comportarse como si no tuviera lección (se regenera) en vez de
+ * romper el diálogo con un reporte a medias.
+ */
+export function readStoredLesson(
+  conversation: { lesson?: unknown } | null | undefined,
+): SessionLesson | null {
+  const stored = conversation?.lesson;
+  return isSessionLesson(stored) ? stored : null;
 }
 
 /** Título por defecto a partir del primer mensaje del aprendiz, o el del escenario. */
