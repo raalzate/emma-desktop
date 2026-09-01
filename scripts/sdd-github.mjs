@@ -163,7 +163,42 @@ function featuresUsadas() {
   }
 }
 
-function nuevaFeature(archivo) {
+/**
+ * Política del plan: NINGUNA feature nace sin milestone. La pregunta «¿bajo qué
+ * milestone va esto?» se hace SIEMPRE — existe uno o se crea — y este freno la
+ * vuelve inevitable: sin `--milestone "<título>"` el subcomando muere ANTES de
+ * tocar la red, listando los milestones abiertos para elegir o el comando para
+ * crear uno. Un issue sin milestone es trabajo fuera del plan.
+ */
+function exigirMilestone(flags) {
+  const idx = flags.indexOf("--milestone");
+  const titulo = idx >= 0 ? flags[idx + 1] : undefined;
+  if (titulo && titulo.trim()) return titulo.trim();
+  let abiertos = "(no se pudo listar: corré `gh api repos/" + gh.repo + "/milestones --jq '.[].title'`)";
+  try {
+    // `gh api` no acepta `--repo`: va directo, sin el envoltorio ghCli.
+    const salida = execFileSync(
+      "gh",
+      ["api", `repos/${gh.repo}/milestones`, "--jq", ".[].title"],
+      { cwd: REPO_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+    ).trim();
+    abiertos = salida ? salida.split("\n").map((t) => `  · ${t}`).join("\n") : "  (ninguno abierto)";
+  } catch {
+    /* el mensaje genérico de arriba ya cubre el caso sin red */
+  }
+  console.error(
+    [
+      "Falta `--milestone \"<título>\"`: política del plan — ninguna feature nace sin milestone.",
+      "Milestones abiertos:",
+      abiertos,
+      `Para crear uno: gh api -X POST repos/${gh.repo}/milestones -f title="<título>"`,
+    ].join("\n"),
+  );
+  process.exit(1);
+}
+
+function nuevaFeature(archivo, flags = []) {
+  const milestone = exigirMilestone(flags);
   const md = fs.readFileSync(archivo, "utf8");
   asegurarLabelsBase();
 
@@ -203,6 +238,8 @@ function nuevaFeature(archivo) {
     [`Spec de la feature \`${feature}\`. Esta issue es el registro: no hay copia en el repo.`, "", md].join("\n"),
     "--label",
     [gh.featureLabel, labelFeature].join(","),
+    "--milestone",
+    milestone,
   ]);
   exigirLabels(url, [gh.featureLabel, labelFeature]);
   console.log(url);
@@ -216,6 +253,15 @@ function tareasDesde(issueMadre, archivo) {
     process.exit(1);
   }
   asegurarLabelsBase();
+  // Las tareas heredan el milestone de la madre: la política del plan aplica al
+  // árbol entero, no sólo a la raíz.
+  const milestoneMadre = (() => {
+    try {
+      return ghCli(["issue", "view", issueMadre, "--json", "milestone", "--jq", ".milestone.title // empty"]);
+    } catch {
+      return "";
+    }
+  })();
   const etiquetas = ghCli(["issue", "view", issueMadre, "--json", "labels", "--jq", ".labels[].name"]).split("\n");
   const labelFeature = etiquetas.find((l) => l.startsWith(gh.featureLabelPrefix));
   const hijos = [];
@@ -229,6 +275,7 @@ function tareasDesde(issueMadre, archivo) {
       [`Tarea de #${issueMadre}.`, "", t.descripcion, "", `- **Requisitos:** ${t.requisitos || "—"}`, `- **Verificación:** ${t.verificacion || "—"}`].join("\n"),
       "--label",
       [gh.taskLabel, labelFeature].filter(Boolean).join(","),
+      ...(milestoneMadre ? ["--milestone", milestoneMadre] : []),
     ]);
     exigirLabels(url, [gh.taskLabel, labelFeature].filter(Boolean));
     hijos.push({ ...t, numero: url.split("/").pop() });
@@ -354,10 +401,10 @@ const [subcomando, ...resto] = process.argv.slice(2);
 switch (subcomando) {
   case "new":
     if (!resto[0]) {
-      console.error("Uso: node scripts/sdd-github.mjs new <specs/<feature>/spec.md>");
+      console.error('Uso: node scripts/sdd-github.mjs new <borrador/<feature>/spec.md> --milestone "<título>"');
       process.exit(1);
     }
-    nuevaFeature(resto[0]);
+    nuevaFeature(resto[0], resto.slice(1));
     break;
   case "tasks":
     if (!resto[1]) {
