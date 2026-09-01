@@ -16,11 +16,20 @@ const situation: SituationVariant = {
 };
 
 describe("buildSceneBriefing", () => {
-  it("genera una ambientación hipotética en español según el carácter", () => {
+  it("genera una ambientación hipotética en inglés según el carácter", () => {
     const b = buildSceneBriefing(situation);
-    expect(b.hypothetical).toMatch(/Imagina/);
+    expect(b.hypothetical).toMatch(/^Picture/);
     // routine → jornada normal, sin urgencias
-    expect(b.hypothetical).toMatch(/normal|tranquil/i);
+    expect(b.hypothetical).toMatch(/ordinary|quiet/i);
+  });
+
+  it("ninguna ambientación deja rastros en español (la escena es ficción en inglés)", () => {
+    const chars = ["incident", "conflict", "onboarding", "routine"] as const;
+    for (const c of chars) {
+      const { hypothetical } = buildSceneBriefing({ ...situation, character: c });
+      expect(hypothetical).not.toMatch(/[áéíóúñ¿¡]/i);
+      expect(hypothetical).not.toMatch(/\b(imagina|equipo|que|tu)\b/i);
+    }
   });
 
   it("parte la misión en objetivos por oración (inglés intacto)", () => {

@@ -37,12 +37,12 @@ function scriptedLlm(replies: string[]): { llm: LlmGenerate; calls: LlmGenerateA
 }
 
 describe("createSceneContract — creador de escenario (BUG-001)", () => {
-  it("genera hechos EN válidos y la narrativa ES a partir de ESOS hechos", async () => {
+  it("genera hechos EN válidos y la narrativa EN a partir de ESOS hechos", async () => {
     const facts =
       "Project: payments API on sprint 14.\nYesterday: login fix merged.\nToday: demo at 3 PM, one risk from code review.";
     const { llm, calls } = scriptedLlm([
       facts,
-      "Te reúnes con Sofía para el daily. Ayer integraste el fix de login y hoy hay demo a las 3 PM.",
+      "You meet Sofía for the daily. Yesterday you merged the login fix and today there is a demo at 3 PM.",
     ]);
     const contract = await createSceneContract({ llm, scenario, situation, techStack: "backend" });
     expect(contract.facts).toBe(facts);

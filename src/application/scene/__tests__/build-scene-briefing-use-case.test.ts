@@ -29,15 +29,15 @@ const situation: SituationVariant = {
 };
 
 describe("buildImmersiveBriefing", () => {
-  it("devuelve la narrativa en español generada por el LLM (recortada)", async () => {
+  it("devuelve la narrativa en inglés generada por el LLM (recortada)", async () => {
     const llm: LlmGenerate = async () =>
-      "  El proyecto lleva 3 días atrasado: el equipo de plataforma no entregó el contrato del API y tu integración de pagos está congelada. Hoy diriges el standup y el equipo espera un plan.  ";
+      "  The project is three days late: the platform team never delivered the API contract and your payments integration is frozen. You are running today's standup and the team expects a plan.  ";
     const r = await buildImmersiveBriefing({ llm, scenario, situation, techStack: "Python, AWS" });
-    expect(r.narrative).toMatch(/^El proyecto lleva 3 días atrasado/);
+    expect(r.narrative).toMatch(/^The project is three days late/);
     expect(r.narrative?.endsWith(" ")).toBe(false);
   });
 
-  it("el prompt pide español, segunda persona y detalles concretos", async () => {
+  it("el prompt pide inglés, segunda persona y detalles concretos", async () => {
     let seenSystem = "";
     let seenPrompt = "";
     const llm: LlmGenerate = async (args) => {
@@ -46,9 +46,12 @@ describe("buildImmersiveBriefing", () => {
       return "Narrativa.";
     };
     await buildImmersiveBriefing({ llm, scenario, situation });
-    expect(seenSystem).toMatch(/SPANISH/i);
-    expect(seenSystem).toMatch(/second person|segunda persona/i);
+    // La escena es ficción: va en inglés. El andamiaje de producto sigue en español.
+    expect(seenSystem).toMatch(/ENGLISH/i);
+    expect(seenSystem).not.toMatch(/SPANISH/i);
+    expect(seenSystem).toMatch(/second person/i);
     expect(seenPrompt).toMatch(/Blocked by another team/);
+    expect(seenPrompt).not.toMatch(/español/i);
   });
 
   it("fallo del LLM o respuesta vacía → narrative null (el caller usa el fallback estático)", async () => {
