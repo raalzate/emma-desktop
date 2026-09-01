@@ -17,13 +17,14 @@ import { LLM_TIMEOUT_SECONDS } from "@/config/session-config";
 import type { LlmGenerate } from "@/domain/ai/llm-port";
 import { capHistory, type ChatTurn } from "@/domain/chat/simulation-session";
 import { layerHistory } from "@/domain/chat/history-layers";
+import { buildSceneMemory, renderSceneMemory } from "@/domain/chat/scene-memory";
 import { sanitizeReply, hasNonLatinScript } from "@/domain/chat/sanitize-reply";
 import {
   hasIdentityLeak,
   removeIdentityLeak,
   pickRecovery,
 } from "@/domain/chat/identity-guard";
-import { stripRepeatedGreeting } from "@/domain/chat/greeting-guard";
+import { isGreeting, stripRepeatedGreeting } from "@/domain/chat/greeting-guard";
 import { stripRepeatedOpener } from "@/domain/chat/repetition-guard";
 import { polishChatReply } from "@/domain/chat/chat-brevity";
 import { CHAT_MAX_TOKENS } from "@/domain/shared/token-budgets";
@@ -59,6 +60,9 @@ function buildPrompt(
   sceneCue?: string,
 ): string {
   if (history.length === 0) return userMessage;
+  // Memoria de escena ANTES de la transcripción: los detalles concretos se
+  // fijan aunque los turnos que los introdujeron ya se hayan recortado.
+  const memory = renderSceneMemory(buildSceneMemory(history));
   // Capas de contexto: recientes verbatim, smalltalk viejo colapsado a una nota.
   const layered = layerHistory(history);
   const transcript = layered.turns
@@ -68,6 +72,7 @@ function buildPrompt(
   const anchor = characterAnchor ? `${characterAnchor} ` : "";
   const script = sceneCue ? `SCENE SCRIPT — ${sceneCue}\n` : "";
   return (
+    (memory ? `${memory}\n\n` : "") +
     `CONVERSATION SO FAR (your lines are "You:"):\n${note}${transcript}\n\n` +
     `NEW MESSAGE from the learner:\n${userMessage}\n\n` +
     script +
@@ -108,11 +113,12 @@ function cleanReply(
   maxSentences: number,
   alreadyGreeted: boolean,
   previousAssistantTurns: readonly string[],
+  learnerGreeted: boolean,
 ): string {
   const sane = sanitizeReply(raw);
   const noLeak = removeIdentityLeak(sane);
   const inCharacter = stripRepeatedOpener(
-    stripRepeatedGreeting(noLeak, alreadyGreeted),
+    stripRepeatedGreeting(noLeak, alreadyGreeted, { learnerGreeted }),
     previousAssistantTurns,
   );
   const polished = polishChatReply(inCharacter, maxSentences);
@@ -174,8 +180,17 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
   };
   // Limpieza + Verify del loop: una respuesta que el validador rechaza
   // (p.ej. re-pregunta un ítem del checklist ya cubierto) cuenta como inválida.
+  // El aprendiz saludó en este turno: la persona puede devolver el saludo. Sin
+  // esto, responder "hi, good morning" con una pregunta seca era lo normal.
+  const learnerGreeted = isGreeting(args.userMessage);
   const clean = (raw: string): string => {
-    const cleaned = cleanReply(raw, CHAT_REPLY_MAX_SENTENCES, alreadyGreeted, previousAssistant);
+    const cleaned = cleanReply(
+      raw,
+      CHAT_REPLY_MAX_SENTENCES,
+      alreadyGreeted,
+      previousAssistant,
+      learnerGreeted,
+    );
     if (cleaned && args.validateReply && !args.validateReply(cleaned)) return "";
     return cleaned;
   };

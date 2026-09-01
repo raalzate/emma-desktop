@@ -34,7 +34,14 @@ function useDebouncedDraft(draft: string): string {
 
 interface Args {
   runtime: EmmaRuntime;
+  /**
+   * Contexto COMPLETO de la escena (persona, situación, tema pendiente y lo que
+   * el aprendiz ya dijo). Antes era sólo la última línea del agente, y sin saber
+   * dónde estaba parada la conversación las sugerencias salían genéricas.
+   */
   context: string;
+  /** Sólo la última línea del agente: es contra ella que se mide el eco. */
+  agentLine: string;
   level: CefrLevel;
   busy: boolean;
   draft?: string;
@@ -47,22 +54,24 @@ interface Args {
   scenarioType: string;
 }
 
-export function useSuggestions({ runtime, context, level, busy, draft = "", scenarioType }: Args) {
+export function useSuggestions({
+  runtime, context, agentLine, level, busy, draft = "", scenarioType,
+}: Args) {
   const [suggestions, setSuggestions] = useState<ReplySuggestion[]>([]);
   const debouncedDraft = useDebouncedDraft(draft);
 
   useEffect(() => {
     let alive = true;
     setSuggestions([]);
-    if (busy || !context) return;
+    if (busy || !agentLine) return;
     runtime
-      .suggest(context, level, debouncedDraft || undefined, scenarioType)
+      .suggest(context, level, debouncedDraft || undefined, scenarioType, agentLine)
       .then((s) => alive && setSuggestions(s))
       .catch(() => {});
     return () => {
       alive = false;
     };
-  }, [runtime, context, level, busy, debouncedDraft, scenarioType]);
+  }, [runtime, context, agentLine, level, busy, debouncedDraft, scenarioType]);
 
   return suggestions;
 }

@@ -16,25 +16,28 @@ import { loadPersonaTuning } from "@/infrastructure/persistence/persona-tuning-r
 import { selectSituation } from "@/domain/situations/situation-selector";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
-import { maxTurnsFor } from "@/domain/chat/simulation-session";
+import { maxTurnsFor, turnsToGradeFor } from "@/domain/chat/simulation-session";
 import { personaAnchor } from "@/domain/chat/simulation-prompt";
 import {
   advanceScene,
+  coverItem,
   createSceneState,
+  deepeningTarget,
   isReaskingCovered,
   isSceneComplete,
-  sceneDirective,
   sceneProgress,
   type SceneState,
 } from "@/domain/chat/scene-state";
 import { resolveSceneClose, shouldWrapUp } from "@/domain/chat/scene-closing";
 import { buildRecastCue } from "@/domain/chat/recast";
-import { needsElaboration } from "@/domain/chat/elaboration";
 import { buildTurnDirective } from "@/domain/chat/turn-directive";
-import { MIN_TURNS_TO_COUNT } from "@/domain/progression/promotion-policy";
+import { buildSuggestionContext } from "@/domain/coaching/suggestion-context";
+import { personaFor } from "@/domain/personas/protopersona";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
 import { isActionableCorrection } from "@/domain/chat/silent-error";
 import type { ChatConversation } from "@/domain/chat/chat-conversation";
+import { readStoredLesson } from "@/domain/chat/chat-conversation";
+import type { SessionLesson } from "@/domain/feedback/session-lesson";
 
 export interface SessionSnapshot {
   scenarioType: string;
@@ -44,6 +47,8 @@ export interface SessionSnapshot {
   turnCount: number;
   /** La escena se completó (persiste para bloquear la sesión al reabrirla). */
   completed: boolean;
+  /** Lección de cierre ya entregada: viaja al histórico para no regenerarla. */
+  lesson?: SessionLesson;
 }
 
 interface Deps {
@@ -85,7 +90,7 @@ async function openScenario(
     scenario, situation, settings: d.settings, profile: d.profile, level, personaTuning, sceneFacts,
     weakErrorCategories,
   });
-  const opening = await rt.kickoff(system, sessionId);
+  const opening = await rt.kickoff(system, sessionId, d.profile.name);
   return { system, opening };
 }
 
@@ -147,6 +152,9 @@ export function useChatSession(d: Deps) {
   const elaborationAskedFor = useRef<string | null>(null);
   // Objetivos cubiertos de la escena, para que la UI muestre el avance.
   const [sceneGoals, setSceneGoals] = useState<{ done: number; total: number } | null>(null);
+  // Lección de cierre ya entregada (guardada con la conversación). Al reabrir
+  // una sesión terminada se revisa esta, no una generación nueva.
+  const [lesson, setLesson] = useState<SessionLesson | null>(() => readStoredLesson(restore));
 
   // Monta la sesión: reanuda `restore` (sin kickoff) o prepara la escena nueva.
   useEffect(() => {
@@ -179,8 +187,11 @@ export function useChatSession(d: Deps) {
       if (restore.completed) setSceneComplete(true);
       let replayed = createSceneState(scenario.scenarioType);
       if (replayed) {
+        // La pregunta que ancla cada respuesta es la línea previa de la persona.
+        let pregunta = "";
         for (const m of restore.messages) {
-          if (m.role === "user") replayed = advanceScene(replayed!, m.content);
+          if (m.role === "assistant") pregunta = m.content;
+          else replayed = advanceScene(replayed!, m.content, { lastAgentLine: pregunta });
         }
       }
       sceneState.current = replayed;
@@ -281,17 +292,46 @@ export function useChatSession(d: Deps) {
       setMessages([...prior, { role: "user", content: clean, at: Date.now(), audioUrl }]);
       setTurnCount(turn);
       setBusy(true);
+      const lastAgentLine =
+        [...prior].reverse().find((m) => m.role === "assistant")?.content ?? "";
+      // Observe — el JUEZ del turno: una clasificación corta del LLM etiqueta el
+      // mensaje (qué tema contesta, si es negación, si es meta, cuánta sustancia
+      // trae) y el código decide con eso. Los jueces regex quedaron como red
+      // dentro del caso de uso: entender inglés con listas de palabras fue la
+      // causa raíz de cuatro incidentes seguidos («No, I am fine today.» se
+      // perdía por no tener la palabra exacta en la lista).
+      // El juez corre ANTES de encolar el chequeo gramatical: el motor local
+      // procesa UNA generación a la vez, y con la gramática (360 tokens) por
+      // delante el juez vencía su tope de 4s y caía a la red en todos los
+      // turnos — la arquitectura instalada sin correr nunca, y en silencio.
+      const observation = await runtime.observeTurn({
+        state: sceneState.current,
+        lastAgentLine,
+        message: clean,
+        level,
+      });
+      if (observation.source === "heuristics" && process.env.NODE_ENV !== "production") {
+        // Visible en la consola de dev: si esto aparece en cada turno, el juez
+        // no está corriendo y hay que mirar la cola del motor.
+        console.warn("[escena] turno etiquetado por la red determinista", observation);
+      }
       const grammarCheck = bufferGrammar(clean, turn);
-      // Respuesta mínima: se pide un detalle antes de pasar de tema, UNA vez por
-      // ítem (insistir trabaría la escena si el aprendiz responde siempre corto).
-      const currentItem = sceneState.current?.pending[0]?.id ?? "free";
+      const intent = observation.intent;
+      const contributes = intent === "in-scene";
+      // Elaboración: sólo sobre una respuesta que contesta con POCO (juicio del
+      // modelo, no conteo de palabras), nunca sobre una negación, una vez por
+      // ítem. Y siempre DESPUÉS de registrar: pedir detalle no borra lo dicho.
+      const answered = observation.answersItem ?? "free";
       const askElaboration =
-        needsElaboration(clean, level) && elaborationAskedFor.current !== currentItem;
-      if (askElaboration) elaborationAskedFor.current = currentItem;
-      // Observe: el mensaje del aprendiz actualiza el checklist ANTES de decidir.
-      // Mientras se pide elaboración el ítem sigue pendiente: aún no está contado.
-      if (sceneState.current && !askElaboration) {
-        sceneState.current = advanceScene(sceneState.current, clean);
+        contributes &&
+        observation.substance === "thin" &&
+        !observation.negative &&
+        elaborationAskedFor.current !== answered;
+      if (askElaboration) elaborationAskedFor.current = answered;
+      if (sceneState.current && contributes && observation.answersItem) {
+        sceneState.current = coverItem(sceneState.current, observation.answersItem, clean, {
+          negative: observation.negative,
+        });
         setSceneGoals(sceneProgress(sceneState.current));
       }
       // Si el checklist quedó completo, la respuesta que viene es el CIERRE de
@@ -302,7 +342,11 @@ export function useChatSession(d: Deps) {
       const maxTurns = maxTurnsFor(scenario.scenarioType);
       // Checklist cubierto demasiado pronto: profundizar en vez de cerrar, o la
       // sesión termina sin los turnos que exige la nota de progresión.
-      const deepen = closingTurn && turn < MIN_TURNS_TO_COUNT && turn < maxTurns;
+      // Turnos que ESTA escena necesita para calificarse: con el presupuesto ya
+      // derivado del guion, cubrir el checklist casi siempre alcanza y `deepen`
+      // deja de ser la vía normal (era donde se improvisaban los turnos vacíos).
+      const minTurns = turnsToGradeFor(scenario.scenarioType);
+      const deepen = closingTurn && turn < minTurns && turn < maxTurns;
       // Recast en caliente: si el chequeo gramatical llega a tiempo, la persona
       // devuelve la forma correcta en su propia línea (feedback inmediato).
       const fresh = await Promise.race([
@@ -313,6 +357,7 @@ export function useChatSession(d: Deps) {
       // apilarlas producía instrucciones contradictorias y respuestas vacías.
       const directive = buildTurnDirective({
         state: sceneState.current,
+        intent,
         elaborate: askElaboration,
         deepen,
         wrapUp: shouldWrapUp(turn, maxTurns) && !deepen,
@@ -327,7 +372,13 @@ export function useChatSession(d: Deps) {
         // Decide: directiva exacta (qué ya se sabe / qué preguntar ahora / cerrar).
         sceneCue: directive || undefined,
         // Verify: veta re-preguntas de ítems ya cubiertos (dispara el reintento).
-        validateReply: (r) => !isReaskingCovered(r, sceneState.current),
+        // Recibe lo que Decide ordenó: al profundizar, la pregunta sobre ESE
+        // ítem cubierto es la orden, no una re-pregunta. Sin este dato el veto
+        // tumbaba las dos generaciones y la escena caía en la recuperación.
+        validateReply: (r) =>
+          !isReaskingCovered(r, sceneState.current, {
+            deepeningOn: deepen ? deepeningTarget(sceneState.current)?.id : undefined,
+          }),
         onToken: (c) => setStreaming((s) => s + c),
       });
       setMessages((m) => [...m, { role: "assistant", content: reply, at: Date.now() }]);
@@ -342,7 +393,7 @@ export function useChatSession(d: Deps) {
         maxTurns,
         lastReply: reply,
         graceTurnsUsed: graceTurns.current,
-        minTurns: MIN_TURNS_TO_COUNT,
+        minTurns,
       });
       if (decision.grantGrace) graceTurns.current += 1;
       if (decision.close) setSceneComplete(true);
@@ -360,15 +411,40 @@ export function useChatSession(d: Deps) {
       messages,
       turnCount,
       completed: sceneComplete,
+      lesson: lesson ?? undefined,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, turnCount, sceneComplete]);
+  }, [messages, turnCount, sceneComplete, lesson]);
+
+  // Guardar la lección cierra la sesión: se entregó el feedback, no se sigue
+  // conversando. Así el banner y el bloqueo del composer valen también cuando
+  // el aprendiz cerró a mano antes de completar el checklist.
+  const saveLesson = useCallback((entregada: SessionLesson) => {
+    setLesson(entregada);
+    setSceneComplete(true);
+  }, []);
 
   const maxTurns = maxTurnsFor(scenario.scenarioType);
   const lastEmma = useMemo(
     () => [...messages].reverse().find((m) => m.role === "assistant")?.content ?? "",
     [messages],
   );
+  // Contexto de escena para las sugerencias del composer: con quién habla, en
+  // qué situación, qué tema está pidiendo la persona y qué ya contó el
+  // aprendiz. Con sólo `lastEmma` las 3 sugerencias salían genéricas.
+  const suggestionContext = useMemo(() => {
+    const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
+    return buildSuggestionContext({
+      lastAgentLine: lastEmma,
+      personaName: persona.name,
+      personaRole: persona.role,
+      situationTitle: situation?.title,
+      saidSoFar: messages.filter((m) => m.role === "user").map((m) => m.content),
+      pendingAsk: sceneState.current?.pending[0]?.ask,
+    });
+    // `sceneState` es una ref: el avance del checklist se refleja al cambiar
+    // `messages`, que es lo que dispara este cálculo.
+  }, [lastEmma, messages, situation?.title, scenario.scenarioType, scenario.emmaRole]);
   return {
     situation, level, phase, begin,
     // Contrato de escena: la antesala muestra la narrativa y el botón espera.
@@ -378,8 +454,10 @@ export function useChatSession(d: Deps) {
     sceneComplete,
     // Sesión reabierta que YA terminó: solo lectura, sin re-disparar la lección.
     restoredComplete: !!restore?.completed,
+    // Lección de cierre guardada (null hasta que Emma la entrega).
+    lesson, saveLesson,
     // Objetivos de la escena cubiertos/total (null si el escenario es libre).
     sceneGoals,
-    messages, streaming, busy, turnCount, maxTurns, errors, send, lastEmma,
+    messages, streaming, busy, turnCount, maxTurns, errors, send, lastEmma, suggestionContext,
   };
 }

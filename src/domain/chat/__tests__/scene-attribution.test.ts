@@ -39,9 +39,17 @@ describe("advanceScene — atribución por contenido", () => {
     expect(after.covered.map((c) => c.id)).toEqual(["blockers"]);
   });
 
-  it("sin señales claras cubre el ítem que se preguntó (primer pendiente)", () => {
-    const after = advanceScene(standup(), "the new module and the reports.");
+  it("sin señales propias cubre el ítem que la persona ACABA de preguntar", () => {
+    const after = advanceScene(standup(), "the new module and the reports.", {
+      lastAgentLine: "What did you do yesterday?",
+    });
     expect(after.covered.map((c) => c.id)).toEqual(["yesterday"]);
+  });
+
+  it("sin señales propias y sin saber qué se preguntó, no atribuye nada", () => {
+    const after = advanceScene(standup(), "the new module and the reports.");
+    expect(after.covered).toEqual([]);
+    expect(after.pending).toHaveLength(3);
   });
 
   it("no consume ítems con relleno o smalltalk", () => {

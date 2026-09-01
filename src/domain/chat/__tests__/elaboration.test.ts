@@ -10,6 +10,25 @@
 import { describe, expect, it } from "vitest";
 import { buildElaborationCue, needsElaboration } from "@/domain/chat/elaboration";
 
+/**
+ * Incidente: el aprendiz contestó «Nathing for now» a la pregunta de bloqueos.
+ * El detector de respuesta cerrada exige la palabra exacta, la falta de
+ * ortografía lo esquivó, y la persona salió con «I'd like to know more about
+ * the specific technical challenge you are facing» — persiguiendo detalle sobre
+ * la nada. Una negación es una negación aunque esté mal escrita.
+ */
+describe("needsElaboration — nunca persigue una negación", () => {
+  it("tolera la falta de ortografía en la familia de 'nothing'", () => {
+    expect(needsElaboration("Nathing for now", "B1")).toBe(false);
+    expect(needsElaboration("nothing for now", "B1")).toBe(false);
+    expect(needsElaboration("notting right now", "B2")).toBe(false);
+  });
+
+  it("no confunde una respuesta con contenido que empieza parecido", () => {
+    expect(needsElaboration("noting the API keys is my task", "B2")).toBe(true);
+  });
+});
+
 describe("needsElaboration", () => {
   it("pide más a un B1 que responde con una frase escueta", () => {
     expect(needsElaboration("i fixed the login bug.", "B1")).toBe(true);
@@ -49,8 +68,8 @@ describe("buildElaborationCue", () => {
   it("pide un detalle concreto sin cambiar de tema y en personaje", () => {
     const cue = buildElaborationCue().toLowerCase();
     expect(cue).toContain("short");
-    expect(cue).toMatch(/detail|specific/);
-    expect(cue).toMatch(/before moving on|without changing/);
+    expect(cue).toMatch(/concrete bit/);
+    expect(cue).toMatch(/stay on their topic|do not open a new one/);
   });
 });
 

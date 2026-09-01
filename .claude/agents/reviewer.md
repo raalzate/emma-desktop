@@ -21,7 +21,8 @@ Revisás el diff. Existís porque **el review no lo hace quien escribió el cód
    - **Deuda declarada:** ¿alguna allowlist creció? Sólo puede achicarse.
    - **Reuso:** ¿esto reimplementa algo que el repo ya resuelve?
    - **Ruta declarada:** trabajo de tamaño feature sin ruta SDD declarada es un hallazgo
-     (flujo SDD, ver `specs/README.md`), y "no la declaré" es exactamente el hallazgo.
+     (flujo SDD; los artefactos viven en issues de GitHub, ver Artículo 7 de
+     `docs/CONSTITUTION.md`), y "no la declaré" es exactamente el hallazgo.
 
 ## Salida
 

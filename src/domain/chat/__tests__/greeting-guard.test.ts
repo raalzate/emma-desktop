@@ -1,5 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { stripRepeatedGreeting } from "../greeting-guard";
+import { isGreeting, stripRepeatedGreeting } from "../greeting-guard";
+
+describe("isGreeting — ¿el aprendiz acaba de saludar?", () => {
+  it("reconoce los saludos habituales", () => {
+    expect(isGreeting("Hi Sofía!")).toBe(true);
+    expect(isGreeting("good morning")).toBe(true);
+    expect(isGreeting("Hey, how are you?")).toBe(true);
+  });
+
+  it("no confunde un turno de trabajo con un saludo", () => {
+    expect(isGreeting("I finished the login API yesterday.")).toBe(false);
+    expect(isGreeting("")).toBe(false);
+  });
+});
 
 describe("greeting-guard — la persona saluda UNA sola vez (BUG-001)", () => {
   it("elimina el resaludo al inicio cuando la escena ya empezó", () => {
@@ -25,5 +38,17 @@ describe("greeting-guard — la persona saluda UNA sola vez (BUG-001)", () => {
 
   it("si TODA la respuesta era saludo devuelve cadena vacía (el caller decide)", () => {
     expect(stripRepeatedGreeting("Hello! Good morning!", true)).toBe("");
+  });
+
+  it("devuelve el saludo cuando el aprendiz acaba de saludar: no devolverlo era seco", () => {
+    expect(
+      stripRepeatedGreeting("Morning! How did the deploy go?", true, { learnerGreeted: true }),
+    ).toBe("Morning! How did the deploy go?");
+  });
+
+  it("sigue borrando el resaludo si el aprendiz no saludó en ese turno", () => {
+    expect(
+      stripRepeatedGreeting("Morning! How did the deploy go?", true, { learnerGreeted: false }),
+    ).toBe("How did the deploy go?");
   });
 });

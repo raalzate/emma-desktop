@@ -26,7 +26,18 @@ describe("protopersonas por escenario", () => {
       expect(p, `falta protopersona para ${type}`).toBeDefined();
       expect(p.name).toMatch(/\w+ \w+/); // nombre y apellido
       expect(p.personaPrompt.length).toBeGreaterThan(40);
-      expect(p.uiDescription.length).toBeGreaterThan(10);
+      expect(p.trait.length).toBeGreaterThan(10);
+    }
+  });
+
+  it("el rasgo visible está en inglés: la persona es ficción, no andamiaje", () => {
+    const personas = [...Object.values(PROTOPERSONAS), personaFor("unknown_scenario", "Team Lead")];
+    for (const p of personas) {
+      // Los nombres propios sí llevan acento (Sofía, Ramírez); el rasgo no.
+      expect(p.trait, `rasgo con acento español: ${p.trait}`).not.toMatch(/[áéíóúñ¿¡]/i);
+      expect(p.trait, `rasgo en español: ${p.trait}`).not.toMatch(
+        /\b(y|de|que|el|la|los|las|con|pero|sin)\b/i,
+      );
     }
   });
 

@@ -4,6 +4,8 @@ import type { Scenario } from "@/domain/scenarios/scenario";
 import type { ChatSettings } from "@/domain/chat-settings/chat-settings";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import { emptyProfile } from "@/domain/profile/user-profile";
+import { WRAP_UP_CUE } from "../scene-closing";
+import { maxTurnsFor } from "../simulation-session";
 
 const scenario: Scenario = {
   scenarioType: "daily_standup",
@@ -49,9 +51,24 @@ describe("buildSimulationPrompt — objetivo de escena", () => {
       profile: emptyProfile("u1"),
       level: "B1",
     });
-    // daily_standup tiene presupuesto 8 en MAX_TURNS_BY_SCENARIO.
-    expect(prompt).toMatch(/8/);
-    expect(prompt).toMatch(/wrap up/i);
+    // El presupuesto lo DERIVA el guion: daily_standup tiene 3 objetivos de
+    // checklist más apertura y cierre (ver `maxTurnsFor`), no el 8 declarado.
+    expect(prompt).toContain(`About ${maxTurnsFor("daily_standup")} exchanges`);
+  });
+
+  // La ORDEN de cerrar salió del system a propósito: se repetía en cada turno
+  // dentro de la directiva de escena, pagando el mismo contexto dos veces con
+  // el modelo pequeño. El presupuesto queda arriba; el "cerrá ahora" llega
+  // cuando de verdad toca. Esta prueba fija que no se perdió por el camino.
+  it("la orden de cerrar no vive en el system: llega en la directiva del turno", () => {
+    const prompt = buildSimulationPrompt({
+      scenario,
+      settings,
+      profile: emptyProfile("u1"),
+      level: "B1",
+    });
+    expect(prompt).not.toMatch(/wrap up/i);
+    expect(WRAP_UP_CUE).toMatch(/wrap up|further questions/i);
   });
 });
 
@@ -99,8 +116,8 @@ describe("buildSimulationPrompt — protopersona", () => {
       level: "B1",
     });
     expect(prompt).toMatch(/META GUARD/);
-    expect(prompt).toMatch(/never .*(analyse|analyze|comment on) the learner'?s wording/i);
-    expect(prompt).toMatch(/bracket/i);
+    expect(prompt).toMatch(/never .*(analyse|analyze|comment on) (?:the learner'?s|their) wording/i);
+    expect(prompt).toMatch(/\[notes\]/i);
   });
 });
 
@@ -116,7 +133,7 @@ describe("buildSimulationPrompt — situación activa comportamental (BUG-001)",
   it("declara que la misión del framing es del APRENDIZ, no de la persona", () => {
     const prompt = buildSimulationPrompt(args);
     expect(prompt).toMatch(/LEARNER'S MISSION/);
-    expect(prompt).toMatch(/refers to the LEARNER/i);
+    expect(prompt).toMatch(/'you' is the LEARNER/i);
     expect(prompt).toContain("Your work is blocked by another team.");
   });
 
@@ -142,7 +159,7 @@ describe("buildSimulationPrompt — hechos concretos de escena (BUG-001)", () =>
     });
     expect(prompt).toMatch(/SCENE FACTS/);
     expect(prompt).toMatch(/keep them consistent/i);
-    expect(prompt).toMatch(/never talk in abstract meta-steps/i);
+    expect(prompt).toMatch(/never abstract meta-steps/i);
   });
 });
 

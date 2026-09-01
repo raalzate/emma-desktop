@@ -16,6 +16,29 @@
 
 import type { ChecklistItem } from "@/domain/chat/scene-state";
 
+/**
+ * Turnos que merece cada objetivo en las escenas de fondo: uno para plantearlo
+ * y otro para ir al detalle. Es lo que sostiene una entrevista o un postmortem
+ * de doce turnos sin inventar relleno.
+ *
+ * Sólo se declara donde el guion la aguanta: una prueba del catálogo exige
+ * `MIN_ITEMS_FOR_DEPTH` objetivos antes de permitirla, porque este mapa sería,
+ * si no, la puerta por la que volvería el presupuesto declarado a dedo.
+ */
+export const MIN_ITEMS_FOR_DEPTH = 5;
+
+export const SCENE_DEPTH: Record<string, number> = {
+  code_review: 2,
+  tech_interview: 2,
+  incident_postmortem: 2,
+  design_review: 2,
+  // Los dos escenarios que además DECLARAN presupuesto largo a propósito (10)
+  // en MAX_TURNS_BY_SCENARIO. El resto del catálogo no declara nada y cae al
+  // default: ahí una escena de cinco turnos es la verdad, no un recorte.
+  retrospective: 2,
+  architecture_pitch: 2,
+};
+
 export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
   // ─── Unidad 6-7 · el stand-up ────────────────────────────────────────────
   daily_standup: [
@@ -54,10 +77,31 @@ export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
         /\b(?:at|in) my (?:last|previous|current)\b|\bi (?:led|built|owned|migrated|designed|implemented|worked on)\b|\bproject\b|\byears?\b/i,
     },
     {
+      id: "technical_depth",
+      ask: "a technical decision they made and its trade-offs",
+      reaskMarkers: /\btrade-?off\b|\bwhy did you (?:choose|pick)\b|\btechnical decision\b|\barchitecture\b/i,
+      answerMarkers:
+        /\b(?:i|we) (?:chose|picked|went with|decided)\b|\binstead of\b|\btrade-?off\b|\bbecause it\b|\bscal(?:e|ing|ability)\b|\bperformance\b/i,
+    },
+    {
       id: "teamwork",
       ask: "a real example of teamwork or conflict",
       reaskMarkers: /\bteam(work)?\b|\bconflict\b|\bdisagree/i,
       answerMarkers: /\bteam(mate|work)?\b|\bcolleague\b|\bconflict\b|\bdisagree|\bwe (?:agreed|decided|discussed)\b/i,
+    },
+    {
+      id: "failure",
+      ask: "something that went wrong and what they took from it",
+      reaskMarkers: /\bwent wrong\b|\bfail(?:ed|ure)\b|\bmistake\b|\blearn(?:ed|t)\b/i,
+      answerMarkers:
+        /\bi learn(?:ed|t)\b|\bwent wrong\b|\bmistake\b|\bnext time\b|\bwe should have\b|\bit (?:failed|broke)\b|\bin hindsight\b/i,
+    },
+    {
+      id: "motivation",
+      ask: "why this role interests them",
+      reaskMarkers: /\bwhy (?:this|our|us)\b|\binterested\b|\bwhat brings you\b|\bwhy do you want\b/i,
+      answerMarkers:
+        /\bi(?:'m| am) interested\b|\bi want to\b|\bwhat attracts me\b|\byour (?:team|company|product)\b|\bi(?:'m| am) looking for\b/i,
     },
     {
       id: "questions",
@@ -436,6 +480,20 @@ export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
   ],
   incident_postmortem: [
     {
+      id: "detection",
+      ask: "how the problem was spotted, and how long that took",
+      reaskMarkers: /\bhow did (?:you|we) (?:find|spot|detect|notice)\b|\bdetect(?:ion|ed)\b|\balert(?:ed|s)?\b/i,
+      answerMarkers:
+        /\bthe alert\b|\bwe noticed\b|\ba (?:customer|user) reported\b|\bmonitoring\b|\bdashboard\b|\bpaged?\b|\bminutes\b/i,
+    },
+    {
+      id: "impact",
+      ask: "who was affected and how badly",
+      reaskMarkers: /\bimpact\b|\bwho was affected\b|\bhow many (?:users|customers)\b|\bhow bad\b/i,
+      answerMarkers:
+        /\busers?\b|\bcustomers?\b|\brequests?\b|\bdowntime\b|\bper ?cent\b|%|\baffected\b|\bno one\b|\berror rate\b/i,
+    },
+    {
       id: "timeline",
       ask: "the timeline — what was happening when it broke",
       reaskMarkers: /\btimeline\b|\bwhat was happening\b|\bwhen (?:did|it)\b/i,
@@ -446,6 +504,13 @@ export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
       ask: "the root cause, distinguishing it from the trigger",
       reaskMarkers: /\broot cause\b|\btrigger\b|\bwhy did it\b/i,
       answerMarkers: /\broot cause\b|\bthe trigger\b|\bbecause\b|\bcaused by\b|\bdue to\b|\bhad (?:not )?been\b/i,
+    },
+    {
+      id: "mitigation",
+      ask: "what stopped the bleeding on the day",
+      reaskMarkers: /\bmitigat|\bhow did (?:you|we) stop\b|\brolled? back\b|\bhow was it fixed\b/i,
+      answerMarkers:
+        /\bwe (?:rolled back|restarted|disabled|reverted|scaled|deployed)\b|\bfail(?: |-)?over\b|\bmitigat|\bhot ?fix\b/i,
     },
     {
       id: "prevention",
@@ -504,10 +569,31 @@ export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
       answerMarkers: /\bit (?:adds|fixes|changes|removes|refactors)\b|\bthe (?:change|pr)\b|\bso that\b/i,
     },
     {
+      id: "scope",
+      ask: "how big the change is and what it touches",
+      reaskMarkers: /\bhow big\b|\bscope\b|\bhow many files\b|\bwhat does it touch\b/i,
+      answerMarkers:
+        /\b(?:files?|lines?|modules?|packages?)\b|\bit touches\b|\bonly (?:the|in)\b|\bjust the\b|\bsmall\b|\bbig(?:ger)?\b/i,
+    },
+    {
       id: "concern",
       ask: "their view on the risky part the reviewer flags",
       reaskMarkers: /\bconcern\b|\brisky\b|\bwhat about\b|\bwhy did you\b/i,
       answerMarkers: /\bi did (?:that|it) (?:on purpose|because)\b|\bfair point\b|\bgood catch\b|\bi(?:'d| would) push back\b|\bbecause\b/i,
+    },
+    {
+      id: "testing",
+      ask: "how they tested the change",
+      reaskMarkers: /\btest(?:s|ed|ing)?\b|\bcoverage\b|\bhow do you know it works\b/i,
+      answerMarkers:
+        /\bi (?:added|wrote|ran)\b|\b(?:unit|integration|e2e) tests?\b|\bmanually\b|\bcovered by\b|\bno tests?\b|\bin staging\b/i,
+    },
+    {
+      id: "tradeoff",
+      ask: "the trade-off they accepted and why",
+      reaskMarkers: /\btrade-?off\b|\bwhy this way\b|\bother approach\b|\bdownside\b/i,
+      answerMarkers:
+        /\btrade-?off\b|\b(?:i|we) (?:chose|picked|went with)\b|\bsimpler\b|\bfaster\b|\bfor now\b|\bthe cost is\b|\binstead of\b/i,
     },
     {
       id: "next_action",
@@ -524,16 +610,37 @@ export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
       answerMarkers: /\bthe problem\b|\bbecause\b|\btoday we\b|\bwe (?:need|can't)\b/i,
     },
     {
+      id: "constraints",
+      ask: "the constraints the design has to live with",
+      reaskMarkers: /\bconstraints?\b|\blimits?\b|\bbudget\b|\bdeadline\b|\bwhat are you stuck with\b/i,
+      answerMarkers:
+        /\bwe (?:only|can'?t|cannot|have to|must)\b|\bconstraint\b|\bdeadline\b|\bbudget\b|\blatency\b|\blegacy\b/i,
+    },
+    {
       id: "alternatives",
       ask: "which alternatives they considered and rejected",
       reaskMarkers: /\balternatives?\b|\bother options?\b|\bwhy not\b/i,
       answerMarkers: /\bwe considered\b|\binstead of\b|\bwe rejected\b|\banother option\b|\bif we (?:did|used)\b/i,
     },
     {
+      id: "data_flow",
+      ask: "how data moves through the design",
+      reaskMarkers: /\bdata (?:flow|move)\b|\bhow does (?:the )?(?:data|request)\b|\bwalk me through\b/i,
+      answerMarkers:
+        /\bthe (?:request|event|message|payload)\b|\bgoes (?:to|through)\b|\bwrites? to\b|\breads? from\b|\bqueue\b|\bthen (?:it|we)\b/i,
+    },
+    {
       id: "failure_mode",
       ask: "how it fails and what they would do then",
       reaskMarkers: /\bfail(?:s|ure)\b|\bwhat if\b|\bfallback\b/i,
       answerMarkers: /\bif it fails\b|\bfailure mode\b|\bfall(?: |-)?back\b|\bwe(?:'d| would)\b|\bworst case\b/i,
+    },
+    {
+      id: "rollout",
+      ask: "how they would roll it out safely",
+      reaskMarkers: /\broll ?out\b|\bmigrat|\bship it\b|\bdeploy\b|\bhow do we get there\b/i,
+      answerMarkers:
+        /\bfeature flag\b|\bwe(?:'d| would) roll\b|\bmigrat|\bin phases\b|\bcanary\b|\bgradual|\bbehind a flag\b/i,
     },
   ],
   architecture_pitch: [
@@ -554,6 +661,20 @@ export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
       ask: "what it costs — effort, risk, or what they give up",
       reaskMarkers: /\bcost\b|\beffort\b|\bgive up\b|\brisks?\b/i,
       answerMarkers: /\bit (?:costs|takes)\b|\bweeks?\b|\bwe(?:'d| would) (?:lose|need)\b|\btrade.?off\b|\brisk\b/i,
+    },
+    {
+      id: "objection",
+      ask: "how they answer the strongest objection to it",
+      reaskMarkers: /\bobjection\b|\bwhat if (?:i|we) said\b|\bpush ?back\b|\bconvince me\b|\bwhy not just\b/i,
+      answerMarkers:
+        /\bfair (?:point|enough)\b|\bi(?:'d| would) argue\b|\bthat(?:'s| is) true, but\b|\bthe difference is\b|\bwe already\b/i,
+    },
+    {
+      id: "first_step",
+      ask: "the smallest first step they want approved today",
+      reaskMarkers: /\bfirst step\b|\bwhat do you need\b|\bstart (?:with|small)\b|\bwhat are you asking\b/i,
+      answerMarkers:
+        /\bstart (?:with|by)\b|\ba (?:spike|prototype|pilot|proof)\b|\bone (?:service|team|module)\b|\btwo weeks\b|\bi(?:'m| am) asking for\b/i,
     },
   ],
   multi_team_sync: [
@@ -608,6 +729,20 @@ export const SCENE_CHECKLISTS: Record<string, readonly ChecklistItem[]> = {
       ask: "what did not work",
       reaskMarkers: /\bdidn(?:'t| not) (?:work|go)\b|\bwent (?:badly|wrong)\b|\bproblems?\b/i,
       answerMarkers: /\bdidn(?:'t| not) work\b|\bwe struggled\b|\bthe problem was\b|\btoo (?:many|much)\b|\bwent wrong\b/i,
+    },
+    {
+      id: "cause",
+      ask: "why they think it went that way",
+      reaskMarkers: /\bwhy do you think\b|\bwhat caused\b|\breason\b|\bbehind (?:it|that)\b/i,
+      answerMarkers:
+        /\bbecause\b|\bthe reason\b|\bwe (?:under ?estimated|assumed|forgot)\b|\bit happened when\b|\bmostly\b/i,
+    },
+    {
+      id: "own_part",
+      ask: "their own part in it, not just the team's",
+      reaskMarkers: /\byour (?:part|side)\b|\bwhat about you\b|\byou personally\b|\bfrom your side\b/i,
+      answerMarkers:
+        /\bi (?:should have|could have|didn'?t|took|missed|kept)\b|\bmy (?:part|side|fault)\b|\bon my end\b|\bpersonally\b/i,
     },
     {
       id: "action",

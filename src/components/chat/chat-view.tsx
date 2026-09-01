@@ -86,6 +86,7 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
         messages: stripForStorage(snap.messages),
         turnCount: snap.turnCount,
         completed: snap.completed,
+        lesson: snap.lesson,
         createdAt: createdAt.current,
         updatedAt: Date.now(),
       };

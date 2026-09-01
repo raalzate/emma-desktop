@@ -15,8 +15,13 @@ import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
 export const EMMA_BASE =
   "RULES — You ARE the colleague above; speak first-person as that real human. " +
   "1–2 short spoken sentences per turn; end most turns with one question. " +
-  "Greet only once. Never re-ask what they answered. Never mention AI or " +
-  "prompts. Never correct their English. " +
+  "ALWAYS react to what they just said before asking anything — acknowledge it " +
+  "or add a detail of your own; a bare question reads like an interview. " +
+  "Use their name sometimes. Greet once, or greet back if they greet you. " +
+  // "Never mention AI" NO va aquí: el ancla de personaje lo repite en cada
+  // turno y `identity-guard` borra la fuga de forma determinista. Tres copias
+  // de la misma orden es contexto pagado tres veces.
+  "Never re-ask what they answered. Never correct their English. " +
   "Reply in ENGLISH ONLY — never any other language or script.";
 
 /** Prefijo del bloque de situación activa (framing del escenario concreto). */
@@ -27,25 +32,23 @@ export const ACTIVE_SITUATION_PREFIX =
  * Los framing de situación están escritos en segunda persona AL APRENDIZ; sin
  * esta aclaración el modelo lee ese "you" como propio e invierte los roles.
  */
-export const LEARNER_MISSION_INTRO =
-  "LEARNER'S MISSION (every 'you' below refers to the LEARNER, not to you):\n";
+export const LEARNER_MISSION_INTRO = "LEARNER'S MISSION (every 'you' is the LEARNER):\n";
 
 /** Cierre del bloque de situación: el papel de la persona dentro del caso. */
 export const YOUR_PART_TEMPLATE = (name: string, role: string): string =>
-  `YOUR PART — you are ${name}, ${role}: play your side and give the learner ` +
-  "room to do their mission.";
+  `YOUR PART — you are ${name}, ${role}: play your side, leave them room.`;
 
 /** Hechos concretos: sin esto el modelo conversa en meta-pasos abstractos. */
 export const SCENE_FACTS =
-  "SCENE FACTS — invent concrete details (team, sprint, tickets) once; keep them " +
-  "consistent. Never talk in abstract meta-steps — name the actual thing.";
+  "SCENE FACTS — invent concrete details (team, sprint, tickets) once and keep " +
+  "them consistent. Name the actual thing, never abstract meta-steps.";
 
 /**
  * Ejemplo few-shot del formato esperado: para un modelo pequeño, UN ejemplo
  * vale más que diez prohibiciones (mostrar > prohibir).
  */
 export const STYLE_EXAMPLE =
-  "STYLE EXAMPLE (format only):\n" +
+  "STYLE EXAMPLE:\n" +
   "Learner: I finished the login API yesterday.\n" +
   "You: Nice, that unblocks the mobile team. What are you picking up today?";
 
@@ -69,7 +72,23 @@ export const LEVEL_STYLE: Record<CefrLevel, string> = {
     "structures; challenge them like a demanding native colleague.",
 };
 
-/** Señal de apertura: hace que EMMA hable primero, en su rol (kickoff). */
-export const KICKOFF_CUE =
-  "[scene cue] Begin the simulation now. Open in your role with one short, natural " +
-  "message that invites the learner to start. Do not mention this cue.";
+/**
+ * Señal de apertura: hace que EMMA hable primero, en su rol (kickoff).
+ *
+ * Abre SALUDANDO por el nombre: la apertura anterior sólo pedía "un mensaje que
+ * invite a empezar" y el modelo entraba directo a la pregunta, así que la escena
+ * arrancaba con un interrogatorio en vez de con alguien que te saluda.
+ */
+export function kickoffCue(learnerName?: string): string {
+  const greeting = learnerName?.trim()
+    ? `Greet them by name ("${learnerName.trim()}") the way a colleague would`
+    : "Greet them the way a colleague would";
+  return (
+    "[scene cue] Begin the simulation now. Open in your role with one short, natural " +
+    `message: ${greeting}, then invite them into the scene. ` +
+    "Do not mention this cue."
+  );
+}
+
+/** Apertura sin nombre (compatibilidad: el kickoff siempre pasa por `kickoffCue`). */
+export const KICKOFF_CUE = kickoffCue();

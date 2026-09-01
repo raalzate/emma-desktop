@@ -21,6 +21,37 @@ Mecanismo: <el comando que ahora falla si alguien lo repite — o "ninguno ejecu
 
 ---
 
+### GOTCHA: `next dev` moría al recompilar Tailwind — config ESM llamando `require()`
+
+Síntoma: `pnpm electron-dev` muere a los minutos con `ReferenceError: require is not
+  defined` en `tailwind.config.ts:53`, sólo en la primera recompilación de Tailwind.
+  `pnpm build` y el gate entero VERDES: en build Next resuelve la config por otro camino.
+Causa:   el config era ESM (`import` + `export default`) pero cargaba los plugins con
+  `require()`. Node 25 detecta sintaxis de módulo y lo carga como ESM (`loadESMFromCJS`),
+  donde `require` no existe. No es reproducible fuera de `next dev` (se intentó con
+  `import()` y con `require()` desde CJS: ambos cargan bien sueltos).
+Regla:   en los configs del raíz no se mezcla ESM con `require()`: los plugins se importan.
+Mecanismo: `src/lib/__tests__/config-esm-sin-require.test.ts` — escanea los configs del
+  raíz y falla ante la mezcla; incluye prueba de vida con el contenido exacto del incidente.
+
+---
+
+### GOTCHA: el juez LLM del turno nunca corría — muerto de hambre detrás de la gramática
+
+Síntoma: la escena seguía perdiendo respuestas («No, I am fine today.» → repregunta de
+  bloqueos) DESPUÉS de desplegar la arquitectura «LLM juzga, código decide». Sin ningún
+  error: desde fuera, indistinguible de que el juez no existiera.
+Causa:   el motor local procesa UNA generación a la vez. `send` encolaba el chequeo
+  gramatical (360 tokens) antes que el juez (80): el juez vencía su tope de 4 s y la red
+  determinista —el statu quo con regexes— respondía todos los turnos.
+Regla:   toda pieza con fallback silencioso declara quién respondió (`source`) y el
+  fallback se ve en la consola de dev; el juez corre primero en la cola del motor.
+Mecanismo: `src/components/chat/__tests__/juez-antes-que-gramatica.test.ts` — falla si el
+  orden se invierte o si el aviso de fallback desaparece. Los invariantes de conversación
+  (`conversacion-invariantes.test.ts`) fijan además el piso que la red garantiza sola.
+
+---
+
 ### GOTCHA: el smoke del release murió en Linux — la cache de pnpm venía "construida" sin el binario de Electron
 
 Síntoma: primer build de v0.1.1: `Error: Electron failed to install correctly` en el paso

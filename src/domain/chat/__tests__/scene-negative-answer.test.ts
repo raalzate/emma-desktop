@@ -31,18 +31,27 @@ describe("isClosedNegative", () => {
   });
 });
 
+// Una negación no trae señales propias: la evidencia de a QUÉ contesta es la
+// pregunta que la persona acaba de hacer.
+const PREGUNTA_BLOQUEOS = { lastAgentLine: "Anything blocking you today?" };
+
 describe("advanceScene con negación breve", () => {
   it("cubre el objetivo pendiente con un 'Not'", () => {
     const state = standupWithBlockersPending();
     expect(state.pending.map((p) => p.id)).toEqual(["blockers"]);
-    const after = advanceScene(state, "Not");
+    const after = advanceScene(state, "Not", PREGUNTA_BLOQUEOS);
     expect(after.pending).toEqual([]);
     expect(after.covered.map((c) => c.id)).toContain("blockers");
   });
 
   it("guarda la negación como el hecho dicho", () => {
-    const after = advanceScene(standupWithBlockersPending(), "Nothing");
+    const after = advanceScene(standupWithBlockersPending(), "Nothing", PREGUNTA_BLOQUEOS);
     expect(after.covered[after.covered.length - 1]?.fact).toBe("Nothing");
+  });
+
+  it("una negación suelta, sin pregunta que la ancle, no cubre nada", () => {
+    const after = advanceScene(standupWithBlockersPending(), "Nothing");
+    expect(after.pending.map((p) => p.id)).toEqual(["blockers"]);
   });
 
   it("sigue ignorando el relleno puro", () => {

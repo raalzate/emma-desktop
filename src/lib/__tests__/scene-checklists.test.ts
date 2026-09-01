@@ -22,10 +22,15 @@ describe("SCENE_CHECKLISTS", () => {
     expect(huerfanos).toEqual([]);
   });
 
-  it("da entre 2 y 4 objetivos por escenario, con ids únicos", () => {
+  // El tope era 4 cuando ninguna escena podía sostener más. Las de fondo
+  // (entrevista, postmortem, code review, design review) llegan a 6 desde que
+  // el presupuesto se deriva del guion: son escenas de 12 turnos y sin objetivos
+  // suficientes esos turnos se llenaban improvisando. Por arriba sigue habiendo
+  // techo: un checklist de diez temas es un interrogatorio, no una conversación.
+  it("da entre 2 y 6 objetivos por escenario, con ids únicos", () => {
     for (const [tipo, items] of Object.entries(SCENE_CHECKLISTS)) {
       expect(items.length, tipo).toBeGreaterThanOrEqual(2);
-      expect(items.length, tipo).toBeLessThanOrEqual(4);
+      expect(items.length, tipo).toBeLessThanOrEqual(6);
       expect(new Set(items.map((i) => i.id)).size, tipo).toBe(items.length);
     }
   });
