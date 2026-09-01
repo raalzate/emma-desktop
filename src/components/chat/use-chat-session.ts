@@ -16,7 +16,7 @@ import { loadPersonaTuning } from "@/infrastructure/persistence/persona-tuning-r
 import { selectSituation } from "@/domain/situations/situation-selector";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
-import { maxTurnsFor } from "@/domain/chat/simulation-session";
+import { maxTurnsFor, turnsToGradeFor } from "@/domain/chat/simulation-session";
 import { personaAnchor } from "@/domain/chat/simulation-prompt";
 import {
   advanceScene,
@@ -34,7 +34,6 @@ import { buildTurnDirective } from "@/domain/chat/turn-directive";
 import { classifyLearnerIntent } from "@/domain/chat/learner-intent";
 import { buildSuggestionContext } from "@/domain/coaching/suggestion-context";
 import { personaFor } from "@/domain/personas/protopersona";
-import { MIN_TURNS_TO_COUNT } from "@/domain/progression/promotion-policy";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
 import { isActionableCorrection } from "@/domain/chat/silent-error";
 import type { ChatConversation } from "@/domain/chat/chat-conversation";
@@ -327,7 +326,11 @@ export function useChatSession(d: Deps) {
       const maxTurns = maxTurnsFor(scenario.scenarioType);
       // Checklist cubierto demasiado pronto: profundizar en vez de cerrar, o la
       // sesión termina sin los turnos que exige la nota de progresión.
-      const deepen = closingTurn && turn < MIN_TURNS_TO_COUNT && turn < maxTurns;
+      // Turnos que ESTA escena necesita para calificarse: con el presupuesto ya
+      // derivado del guion, cubrir el checklist casi siempre alcanza y `deepen`
+      // deja de ser la vía normal (era donde se improvisaban los turnos vacíos).
+      const minTurns = turnsToGradeFor(scenario.scenarioType);
+      const deepen = closingTurn && turn < minTurns && turn < maxTurns;
       // Recast en caliente: si el chequeo gramatical llega a tiempo, la persona
       // devuelve la forma correcta en su propia línea (feedback inmediato).
       const fresh = await Promise.race([
@@ -368,7 +371,7 @@ export function useChatSession(d: Deps) {
         maxTurns,
         lastReply: reply,
         graceTurnsUsed: graceTurns.current,
-        minTurns: MIN_TURNS_TO_COUNT,
+        minTurns,
       });
       if (decision.grantGrace) graceTurns.current += 1;
       if (decision.close) setSceneComplete(true);
