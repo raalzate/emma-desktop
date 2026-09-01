@@ -292,7 +292,6 @@ export function useChatSession(d: Deps) {
       setMessages([...prior, { role: "user", content: clean, at: Date.now(), audioUrl }]);
       setTurnCount(turn);
       setBusy(true);
-      const grammarCheck = bufferGrammar(clean, turn);
       const lastAgentLine =
         [...prior].reverse().find((m) => m.role === "assistant")?.content ?? "";
       // Observe — el JUEZ del turno: una clasificación corta del LLM etiqueta el
@@ -301,12 +300,22 @@ export function useChatSession(d: Deps) {
       // dentro del caso de uso: entender inglés con listas de palabras fue la
       // causa raíz de cuatro incidentes seguidos («No, I am fine today.» se
       // perdía por no tener la palabra exacta en la lista).
+      // El juez corre ANTES de encolar el chequeo gramatical: el motor local
+      // procesa UNA generación a la vez, y con la gramática (360 tokens) por
+      // delante el juez vencía su tope de 4s y caía a la red en todos los
+      // turnos — la arquitectura instalada sin correr nunca, y en silencio.
       const observation = await runtime.observeTurn({
         state: sceneState.current,
         lastAgentLine,
         message: clean,
         level,
       });
+      if (observation.source === "heuristics" && process.env.NODE_ENV !== "production") {
+        // Visible en la consola de dev: si esto aparece en cada turno, el juez
+        // no está corriendo y hay que mirar la cola del motor.
+        console.warn("[escena] turno etiquetado por la red determinista", observation);
+      }
+      const grammarCheck = bufferGrammar(clean, turn);
       const intent = observation.intent;
       const contributes = intent === "in-scene";
       // Elaboración: sólo sobre una respuesta que contesta con POCO (juicio del

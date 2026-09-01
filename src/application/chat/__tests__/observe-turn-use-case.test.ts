@@ -26,6 +26,7 @@ describe("observeTurn — LLM juzga, código decide", () => {
       negative: true,
       intent: "in-scene",
       substance: "none",
+      source: "judge",
     });
   });
 

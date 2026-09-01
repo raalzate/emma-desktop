@@ -94,7 +94,8 @@ const OPENING_NEGATION = /^(?:no|not|nope|nah|none|n[ao]t?[th]ing|neither)\b[,.!
 const REASSURANCE = new Set([
   "really", "much", "else", "all", "yet", "now", "right", "fine", "good", "great",
   "ok", "okay", "everything", "thanks", "blockers", "blocker", "issues", "issue",
-  "problems", "problem", "side", "end", "moment",
+  "problems", "problem", "side", "end", "moment", "today", "tomorrow", "currently",
+  "present", "clear", "smooth", "far", "track", "sailing",
   // Una segunda negación tampoco es contenido: "No, nothing much."
   "no", "not", "nope", "nah", "none", "nothing", "neither",
 ]);

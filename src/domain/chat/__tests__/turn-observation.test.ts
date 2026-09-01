@@ -45,6 +45,7 @@ describe("parseObservation — guarda de borde sobre lo que devuelve el modelo",
       negative: true,
       intent: "in-scene",
       substance: "none",
+      source: "judge",
     });
   });
 

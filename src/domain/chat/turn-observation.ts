@@ -37,6 +37,13 @@ export interface TurnObservation {
   negative: boolean;
   intent: LearnerIntent;
   substance: Substance;
+  /**
+   * Quién etiquetó: el juez LLM o la red determinista. Observable a propósito —
+   * el primer despliegue del juez falló EN SILENCIO (hacía cola detrás del
+   * chequeo gramatical en el motor serializado, vencía su tope y la red
+   * respondía siempre) y desde fuera era indistinguible de que no existiera.
+   */
+  source: "judge" | "heuristics";
 }
 
 export interface PendingTopic {
@@ -110,7 +117,7 @@ export function parseObservation(raw: string, validItemIds: readonly string[]): 
   const substance = SUBSTANCES.includes(data.substance as Substance)
     ? (data.substance as Substance)
     : "none";
-  return { answersItem, negative: data.negative, intent, substance };
+  return { answersItem, negative: data.negative, intent, substance, source: "judge" };
 }
 
 export interface FallbackArgs {
@@ -137,5 +144,5 @@ export function fallbackObservation(args: FallbackArgs): TurnObservation {
     }
   }
   const substance: Substance = negative ? "none" : isSubstantive(message) ? "full" : "none";
-  return { answersItem, negative, intent, substance };
+  return { answersItem, negative, intent, substance, source: "heuristics" };
 }
