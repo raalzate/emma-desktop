@@ -31,7 +31,7 @@
       {
         "name": "artefactos en su lugar",
         "command": ["node", "scripts/artifacts-check.mjs"],
-        "why": "los specs del flujo SDD viven en specs/: un plan suelto en otro lado parte el registro en dos"
+        "why": "los artefactos SDD viven en las issues de GitHub: un spec o plan suelto bajo specs/ parte el registro en dos"
       },
       {
         "name": "typecheck (app + electron)",
@@ -94,7 +94,7 @@
       "reason": "índice de Serena: lo mantiene la herramienta."
     },
     {
-      "pattern": "^English-for-Software-Engineers-fuente\\.md$",
+      "pattern": "^docs/English-for-Software-Engineers-fuente\\.md$",
       "agentOnly": true,
       "reason": "material fuente del currículo: es el original del que se deriva el contenido, no se toca. Sí vive en el repo: de él se deriva el contenido."
     }
@@ -239,6 +239,13 @@
       "appliesTo": "^src/(domain|application)/(?!.*__tests__)",
       "allow": [],
       "message": "console.log en dominio/aplicación es IO disfrazado y ensucia la salida. Si necesitás observabilidad, es un puerto."
+    },
+    {
+      "id": "ESCENA",
+      "pattern": "(trait|hypothetical):\\s*\"[^\"]*[áéíóúñ¿¡]",
+      "appliesTo": "^src/domain/(personas|situations)/",
+      "allow": [],
+      "message": "Artículo 9: el contenido de escena (rasgo de la protopersona, ambientación, etiqueta de carácter) es ficción y va en INGLÉS. El andamiaje de producto —botones, títulos, mensajes de sistema— sí va en español."
     }
   ],
   "tests": {
@@ -271,7 +278,7 @@
       ".claude/skills/graphify"
     ],
     "ignoreFiles": [
-      "English-for-Software-Engineers-fuente.md",
+      "docs/English-for-Software-Engineers-fuente.md",
       "docs/buenas-practicas.md",
       ".claude/skills/graphify/SKILL.md",
       ".claude/skills/graphify/references/extraction-spec.md",

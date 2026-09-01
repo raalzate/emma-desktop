@@ -1,6 +1,6 @@
 # Constitución del proyecto — EMMA Desktop
 
-**Versión 1.3.0** · Reglas **no negociables**. Cualquier PR o cambio (humano o agente) debe
+**Versión 1.4.0** · Reglas **no negociables**. Cualquier PR o cambio (humano o agente) debe
 cumplirlas. Versionado por enmiendas. Las convenciones del día a día viven en `CLAUDE.md`;
 el arnés que hace cumplir esto, en `.claude/harness.config.json` y `scripts/`.
 
@@ -71,10 +71,12 @@ nuevo la juzga una persona contra el proyecto Python.
 
 Features nuevas o cambios de comportamiento pasan por el flujo SDD
 (specify → checklist → plan → testify → tasks → implement → analyze). Los bugfixes
-arrancan con un test rojo que reproduzca la falla. Los artefactos viven en `specs/`.
+arrancan con un test rojo que reproduzca la falla. Los artefactos viven en las **issues
+de GitHub** (`sdd:feature` / `sdd:task`), no en el repo.
 
 *Mecanismo:* el hook `sdd-router` pone la ruta delante del agente en cada pedido tamaño
-feature, y `node scripts/artifacts-check.mjs` verifica que los artefactos estén en `specs/`.
+feature, y `node scripts/artifacts-check.mjs` verifica que no queden artefactos sueltos
+en el repo (`tracker.artifactsIn: "tracker"`).
 Saltarse el flujo se **declara** en una línea; no se omite en silencio.
 
 ## Artículo 8 — Nada se entrega sin gate verde · BLOCKING
@@ -89,10 +91,17 @@ no es verde, y `gate:fast` es señal de desarrollo, no entregable. Tras cambiar 
 ## Artículo 9 — Inmersión 100% con andamiaje en español · REVIEW
 
 La práctica conversacional (mensajes de EMMA, sugerencias de respuesta, autocompletado, voz) es
-**únicamente en inglés**: EMMA nunca cambia de idioma ni rompe el personaje. Todo el
-**andamiaje de la UI** (tooltips, botones, títulos, mensajes de sistema, introducciones,
-feedback de producto) va **en español**. El puente entre ambos mundos son las acciones
-explícitas del aprendiz (Teach me / Translate), nunca la conversación misma.
+**únicamente en inglés**: EMMA nunca cambia de idioma ni rompe el personaje. El puente entre
+ambos mundos son las acciones explícitas del aprendiz (Teach me / Translate), nunca la
+conversación misma.
+
+La línea no está entre "conversación" y "resto de la UI", sino entre **ficción** y **producto**:
+
+- **Ficción → inglés.** Todo lo que el aprendiz lee *dentro* de la escena: narrativa del
+  briefing, misión, rasgo de la protopersona, etiqueta de carácter de la situación, títulos y
+  framing del catálogo. Es material de práctica; traducirlo rompe la inmersión antes de empezar.
+- **Andamiaje de producto → español.** Lo que le habla al usuario *sobre* la app: tooltips,
+  botones, títulos de sección, mensajes de sistema, estados de carga, feedback de producto.
 
 **Emma vs protopersonas.** Emma es LA TUTORA: hace el onboarding, explica (Teach me) y da el
 feedback final; es siempre femenina y su voz no se configura. Los escenarios los encarnan
@@ -100,7 +109,11 @@ feedback final; es siempre femenina y su voz no se configura. Los escenarios los
 `../src/domain/personas/`) cuya entrega (tono/actitud/estilo) sí es configurable. Ninguna
 superficie mezcla ambos papeles.
 
-*Mecanismo:* ninguno ejecutable — lo revisa una persona en cada superficie nueva.
+*Mecanismo:* parcial. La regla `ESCENA` del lint (`node scripts/repo-lint.mjs`) muerde si un
+rasgo de protopersona o una ambientación de escena queda en español, y
+`src/components/chat/__tests__/andamiaje-espanol.test.ts` muerde si el andamiaje se traduce al
+inglés. El resto —que EMMA no cambie de idioma en la conversación— lo revisa una persona en
+cada superficie nueva.
 
 ## Artículo 10 — Integridad de aserciones · REVIEW
 
@@ -153,3 +166,8 @@ escala con el diagnóstico. Fallar rápido y con causa vale más que degradar en
   gana freno propio: `docs-linkcheck` verifica que todo artículo BLOCKING cite un comando
   ejecutable en su *Mecanismo:*, y que todo script npm/pnpm citado en docs y hooks exista en
   `package.json`.
+- **v1.4.0** (2026-09-01) — El Artículo 9 listaba "introducciones" como andamiaje español, y la
+  pantalla de briefing salía bilingüe: catálogo en inglés, narrativa y rasgo de la protopersona
+  en español. Se reformula la línea: **ficción en inglés, producto en español** (issue #106), y
+  el artículo gana freno parcial — regla `ESCENA` del lint para el contenido de escena y
+  `andamiaje-espanol.test.ts` para que el andamiaje no se traduzca.

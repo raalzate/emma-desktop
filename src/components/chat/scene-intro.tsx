@@ -13,14 +13,8 @@ import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import { personaFor } from "@/domain/personas/protopersona";
 import { buildSceneBriefing } from "@/domain/situations/scene-briefing";
-import type { SituationVariant, SituationCharacter } from "@/domain/situations/situation-variant";
-
-const CHARACTER_LABEL: Record<SituationCharacter, string> = {
-  incident: "Incidente",
-  onboarding: "Onboarding",
-  routine: "Rutina",
-  conflict: "Conflicto",
-};
+import { characterLabel } from "@/domain/situations/character-label";
+import type { SituationVariant } from "@/domain/situations/situation-variant";
 
 interface Props {
   scenario: Scenario;
@@ -35,7 +29,7 @@ interface Props {
   onStart: () => void;
 }
 
-/** Escena en español (contrato con fallback estático) + misión en inglés. */
+/** Escena en inglés (contrato con fallback estático) + misión en inglés. */
 function SituationBriefing({
   situation,
   narrative,
@@ -55,7 +49,7 @@ function SituationBriefing({
             Imagina la escena
           </p>
           <Badge variant="outline" className="text-[10px]">
-            {CHARACTER_LABEL[situation.character]}
+            {characterLabel(situation.character)}
           </Badge>
         </div>
         <p className="text-sm font-medium">{situation.title}</p>
@@ -115,7 +109,7 @@ export function SceneIntro({ scenario, situation, level, maxTurns, starting, nar
               <p className="text-sm font-medium">
                 {persona.name} · {persona.role}
               </p>
-              <p className="text-xs text-muted-foreground">{persona.uiDescription}</p>
+              <p className="text-xs text-muted-foreground">{persona.trait}</p>
             </div>
           </div>
           {situation && (

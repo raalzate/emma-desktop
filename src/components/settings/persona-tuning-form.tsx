@@ -89,7 +89,7 @@ export function PersonaTuningForm() {
               Voz {persona.voice === "feminine" ? "femenina" : "masculina"}
             </Badge>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{persona.uiDescription}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{persona.trait}</p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">

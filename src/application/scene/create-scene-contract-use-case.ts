@@ -1,7 +1,7 @@
 /**
  * Contrato de escena (BUG-001): la única fuente de verdad de los hechos del
  * escenario, generada ANTES del kickoff. Alimenta AMBOS lados: los SCENE FACTS
- * fijos del system prompt de la persona (guardrail) y la narrativa en español
+ * fijos del system prompt de la persona (guardrail) y la narrativa en inglés
  * que lee el aprendiz en la antesala — así los dos ven el mismo mundo. Si el
  * LLM falla o devuelve basura, el framing del catálogo es el contrato
  * determinista de respaldo (el botón de comenzar nunca queda bloqueado).
@@ -27,7 +27,7 @@ const FACTS_SYSTEM =
 export interface SceneContract {
   /** Hechos fijos en inglés (guardrail del system prompt). */
   facts: string;
-  /** Narrativa en español para la antesala, o null si el LLM falló. */
+  /** Narrativa en inglés para la antesala, o null si el LLM falló. */
   narrative: string | null;
 }
 
@@ -51,7 +51,7 @@ function validFacts(raw: string): string | null {
   return lines.join("\n");
 }
 
-/** Genera el contrato de escena: hechos EN (guardrail) + narrativa ES derivada. */
+/** Genera el contrato de escena: hechos EN (guardrail) + narrativa EN derivada. */
 export async function createSceneContract(args: CreateSceneContractArgs): Promise<SceneContract> {
   const { llm, scenario, situation, techStack } = args;
   let facts = situation.framingDescription;

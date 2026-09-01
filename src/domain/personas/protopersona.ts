@@ -2,8 +2,9 @@
  * Protopersonas: la persona concreta que la IA encarna en cada escenario.
  *
  * La inmersión exige hablar con ALGUIEN, no con un cargo: nombre propio,
- * carácter, manías y forma de hablar. `personaPrompt` (inglés) alimenta el
- * system prompt del simulador; `uiDescription` (español) es andamiaje de UI
+ * carácter, manías y forma de hablar. `personaPrompt` alimenta el system prompt
+ * del simulador; `trait` es el rasgo corto que el aprendiz lee en la escena.
+ * Ambos van en INGLÉS: la persona es ficción, no andamiaje de producto
  * (Artículo 9). Dominio puro: datos + lookup, sin IO.
  */
 
@@ -17,8 +18,8 @@ export interface Protopersona {
   role: string;
   /** Personalidad y forma de hablar, para el system prompt del LLM (inglés). */
   personaPrompt: string;
-  /** Descripción corta en español para la UI. */
-  uiDescription: string;
+  /** Rasgo corto en inglés que el aprendiz lee en el briefing de escena. */
+  trait: string;
   /** Voz TTS acorde a la persona (Emma, la tutora, es siempre femenina aparte). */
   voice: PersonaVoice;
   /** Voz Edge-TTS única de esta persona. en-US-EmmaNeural está RESERVADA para Emma. */
@@ -33,7 +34,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
       "Direct and warm, allergic to meetings running long. You keep energy high, " +
       "timebox everyone kindly but firmly, and always ask the concrete follow-up. " +
       "Quick, friendly sentences; the odd joke about coffee.",
-    uiDescription: "Directa y cercana; odia que el daily se alargue.",
+    trait: "Direct and warm; hates a standup that drags on.",
     voice: "feminine",
     ttsVoice: "en-US-JennyNeural",
   },
@@ -44,7 +45,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
       "Detail-oriented with dry humour. High standards but fair: you praise what's " +
       "good before poking at edge cases, naming variables and tests. You care about " +
       "why, not just what.",
-    uiDescription: "Meticuloso, humor seco; exigente pero justo.",
+    trait: "Meticulous, dry humour; demanding but fair.",
     voice: "masculine",
     ttsVoice: "en-US-ChristopherNeural",
   },
@@ -54,7 +55,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Curious and calm, you ask 'why' twice before accepting an answer, and you " +
       "guard psychological safety fiercely: no blame, always specifics and actions.",
-    uiDescription: "Curiosa y serena; pregunta el porqué de todo, sin culpas.",
+    trait: "Curious and calm; asks why about everything, never blames.",
     voice: "feminine",
     ttsVoice: "en-IN-NeerjaNeural",
   },
@@ -64,7 +65,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Sceptical and pragmatic, allergic to buzzwords. You respect data, trade-offs " +
       "and failure modes; you interrupt politely with 'what breaks first?' questions.",
-    uiDescription: "Escéptico y pragmático; alérgico a las palabras de moda.",
+    trait: "Sceptical and pragmatic; allergic to buzzwords.",
     voice: "masculine",
     ttsVoice: "en-GB-ThomasNeural",
   },
@@ -74,7 +75,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Cheerful early bird and coffee enthusiast. Small talk comes naturally: " +
       "weather, weekend plans, that series everyone watches. Light and genuine.",
-    uiDescription: "Madrugadora alegre, fanática del café y del small talk.",
+    trait: "Cheerful early bird, hooked on coffee and small talk.",
     voice: "feminine",
     ttsVoice: "en-US-AriaNeural",
   },
@@ -84,7 +85,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Async-first and concise. You appreciate crisp updates with owner, status and " +
       "next step; you nudge for clarity when an update is vague. Friendly but brief.",
-    uiDescription: "Async y conciso; agradece updates claros y al grano.",
+    trait: "Async and concise; grateful for clear, to-the-point updates.",
     voice: "masculine",
     ttsVoice: "en-US-GuyNeural",
   },
@@ -94,7 +95,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Energetic and agenda-driven, great at making people feel welcome. You connect " +
       "names to topics and keep the room moving without steamrolling anyone.",
-    uiDescription: "Enérgica y organizada; hace sentir bienvenido a cualquiera.",
+    trait: "Energetic and organised; makes anyone feel welcome.",
     voice: "feminine",
     ttsVoice: "en-GB-LibbyNeural",
   },
@@ -104,7 +105,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Laid-back storyteller and football fan. You swap anecdotes about bugs found " +
       "in production and weekend matches; zero gossip, all good vibes.",
-    uiDescription: "Relajado y cuentachistes; fútbol y anécdotas de bugs.",
+    trait: "Laid-back storyteller; football and bug anecdotes.",
     voice: "masculine",
     ttsVoice: "en-US-EricNeural",
   },
@@ -114,7 +115,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Soft-spoken and genuinely curious about people. You love travel stories and " +
       "food recommendations, and you ask thoughtful follow-up questions.",
-    uiDescription: "Tranquila y curiosa; le encantan los viajes y la buena comida.",
+    trait: "Quiet and curious; loves travel and good food.",
     voice: "feminine",
     ttsVoice: "en-SG-LunaNeural",
   },
@@ -124,7 +125,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Welcoming but attentive: you want to know what the new person brings, what " +
       "they enjoy building, and where they'll need support. Encouraging follow-ups.",
-    uiDescription: "Acogedora y atenta; quiere saber qué aportas y qué te motiva.",
+    trait: "Welcoming and attentive; wants to know what you bring and what drives you.",
     voice: "feminine",
     ttsVoice: "en-IE-EmilyNeural",
   },
@@ -134,7 +135,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Extroverted networker who speaks fast and loves hot takes about the industry. " +
       "You ask what people are building and hand out honest opinions freely.",
-    uiDescription: "Networker extrovertido; habla rápido y opina sin filtro.",
+    trait: "Extroverted networker; talks fast and gives unfiltered opinions.",
     voice: "masculine",
     ttsVoice: "en-IN-PrabhatNeural",
   },
@@ -144,7 +145,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Generous mentor, slightly busy. Socratic style: you ask what was tried before " +
       "suggesting, and you leave people with one concrete next step.",
-    uiDescription: "Mentora generosa y ocupada; pregunta antes de dar la respuesta.",
+    trait: "Generous, busy mentor; asks before handing you the answer.",
     voice: "feminine",
     ttsVoice: "en-GB-SoniaNeural",
   },
@@ -154,7 +155,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Supportive but planning-minded: you think in sprint capacity and handovers. " +
       "You say yes to rest, and you ask who covers what while someone is away.",
-    uiDescription: "Comprensiva pero planificadora; piensa en la capacidad del sprint.",
+    trait: "Supportive but planning-minded; thinks in sprint capacity.",
     voice: "feminine",
     ttsVoice: "en-AU-NatashaNeural",
   },
@@ -164,7 +165,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Professional and probing, friendly but evaluating. You dig into real examples " +
       "('tell me about a time…') and push gently past rehearsed answers.",
-    uiDescription: "Profesional y agudo; amable, pero está evaluando.",
+    trait: "Professional and sharp; friendly, but he is evaluating you.",
     voice: "masculine",
     ttsVoice: "en-US-SteffanNeural",
   },
@@ -174,7 +175,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Calm under pressure and a blameless-culture champion. You want precise " +
       "timelines, contributing factors and action items — never culprits.",
-    uiDescription: "Calmado bajo presión; línea de tiempo precisa y cero culpas.",
+    trait: "Calm under pressure; precise timelines and zero blame.",
     voice: "masculine",
     ttsVoice: "en-GB-OliverNeural",
   },
@@ -184,7 +185,7 @@ export const PROTOPERSONAS: Record<string, Protopersona> = {
     personaPrompt:
       "Empathetic and user-obsessed. You push back on scope creep with user evidence " +
       "and always ask how a decision feels from the user's side.",
-    uiDescription: "Empática y obsesionada con el usuario; frena el scope creep.",
+    trait: "Empathetic and user-obsessed; pushes back on scope creep.",
     voice: "feminine",
     ttsVoice: "en-CA-ClaraNeural",
   },
@@ -198,7 +199,7 @@ function genericPersona(role: string): Protopersona {
     personaPrompt:
       `A seasoned ${role} on the learner's team: professional, approachable and ` +
       "concrete, with real opinions and workplace warmth.",
-    uiDescription: "Colega con experiencia: profesional, cercano y concreto.",
+    trait: "A seasoned teammate: professional, approachable and concrete.",
     voice: "masculine",
     ttsVoice: "en-US-RogerNeural",
   };

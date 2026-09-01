@@ -11,21 +11,15 @@ import { Badge } from "@/components/ui/badge";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import { personaFor } from "@/domain/personas/protopersona";
 import { buildSceneBriefing } from "@/domain/situations/scene-briefing";
-import type { SituationVariant, SituationCharacter } from "@/domain/situations/situation-variant";
-
-const CHARACTER_LABEL: Record<SituationCharacter, string> = {
-  incident: "Incidente",
-  onboarding: "Onboarding",
-  routine: "Rutina",
-  conflict: "Conflicto",
-};
+import { characterLabel } from "@/domain/situations/character-label";
+import type { SituationVariant } from "@/domain/situations/situation-variant";
 
 interface Props {
   scenario: Scenario;
   situation?: SituationVariant | null;
 }
 
-/** Versión compacta del briefing: ambientación en español + objetivos en inglés. */
+/** Versión compacta del briefing: ambientación y objetivos, ambos en inglés. */
 function BannerBriefing({ situation }: { situation: SituationVariant }) {
   const briefing = buildSceneBriefing(situation);
   return (
@@ -33,7 +27,7 @@ function BannerBriefing({ situation }: { situation: SituationVariant }) {
       <div className="flex items-center justify-center gap-2">
         <span className="text-xs font-medium">{situation.title}</span>
         <Badge variant="outline" className="text-[10px]">
-          {CHARACTER_LABEL[situation.character]}
+          {characterLabel(situation.character)}
         </Badge>
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">{briefing.hypothetical}</p>
