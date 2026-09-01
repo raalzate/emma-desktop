@@ -20,19 +20,17 @@ import { maxTurnsFor, turnsToGradeFor } from "@/domain/chat/simulation-session";
 import { personaAnchor } from "@/domain/chat/simulation-prompt";
 import {
   advanceScene,
+  coverItem,
   createSceneState,
   deepeningTarget,
   isReaskingCovered,
   isSceneComplete,
-  sceneDirective,
   sceneProgress,
   type SceneState,
 } from "@/domain/chat/scene-state";
 import { resolveSceneClose, shouldWrapUp } from "@/domain/chat/scene-closing";
 import { buildRecastCue } from "@/domain/chat/recast";
-import { needsElaboration } from "@/domain/chat/elaboration";
 import { buildTurnDirective } from "@/domain/chat/turn-directive";
-import { classifyLearnerIntent } from "@/domain/chat/learner-intent";
 import { buildSuggestionContext } from "@/domain/coaching/suggestion-context";
 import { personaFor } from "@/domain/personas/protopersona";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
@@ -189,8 +187,11 @@ export function useChatSession(d: Deps) {
       if (restore.completed) setSceneComplete(true);
       let replayed = createSceneState(scenario.scenarioType);
       if (replayed) {
+        // La pregunta que ancla cada respuesta es la línea previa de la persona.
+        let pregunta = "";
         for (const m of restore.messages) {
-          if (m.role === "user") replayed = advanceScene(replayed!, m.content);
+          if (m.role === "assistant") pregunta = m.content;
+          else replayed = advanceScene(replayed!, m.content, { lastAgentLine: pregunta });
         }
       }
       sceneState.current = replayed;
@@ -292,31 +293,36 @@ export function useChatSession(d: Deps) {
       setTurnCount(turn);
       setBusy(true);
       const grammarCheck = bufferGrammar(clean, turn);
-      // Qué hizo el aprendiz: jugar la escena, saludar o pedir ayuda con el
-      // idioma. Un "what does blocker mean?" NO es una respuesta al objetivo —
-      // darlo por respondido daba la escena por avanzada sin que se dijera nada.
-      const intent = classifyLearnerIntent(clean);
+      const lastAgentLine =
+        [...prior].reverse().find((m) => m.role === "assistant")?.content ?? "";
+      // Observe — el JUEZ del turno: una clasificación corta del LLM etiqueta el
+      // mensaje (qué tema contesta, si es negación, si es meta, cuánta sustancia
+      // trae) y el código decide con eso. Los jueces regex quedaron como red
+      // dentro del caso de uso: entender inglés con listas de palabras fue la
+      // causa raíz de cuatro incidentes seguidos («No, I am fine today.» se
+      // perdía por no tener la palabra exacta en la lista).
+      const observation = await runtime.observeTurn({
+        state: sceneState.current,
+        lastAgentLine,
+        message: clean,
+        level,
+      });
+      const intent = observation.intent;
       const contributes = intent === "in-scene";
-      // Respuesta mínima: se pide un detalle antes de pasar de tema, UNA vez por
-      // ítem (insistir trabaría la escena si el aprendiz responde siempre corto).
-      const currentItem = sceneState.current?.pending[0]?.id ?? "free";
+      // Elaboración: sólo sobre una respuesta que contesta con POCO (juicio del
+      // modelo, no conteo de palabras), nunca sobre una negación, una vez por
+      // ítem. Y siempre DESPUÉS de registrar: pedir detalle no borra lo dicho.
+      const answered = observation.answersItem ?? "free";
       const askElaboration =
-        contributes && needsElaboration(clean, level) && elaborationAskedFor.current !== currentItem;
-      if (askElaboration) elaborationAskedFor.current = currentItem;
-      // Observe: el mensaje del aprendiz actualiza el checklist ANTES de decidir,
-      // y lo hace TAMBIÉN cuando se va a pedir más detalle.
-      //
-      // El "why" (incidente): pedir elaboración dejaba el ítem pendiente, así
-      // que una respuesta correcta («Yesterday I finished the login page.») no
-      // se registraba, seguía a la cabeza de la cola y el siguiente mensaje —
-      // sobre otro tema— terminaba ocupándola. Profundizar es un matiz de la
-      // conversación, no un motivo para olvidar lo que el aprendiz ya contó.
-      if (sceneState.current && contributes) {
-        // La pregunta que este mensaje contesta: sin ella, un mensaje sin
-        // señales propias no puede atribuirse a ningún objetivo.
-        const lastAgentLine =
-          [...prior].reverse().find((m) => m.role === "assistant")?.content ?? "";
-        sceneState.current = advanceScene(sceneState.current, clean, { lastAgentLine });
+        contributes &&
+        observation.substance === "thin" &&
+        !observation.negative &&
+        elaborationAskedFor.current !== answered;
+      if (askElaboration) elaborationAskedFor.current = answered;
+      if (sceneState.current && contributes && observation.answersItem) {
+        sceneState.current = coverItem(sceneState.current, observation.answersItem, clean, {
+          negative: observation.negative,
+        });
         setSceneGoals(sceneProgress(sceneState.current));
       }
       // Si el checklist quedó completo, la respuesta que viene es el CIERRE de

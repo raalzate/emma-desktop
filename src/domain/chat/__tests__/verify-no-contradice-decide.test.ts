@@ -27,7 +27,9 @@
 import { describe, expect, it } from "vitest";
 import {
   advanceScene,
+  coverItem,
   createSceneState,
+  deepeningTarget,
   isClosedNegative,
   isReaskingCovered,
   type SceneState,
@@ -76,6 +78,30 @@ describe("advanceScene — una negación cortés contesta el objetivo", () => {
     });
     expect(s.covered.map((c) => c.id)).toContain("blockers");
     expect(s.pending).toHaveLength(0);
+  });
+});
+
+describe("coverItem — el código cubre el ítem que el juez nombró", () => {
+  it("cubre por id, sin adivinar, y guarda el hecho literal", () => {
+    const s = coverItem(standup(), "blockers", "No, I am fine today.", { negative: true });
+    expect(s.covered.map((c) => c.id)).toEqual(["blockers"]);
+    expect(s.covered[0].fact).toBe("No, I am fine today.");
+    expect(s.pending.map((p) => p.id)).toEqual(["yesterday", "today"]);
+  });
+
+  it("un id que no está pendiente no cambia nada (guarda ante un juez confundido)", () => {
+    const s = coverItem(standup(), "sprint_goals", "whatever", {});
+    expect(s.covered).toEqual([]);
+    expect(s.pending).toHaveLength(3);
+  });
+
+  it("una negación marcada por el juez nunca es material para profundizar", () => {
+    let s = standup();
+    s = coverItem(s, "yesterday", "Yesterday I finished the login page.", {});
+    // «No, I am fine today.» pasa el filtro regex de sustantividad: la marca
+    // del juez es la que manda, no la lista de palabras.
+    s = coverItem(s, "blockers", "No, I am fine today.", { negative: true });
+    expect(deepeningTarget(s)?.fact).toBe("Yesterday I finished the login page.");
   });
 });
 

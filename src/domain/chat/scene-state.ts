@@ -25,10 +25,24 @@ export interface ChecklistItem {
   answerMarkers?: RegExp;
 }
 
+export interface CoveredItem {
+  id: string;
+  ask: string;
+  /** El hecho literal que dijo el aprendiz. */
+  fact: string;
+  reaskMarkers: RegExp;
+  /**
+   * El hecho es una negación ("no blockers", como sea que la haya dicho). Lo
+   * marca el juez del turno; sin la marca se cae al detector regex, que es
+   * exactamente el que fallaba con variaciones («No, I am fine today.»).
+   */
+  negative?: boolean;
+}
+
 export interface SceneState {
   scenarioType: string;
   /** Ítems cubiertos con el hecho literal que dijo el aprendiz. */
-  covered: { id: string; ask: string; fact: string; reaskMarkers: RegExp }[];
+  covered: CoveredItem[];
   /** Ítems aún pendientes, en orden. */
   pending: ChecklistItem[];
 }
@@ -156,6 +170,27 @@ export function advanceScene(
   };
 }
 
+/**
+ * Cubre UN ítem concreto, nombrado por el juez del turno (LLM juzga, código
+ * decide). Sin adivinanzas: un id que no está pendiente no cambia nada — la
+ * guarda ante un juez confundido es no hacer nada, nunca inventar.
+ */
+export function coverItem(
+  state: SceneState,
+  itemId: string,
+  fact: string,
+  opts: { negative?: boolean } = {},
+): SceneState {
+  const index = state.pending.findIndex((i) => i.id === itemId);
+  if (index < 0) return state;
+  const target = state.pending[index];
+  return {
+    ...state,
+    covered: [...state.covered, { ...target, fact: fact.trim(), negative: opts.negative }],
+    pending: state.pending.filter((_, i) => i !== index),
+  };
+}
+
 /** Índice del ítem que este mensaje contesta, o -1 si no hay evidencia. */
 function attributionIndex(
   state: SceneState,
@@ -234,7 +269,8 @@ export function deepeningTarget(
   if (!state) return null;
   const found = [...state.covered]
     .reverse()
-    .find((c) => isSubstantive(c.fact) && !isClosedNegative(c.fact));
+    // La marca del juez manda; el detector regex queda para hechos sin marca.
+    .find((c) => !c.negative && isSubstantive(c.fact) && !isClosedNegative(c.fact));
   return found ? { id: found.id, fact: found.fact } : null;
 }
 
