@@ -133,20 +133,23 @@ describe("runAgenticOnboarding — normalización antes de persistir", () => {
 });
 
 describe("runAgenticOnboarding — robustez ante parseo fallido", () => {
-  it("un turno sin línea DATA no persiste nada y sigue preguntando", async () => {
+  it("un turno sin línea DATA no deja a Emma repitiendo la pregunta: la red la resuelve", async () => {
+    // Desde el issue #154: si el turno no emite DATA, el código (no el LLM) usa
+    // comprehendStep con la última respuesta del usuario en vez de re-preguntar.
     let turn = 0;
     const llm: LlmGenerate = async (args) => {
-      if (!isTurnCall(args)) return "warmup";
+      if (!isTurnCall(args)) return "Ada"; // comprehendStep sí logra inferir el nombre
       turn += 1;
       if (turn === 1) return "Just chatting, no data at all.";
-      return 'Nice!\nDATA: {"name":"Ada","role":"Dev","techStack":"Go","skills":"testing"}';
+      return 'Nice!\nDATA: {"role":"Dev","techStack":"Go","skills":"testing"}';
     };
     const { repo, saved } = makeRepo();
-    const { io, asked } = makeIo(["hello", "Ada, dev, Go, testing"]);
+    const { io, asked } = makeIo(["hello", "dev, Go, testing"]);
 
     const res = await runAgenticOnboarding({ llm, io, repo });
 
-    expect(asked).toHaveLength(2); // saludo + 1 pregunta (el 2do turno completa y cierra)
+    // el nombre se capturó por la red en el primer turno: nunca se repitió la pregunta
+    expect(asked.filter((q) => /name/i.test(q))).toHaveLength(1);
     expect(res.completed).toBe(true);
     expect(saved.map((s) => s.step).sort()).toEqual(["name", "role", "skills", "tech_stack"]);
   });
@@ -163,17 +166,20 @@ describe("runAgenticOnboarding — robustez ante parseo fallido", () => {
     await expect(runAgenticOnboarding({ llm, io, repo })).resolves.toMatchObject({ completed: true });
   });
 
-  it("respeta maxTurns como tope de seguridad", async () => {
-    const llm: LlmGenerate = async (args) => (isTurnCall(args) ? 'Hi!\nDATA: {"name":"Ada"}' : "warmup");
+  it("respeta maxTurns como tope de seguridad (AC4: cierre honesto)", async () => {
+    // Solo captura "name"; con maxTurns=1 el contexto queda incompleto a propósito.
+    const llm: LlmGenerate = async (args) => (isTurnCall(args) ? 'Hi!\nDATA: {"name":"Ada"}' : "Ada");
     const { repo, saved, state } = makeRepo();
     const { io, asked } = makeIo(["Ada"]);
 
-    const res = await runAgenticOnboarding({ llm, io, repo, maxTurns: 3 });
+    const res = await runAgenticOnboarding({ llm, io, repo, maxTurns: 1 });
 
-    expect(asked).toHaveLength(4); // saludo + 3 turnos (nunca se completa)
+    expect(asked).toHaveLength(2); // saludo + 1 turno (tope alcanzado, sigue incompleto)
     expect(saved).toEqual([{ step: "name", value: "Ada" }]);
-    expect(state.completed).toBe(true);
-    expect(res.completed).toBe(true);
+    // contexto incompleto al agotar maxTurns: NO se marca completado, queda retomable
+    expect(state.completed).toBe(false);
+    expect(res.completed).toBe(false);
+    expect(res.context.name).toBe("Ada");
   });
 });
 
@@ -193,6 +199,20 @@ describe("runAgenticOnboarding — cierre", () => {
     expect(notified[0]).toMatch(/first real workplace scenario/i);
   });
 
+  it("al agotar maxTurns incompleto notifica pausa, no el resumen falso (AC4)", async () => {
+    // El modelo solo captura "name": el resumen de cierre inventaría el resto.
+    const llm: LlmGenerate = async (args) => (isTurnCall(args) ? 'Hi!\nDATA: {"name":"Ada"}' : "Ada");
+    const { repo, state } = makeRepo();
+    const { io, notified } = makeIo(["Ada"]);
+
+    await runAgenticOnboarding({ llm, io, repo, maxTurns: 1 });
+
+    expect(state.completed).toBe(false);
+    expect(notified).toHaveLength(1);
+    expect(notified[0]).not.toMatch(/first real workplace scenario/i);
+    expect(notified[0]).toMatch(/pick this up/i);
+  });
+
   it("reporta progreso empezando en (0, total) y terminando en (4, total)", async () => {
     const llm: LlmGenerate = async (args) =>
       isTurnCall(args)
@@ -206,6 +226,42 @@ describe("runAgenticOnboarding — cierre", () => {
 
     expect(progress[0]).toEqual([0, 4]);
     expect(progress[progress.length - 1]).toEqual([4, 4]);
+  });
+});
+
+describe("runAgenticOnboarding — red de extracción (AC2)", () => {
+  it("si el turno no emite DATA para el campo pedido, cae a comprehendStep y captura el valor", async () => {
+    const llm: LlmGenerate = async (args) => {
+      // El turno agéntico nunca emite DATA para "name": se apoya en la red de extracción.
+      if (isTurnCall(args)) return "Nice to meet you!";
+      return "Ada"; // respuesta de comprehendStep (prompt de extracción, no de turno)
+    };
+    const { repo, saved } = makeRepo();
+    const { io, asked } = makeIo(["Ada", "backend dev", "Go and testing"]);
+
+    await runAgenticOnboarding({ llm, io, repo });
+
+    // El nombre quedó capturado por la red, así que Emma no vuelve a preguntarlo.
+    expect(saved.some((s) => s.step === "name" && s.value === "Ada")).toBe(true);
+    expect(asked.filter((q) => /name/i.test(q))).toHaveLength(1);
+  });
+});
+
+describe("runAgenticOnboarding — tope por campo (AC3)", () => {
+  it("ningún campo se pregunta una tercera vez aunque la red también falle", async () => {
+    const llm: LlmGenerate = async (args) => {
+      if (isTurnCall(args)) return "Just chatting, no data at all."; // nunca emite DATA
+      throw new Error("comprehend down"); // la red de extracción también falla
+    };
+    const { repo, saved } = makeRepo();
+    // Respuestas siempre sustantivas: cada intento debería resolver o forzar el campo.
+    const { io, asked } = makeIo(["Ada", "Ada again", "Ada once more"]);
+
+    await runAgenticOnboarding({ llm, io, repo, maxTurns: 6 });
+
+    // A lo sumo 2 preguntas sobre "name": al segundo intento se acepta el texto crudo.
+    expect(asked.filter((q) => /name/i.test(q)).length).toBeLessThanOrEqual(2);
+    expect(saved.some((s) => s.step === "name")).toBe(true);
   });
 });
 

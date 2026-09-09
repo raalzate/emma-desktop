@@ -31,6 +31,8 @@ export interface OnboardingFlow {
   messages: Bubble[];
   thinking: boolean;
   done: boolean;
+  /** false si el flujo terminó por tope de turnos con el perfil incompleto. */
+  completed: boolean;
   progress: number;
   total: number;
   submit: (answer: string) => void;
@@ -44,6 +46,7 @@ export function useOnboardingFlow(
   const [messages, setMessages] = useState<Bubble[]>([]);
   const [thinking, setThinking] = useState(true);
   const [done, setDone] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const [captured, setCaptured] = useState(0);
   const [total, setTotal] = useState(TOTAL_STEPS);
   const resolveRef = useRef<((v: string) => void) | null>(null);
@@ -90,9 +93,13 @@ export function useOnboardingFlow(
       setCaptured(c);
       setTotal(t);
     };
-    void runtime.runAgenticOnboarding(createIo(), onProgress).then(async () => {
+    void runtime.runAgenticOnboarding(createIo(), onProgress).then(async (result) => {
       setThinking(false);
+      // El flujo termina siempre (no dejamos un composer muerto sin pregunta
+      // viva); `completed` distingue perfil completo de pausa por tope de
+      // turnos, que la pantalla ofrece retomar.
       setDone(true);
+      setCompleted(result.completed);
       await onComplete();
     });
   }, [ready, runtime, createIo, onComplete]);
@@ -101,6 +108,7 @@ export function useOnboardingFlow(
     messages,
     thinking,
     done,
+    completed,
     progress: done ? total : Math.min(captured, total),
     total,
     submit,

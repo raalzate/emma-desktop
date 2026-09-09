@@ -9,27 +9,34 @@
 import type { LlmGenerate } from "@/domain/ai/llm-port";
 import type { OnboardingIo, OnboardingRepository } from "@/domain/onboarding/i-onboarding-repository";
 import type { UserProfile } from "@/domain/profile/user-profile";
+import type { OnboardingStep } from "@/domain/onboarding/onboarding-state";
 import { ONBOARDING_TURN_MAX_TOKENS } from "@/domain/shared/token-budgets";
 import {
   buildClosingSummary,
+  buildPauseSummary,
   buildTurnPrompt,
   capturedCount,
   INSTANT_GREETING,
   isContextComplete,
   mergeContext,
+  missingFields,
   normalizeContext,
   parseTurn,
   REQUIRED_FIELDS,
   type OnboardingContext,
 } from "@/domain/onboarding/agentic-onboarding";
+import { comprehendStep } from "@/application/onboarding/comprehend-use-case";
 
-const FIELD_STEP: Record<string, string> = {
+const FIELD_STEP: Record<string, OnboardingStep> = {
   name: "name",
   role: "role",
   yearsInRole: "years_in_role",
   techStack: "tech_stack",
   skills: "skills",
 };
+
+/** Tope de veces que se le pide al usuario un mismo campo antes de resolverlo por código. */
+const MAX_ATTEMPTS_PER_FIELD = 2;
 
 export interface AgenticOnboardingArgs {
   llm: LlmGenerate;
@@ -58,12 +65,25 @@ export async function runAgenticOnboarding(
   let lastEmma = buildGreeting(ctx);
   let lastUser = (await io.ask(lastEmma)).trim();
 
+  const attempts = new Map<keyof OnboardingContext, number>();
+
   for (let turn = 0; turn < maxTurns && !isContextComplete(ctx); turn++) {
+    // El campo objetivo de este turno es el que se preguntó en `lastEmma`: el
+    // primer faltante ANTES de llamar al modelo (ctx todavía no cambió).
+    const targetField = missingFields(ctx)[0];
+    const attemptNumber = (attempts.get(targetField) ?? 0) + 1;
+    attempts.set(targetField, attemptNumber);
+
     const { system, user } = buildTurnPrompt(ctx, lastEmma, lastUser);
     const raw = await llm({ prompt: user, system, maxTokens: ONBOARDING_TURN_MAX_TOKENS });
     const { message, extracted } = parseTurn(raw);
 
     ctx = await mergeAndPersist(ctx, extracted, repo);
+    // Red de extracción: si el modelo no emitió DATA para el campo pedido, el
+    // código decide — no se depende de que el LLM recuerde emitir la línea.
+    if (missingFields(ctx).includes(targetField)) {
+      ctx = await recoverField({ field: targetField, rawUser: lastUser, attemptNumber, ctx, llm, repo });
+    }
     onProgress?.(capturedCount(ctx), REQUIRED_FIELDS.length);
 
     if (isContextComplete(ctx)) break;
@@ -71,9 +91,53 @@ export async function runAgenticOnboarding(
     lastUser = (await io.ask(message)).trim();
   }
 
-  await io.notify?.(buildClosingSummary(ctx));
-  await repo.markCompleted();
-  return { context: ctx, completed: true };
+  const completed = isContextComplete(ctx);
+  await io.notify?.(completed ? buildClosingSummary(ctx) : buildPauseSummary(ctx));
+  if (completed) await repo.markCompleted();
+  return { context: ctx, completed };
+}
+
+/** Texto con contenido sustantivo: descarta respuestas vacías o de un carácter. */
+function hasSubstance(text: string): boolean {
+  return text.trim().length >= 2;
+}
+
+/**
+ * Intenta recuperar un campo que el turno no capturó vía `DATA:`, apoyándose en
+ * `comprehendStep` (extracción focalizada ya existente, que a su vez cae al
+ * texto crudo si no logra extraer nada). Solo el código decide cuándo intentar:
+ * en el primer intento exige contenido sustantivo; al segundo intento, agotado
+ * el tope, se prueba igual para no volver a preguntar un tercer turno.
+ */
+async function recoverField(args: {
+  field: keyof OnboardingContext;
+  rawUser: string;
+  attemptNumber: number;
+  ctx: OnboardingContext;
+  llm: LlmGenerate;
+  repo: OnboardingRepository;
+}): Promise<OnboardingContext> {
+  const { field, rawUser, attemptNumber, ctx, llm, repo } = args;
+  const trimmedUser = rawUser.trim();
+  if (!trimmedUser) return ctx;
+  if (!hasSubstance(trimmedUser) && attemptNumber < MAX_ATTEMPTS_PER_FIELD) return ctx;
+
+  const step = FIELD_STEP[field];
+  if (!step) return ctx;
+  const value = await extractViaComprehend(llm, step, trimmedUser);
+  if (!value) return ctx;
+
+  return mergeAndPersist(ctx, { [field]: value } as OnboardingContext, repo);
+}
+
+async function extractViaComprehend(llm: LlmGenerate, step: OnboardingStep, rawAnswer: string): Promise<string> {
+  try {
+    const outcome = await comprehendStep({ llm, step, rawAnswer });
+    if (outcome.skipped || outcome.value === "") return "";
+    return String(outcome.value);
+  } catch {
+    return ""; // fallo de la red de extracción: el llamador decide el fallback
+  }
 }
 
 /** Llamada mínima de precarga; su resultado no importa, solo calienta el modelo. */

@@ -11,6 +11,7 @@ import {
   mergeContext,
   normalizeContext,
   buildClosingSummary,
+  buildPauseSummary,
   type OnboardingContext,
 } from "../agentic-onboarding";
 
@@ -139,6 +140,29 @@ describe("agentic-onboarding — parseTurn", () => {
     expect(message).toBe("Cool!");
     expect(extracted).toEqual({});
   });
+
+  it("extrae la línea DATA aunque no esté al final (texto después de ella)", () => {
+    const raw = 'Wow!\nDATA: {"skills":"microservices"}\nHope that helps!';
+    const { message, extracted } = parseTurn(raw);
+    expect(message).toBe("Wow!\nHope that helps!");
+    expect(extracted).toEqual({ skills: "microservices" });
+    expect(message).not.toMatch(/DATA:/);
+  });
+
+  it("extrae JSON de un fence ```json sin prefijo DATA:", () => {
+    const raw = 'Nice!\n```json\n{"skills": "microservices"}\n```';
+    const { message, extracted } = parseTurn(raw);
+    expect(message).toBe("Nice!");
+    expect(extracted).toEqual({ skills: "microservices" });
+    expect(message).not.toMatch(/`/);
+  });
+
+  it("extrae JSON desnudo en su propia línea (sin DATA: ni fence)", () => {
+    const raw = 'Nice one!\n{"skills": "microservices"}';
+    const { message, extracted } = parseTurn(raw);
+    expect(message).toBe("Nice one!");
+    expect(extracted).toEqual({ skills: "microservices" });
+  });
 });
 
 describe("agentic-onboarding — mergeContext", () => {
@@ -206,3 +230,19 @@ describe("agentic-onboarding — buildClosingSummary", () => {
     expect(buildClosingSummary({})).toMatch(/first real workplace scenario/i);
   });
 });
+
+describe("agentic-onboarding — buildPauseSummary", () => {
+  it("cierra sin inventar perfil y anuncia que se retoma", () => {
+    const pause = buildPauseSummary({ name: "Ada" });
+    expect(pause).toMatch(/Ada/);
+    expect(pause).not.toMatch(/professional/i);
+    expect(pause).not.toMatch(/first real workplace scenario/i);
+    expect(pause).toMatch(/pick this up/i);
+  });
+
+  it("funciona sin nombre y no lanza", () => {
+    expect(() => buildPauseSummary({})).not.toThrow();
+    expect(buildPauseSummary({})).toMatch(/pick this up/i);
+  });
+});
+
