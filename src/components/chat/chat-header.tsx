@@ -1,10 +1,14 @@
 "use client";
 
-/** Cabecera del chat: selector de escenario, badge de nivel y progreso de turnos. */
+/**
+ * Cabecera del chat (rediseño «Café sereno», FR-013): título de escena en
+ * display, badge CEFR mono sobre azul suave, contador de turnos con puntos y
+ * pill de objetivos con borde. La navegación general vive en el AppShell; aquí
+ * solo quedan el regreso a la ruta y la salida discreta de la escena.
+ */
 
 import Link from "next/link";
-import { ArrowLeft, BarChart3, BookOpenCheck, ChevronDown, Flag, Settings } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, ChevronDown, Flag, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import { personaFor } from "@/domain/personas/protopersona";
@@ -35,57 +40,80 @@ interface Props {
   finishEarlyDisabled?: boolean;
 }
 
+/** Contador de turnos del mockup: texto + hilera de puntos llenos/vacíos. */
+function TurnDots({ turnCount, maxTurns }: { turnCount: number; maxTurns: number }) {
+  return (
+    <div
+      className="flex items-center gap-2"
+      title="Turnos usados de los disponibles en esta escena"
+    >
+      <span className="whitespace-nowrap text-xs text-muted-foreground">
+        Turno {turnCount} de {maxTurns}
+      </span>
+      <div className="flex items-center gap-1" aria-hidden>
+        {Array.from({ length: maxTurns }).map((_, i) => (
+          <span
+            key={i}
+            className={cn("h-1.5 w-1.5 rounded-full", i < turnCount ? "bg-primary" : "bg-border")}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ChatHeader({
   scenarios, scenario, onSelect, level, situationTitle, turnCount, maxTurns, sceneGoals,
   onFinishEarly, finishEarlyDisabled,
 }: Props) {
   const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
   return (
-    <header className="flex items-center gap-3 border-b bg-background px-4 py-3">
+    <header className="flex items-center gap-3 border-b border-border bg-background px-4 py-3">
       <Button asChild variant="ghost" size="icon" className="h-8 w-8 shrink-0">
         <Link href="/" aria-label="Volver a tu ruta">
           <ArrowLeft className="h-4 w-4" />
         </Link>
       </Button>
-      <div
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground"
-        title={`${persona.name} · ${persona.role}`}
-      >
-        {persona.name.charAt(0).toUpperCase()}
-      </div>
       <div className="min-w-0 flex-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="-ml-2 h-auto gap-1 truncate py-1 text-base font-semibold">
-              {scenario.title}
-              <ChevronDown className="h-4 w-4 opacity-60" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
-            {scenarios.map((s) => (
-              <DropdownMenuItem key={s.scenarioType} onSelect={() => onSelect(s)}>
-                {s.title}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="-ml-2 h-auto gap-1 truncate py-1 font-headline text-lg font-semibold tracking-tight"
+              >
+                {scenario.title}
+                <ChevronDown className="h-4 w-4 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
+              {scenarios.map((s) => (
+                <DropdownMenuItem key={s.scenarioType} onSelect={() => onSelect(s)}>
+                  {s.title}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <span className="rounded-md bg-primary-soft px-1.5 py-0.5 font-code text-xs font-medium text-primary-deep">
+            {level}
+          </span>
+        </div>
         <p className="truncate text-xs text-muted-foreground">
           Con <span className="font-medium text-foreground">{persona.name}</span> ({persona.role})
           {situationTitle ? ` — ${situationTitle}` : ""}
         </p>
       </div>
+      <TurnDots turnCount={turnCount} maxTurns={maxTurns} />
       {sceneGoals && (
         <span
-          className="text-xs text-muted-foreground"
+          className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border px-3 py-1 text-xs text-foreground"
           title="Temas de la conversación que ya cubriste. Al completarlos, la escena se cierra."
         >
-          Temas {sceneGoals.done}/{sceneGoals.total}
+          <Target className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+          Objetivos {sceneGoals.done}/{sceneGoals.total}
         </span>
       )}
-      <span className="text-xs text-muted-foreground" title="Turnos usados de los disponibles en esta escena">
-        {turnCount}/{maxTurns}
-      </span>
-      <Badge variant="secondary">{level}</Badge>
       {onFinishEarly && (
         <Button
           variant="ghost"
@@ -99,21 +127,6 @@ export function ChatHeader({
           <Flag className="h-4 w-4" />
         </Button>
       )}
-      <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-        <Link href="/progress" aria-label="Mi progreso">
-          <BarChart3 className="h-4 w-4" />
-        </Link>
-      </Button>
-      <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-        <Link href="/practice" aria-label="Práctica">
-          <BookOpenCheck className="h-4 w-4" />
-        </Link>
-      </Button>
-      <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-        <Link href="/settings" aria-label="Configuración">
-          <Settings className="h-4 w-4" />
-        </Link>
-      </Button>
     </header>
   );
 }

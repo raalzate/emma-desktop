@@ -70,19 +70,21 @@ export function Composer({ onSend, busy, context, sceneContext, level, scenarioT
   };
 
   return (
-    <div className="border-t bg-background px-4 py-3">
+    <div className="bg-background px-4 py-3">
       <div className="mx-auto max-w-2xl">
         <SuggestionChips suggestions={suggestions} />
         <div className="flex items-end gap-2">
-          <div className="relative flex-1">
+          {/* Superficie blanca con borde y radio 14px (FR-022). */}
+          <div className="relative flex-1 rounded-[14px] border border-border bg-card">
             {/*
-              El overlay debe calcar la caja del textarea (padding, borde y el
+              El overlay debe calcar la caja del textarea (mismo padding y el
               mismo salto tipográfico `text-base md:text-sm`): con un tamaño
               fijo, el fantasma se desalineaba del texto bajo el breakpoint md.
+              El borde vive en el contenedor; textarea y overlay van sin borde.
             */}
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 whitespace-pre-wrap break-words border border-transparent px-3 py-2 text-base text-muted-foreground md:text-sm"
+              className="pointer-events-none absolute inset-0 whitespace-pre-wrap break-words px-3 py-2 text-base text-muted md:text-sm"
             >
               <span className="invisible">{text}</span>
               {ghost}
@@ -94,23 +96,33 @@ export function Composer({ onSend, busy, context, sceneContext, level, scenarioT
               placeholder={busy ? "Emma está escribiendo…" : "Escribe tu respuesta en inglés…"}
               disabled={busy}
               rows={2}
-              className="relative resize-none bg-transparent"
+              className="relative resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
             />
           </div>
           <Button
             size="icon"
-            variant={voice.recording ? "destructive" : "secondary"}
+            variant={voice.recording ? "destructive" : "outline"}
+            className="h-9 w-9 rounded-full border-border"
             onClick={voice.toggle}
             disabled={busy || voice.busy}
             aria-label={voice.recording ? "Enviar nota de voz" : "Grabar nota de voz"}
           >
             {voice.busy ? <Loader2 className="animate-spin" /> : voice.recording ? <Square /> : <Mic />}
           </Button>
-          <Button size="icon" onClick={() => submit(text)} disabled={busy || !text.trim()} aria-label="Enviar">
+          <Button
+            size="icon"
+            className="h-9 w-9 rounded-full"
+            onClick={() => submit(text)}
+            disabled={busy || !text.trim()}
+            aria-label="Enviar"
+          >
             <Send />
           </Button>
         </div>
-        {ghost && <p className="mt-1 text-xs text-muted-foreground">Pulsa Tab para aceptar la sugerencia</p>}
+        {/* Línea persistente (FR-021): atajos + recordatorio de inmersión, en mono. */}
+        <p className="mt-2 font-code text-[11px] tracking-wide text-muted-foreground">
+          TAB acepta la sugerencia · ENTER envía · La conversación es solo en inglés
+        </p>
       </div>
     </div>
   );

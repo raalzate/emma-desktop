@@ -8,6 +8,7 @@
 import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEmma } from "@/interface/emma-context";
+import { AppShell } from "@/components/nav/app-shell";
 import { PageHeader } from "@/components/nav/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExerciseDrill } from "@/components/practice/exercise-drill";
@@ -79,13 +80,13 @@ export default function PracticePage() {
   if (!profile) return null; // redirigiendo al onboarding
 
   return (
-    <>
+    <AppShell>
       <PageHeader title="Práctica" />
-      <div className="mx-auto max-w-3xl space-y-4 p-4">
+      <div className="mx-auto w-full max-w-3xl space-y-4 p-4">
         <Suspense fallback={null}>
           <PracticeTabs />
         </Suspense>
       </div>
-    </>
+    </AppShell>
   );
 }

@@ -4,83 +4,114 @@
 
 @layer base {
   :root {
-    /* Paleta fría y gris-azulada para modo claro */
-    --background: 210 20% 98%;        /* Blanco-azulado muy suave */
-    --foreground: 220 15% 15%;        /* Gris-azul oscuro muy apagado */
+    /* «Café sereno» — modo claro: papel cálido, azul índigo sereno y ámbar. */
+    --background: 48 21.7% 95.5%;        /* #F6F5F1 papel cálido */
+    --foreground: 223.6 13.6% 15.9%;     /* #23262E tinta gris-azul */
 
-    --card: 210 20% 96%;
-    --card-foreground: 220 15% 15%;
+    --card: 0 0% 100%;                   /* #FFFFFF */
+    --card-foreground: 223.6 13.6% 15.9%;
 
-    --popover: 210 20% 98%;
-    --popover-foreground: 220 15% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 223.6 13.6% 15.9%;
 
-    --primary: 218 35% 62%;           /* Azul frío medio (antes era índigo cálido) */
+    --primary: 216.9 43.6% 43.1%;        /* #3E639E azul sereno */
     --primary-foreground: 0 0% 100%;
+    --primary-deep: 216.3 45.2% 32.9%;   /* #2E4C7A hover/énfasis */
+    --primary-soft: 217.5 42.1% 92.5%;   /* #E4EAF4 fondo suave azul */
 
-    --secondary: 210 18% 92%;
-    --secondary-foreground: 220 12% 25%;
+    --secondary: 46.7 20% 91.2%;         /* #EDEBE4 lino */
+    --secondary-foreground: 223.6 13.6% 15.9%;
 
-    --muted: 210 20% 94%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 46.7 20% 91.2%;
+    --muted-foreground: 222.4 8.6% 38.6%; /* #5A5F6B */
 
-    --accent: 200 30% 70%;            /* Azul-grisáceo frío */
+    --accent: 33.6 55% 52.9%;            /* #C98F45 ámbar */
     --accent-foreground: 0 0% 100%;
+    --accent-soft: 37.2 56.9% 90%;       /* #F4E9D7 fondo suave ámbar */
 
-    --destructive: 0 70% 62%;         /* Rojo menos saturado para que no rompa la armonía fría */
+    --destructive: 0 39.7% 59%;          /* #C06D6D rojo apagado */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 210 20% 88%;
-    --input: 210 20% 88%;
-    --ring: 218 35% 62%;
+    --border: 43.6 18.6% 88.4%;          /* #E7E4DC */
+    --input: 43.6 18.6% 88.4%;
+    --ring: 216.9 43.6% 43.1%;
 
-    /* Gráficos también en tonos fríos y apagados */
-    --chart-1: 210 40% 60%;
-    --chart-2: 200 35% 55%;
-    --chart-3: 220 30% 50%;
-    --chart-4: 190 35% 65%;
-    --chart-5: 230 30% 45%;
+    /* Andamiaje pedagógico: fácil / medio / difícil (texto + fondo). */
+    --scaffold-easy: 136.7 24.5% 48.8%;     /* #5E9B6F */
+    --scaffold-easy-bg: 130.9 25.6% 91.6%;  /* #E4EFE6 */
+    --scaffold-mid: 33.6 55% 52.9%;         /* #C98F45 */
+    --scaffold-mid-bg: 37.2 56.9% 90%;      /* #F4E9D7 */
+    --scaffold-hard: 0 39.7% 59%;           /* #C06D6D */
+    --scaffold-hard-bg: 0 41.5% 92%;        /* #F3E2E2 */
 
-    --radius: 0.5rem;
+    /* Categorías (temas/escenas): 5 matices distinguibles y armónicos. */
+    --cat-1: 212.3 42.7% 51.4%;  /* #4E7FB8 azul */
+    --cat-2: 252.2 31.1% 59.6%;  /* #8578B8 violeta */
+    --cat-3: 33.6 55% 52.9%;     /* #C98F45 ámbar */
+    --cat-4: 136.7 24.5% 48.8%;  /* #5E9B6F verde */
+    --cat-5: 0 39.7% 59%;        /* #C06D6D rojo */
+
+    /* Gráficos alineados a las categorías. */
+    --chart-1: 212.3 42.7% 51.4%;
+    --chart-2: 252.2 31.1% 59.6%;
+    --chart-3: 33.6 55% 52.9%;
+    --chart-4: 136.7 24.5% 48.8%;
+    --chart-5: 0 39.7% 59%;
+
+    --radius: 0.625rem;
   }
 
   .dark {
-    /* Modo oscuro suave, slate azulado (no negro): más elegante y menos cansado. */
-    --background: 222 16% 17%;        /* Slate templado, ni negro ni plano */
-    --foreground: 210 16% 90%;        /* Gris-azul claro legible */
+    /* «Café sereno» — modo oscuro: carbón cálido con los mismos roles. */
+    --background: 222 14.3% 13.7%;       /* #1E2128 */
+    --foreground: 45 14.8% 89.4%;        /* #E8E6E0 */
 
-    --card: 222 15% 20%;              /* Paneles ligeramente sobre el fondo */
-    --card-foreground: 210 16% 90%;
+    --card: 220 13.3% 17.6%;             /* #272B33 */
+    --card-foreground: 45 14.8% 89.4%;
 
-    --popover: 222 15% 20%;
-    --popover-foreground: 210 16% 90%;
+    --popover: 220 13.3% 17.6%;
+    --popover-foreground: 45 14.8% 89.4%;
 
-    --primary: 218 52% 68%;           /* Azul frío vivo pero elegante */
-    --primary-foreground: 222 20% 12%;
+    --primary: 215.5 48.1% 69%;          /* #8AA9D6 azul claro legible */
+    --primary-foreground: 222 14.3% 13.7%;
+    --primary-deep: 214.6 52.2% 77.8%;   /* #A9C2E4 */
+    --primary-soft: 218.6 24.1% 22.7%;   /* #2C3648 */
 
-    --secondary: 220 13% 26%;
-    --secondary-foreground: 210 14% 82%;
+    --secondary: 220 12% 19.6%;          /* #2C3038 */
+    --secondary-foreground: 45 14.8% 89.4%;
 
-    --muted: 220 13% 25%;
-    --muted-foreground: 215 12% 66%;
+    --muted: 220 12% 19.6%;
+    --muted-foreground: 222 9% 65%;
 
-    /* accent = superficie de hover/focus de menús (convención shadcn): slate
-       sutil sobre el fondo, con texto claro, para que todo siga legible. */
-    --accent: 220 13% 28%;
-    --accent-foreground: 210 16% 92%;
+    --accent: 33.1 63.3% 66.9%;          /* #E0B075 ámbar claro */
+    --accent-foreground: 222 14.3% 13.7%;
+    --accent-soft: 34.7 22.9% 16.3%;     /* #332B20 */
 
-    --destructive: 0 60% 50%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 42.7% 67.8%;        /* #D08A8A */
+    --destructive-foreground: 222 14.3% 13.7%;
 
-    --border: 220 12% 30%;
-    --input: 220 12% 30%;
-    --ring: 218 52% 68%;
+    --border: 220 10.5% 22.4%;           /* #33373F */
+    --input: 220 10.5% 22.4%;
+    --ring: 215.5 48.1% 69%;
 
-    /* Gráficos oscuros pero fríos */
-    --chart-1: 210 45% 65%;
-    --chart-2: 200 40% 60%;
-    --chart-3: 220 40% 55%;
-    --chart-4: 190 45% 70%;
-    --chart-5: 230 35% 50%;
+    --scaffold-easy: 136.7 26.7% 60.4%;     /* #7FB58E */
+    --scaffold-easy-bg: 135 13.6% 17.3%;    /* #263229 */
+    --scaffold-mid: 33.1 63.3% 66.9%;       /* #E0B075 */
+    --scaffold-mid-bg: 34.7 22.9% 16.3%;    /* #332B20 */
+    --scaffold-hard: 0 42.7% 67.8%;         /* #D08A8A */
+    --scaffold-hard-bg: 0 15.9% 17.3%;      /* #332525 */
+
+    --cat-1: 211.1 46.3% 65.7%;  /* #7FA6D0 */
+    --cat-2: 252.2 41.8% 72.4%;  /* #A79BD6 */
+    --cat-3: 33.1 63.3% 66.9%;   /* #E0B075 */
+    --cat-4: 136.7 26.7% 60.4%;  /* #7FB58E */
+    --cat-5: 0 42.7% 67.8%;      /* #D08A8A */
+
+    --chart-1: 211.1 46.3% 65.7%;
+    --chart-2: 252.2 41.8% 72.4%;
+    --chart-3: 33.1 63.3% 66.9%;
+    --chart-4: 136.7 26.7% 60.4%;
+    --chart-5: 0 42.7% 67.8%;
   }
 }
 

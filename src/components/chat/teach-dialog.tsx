@@ -59,7 +59,7 @@ export function TeachDialog({ text, onClose }: Props) {
       <DialogContent className="max-h-[85vh] max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" /> Teach me
+            <BookOpen className="h-5 w-5 text-primary" /> Enséñame
           </DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">

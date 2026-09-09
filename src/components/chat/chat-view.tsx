@@ -15,6 +15,7 @@ import { scenariosForLevel } from "@/domain/scenarios/scenario-catalog";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { ChatConversation } from "@/domain/chat/chat-conversation";
 import { deriveTitle, stripForStorage } from "@/domain/chat/chat-conversation";
+import { AppShell } from "@/components/nav/app-shell";
 import { ChatSidebar } from "./chat-sidebar";
 import { ChatPane } from "./chat-pane";
 import { useChatHistory } from "./use-chat-history";
@@ -106,16 +107,20 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
     [history, sessionId, scenario, startNew],
   );
 
+  // UNA sola sidebar: la del shell. Las sesiones viajan por la ranura `extra`.
   return (
-    <div className="flex h-screen">
-      <ChatSidebar
-        list={history.list}
-        activeId={sessionId}
-        onNew={() => startNew(scenario)}
-        onOpen={openChat}
-        onRename={history.rename}
-        onDelete={handleDelete}
-      />
+    <AppShell
+      extra={
+        <ChatSidebar
+          list={history.list}
+          activeId={sessionId}
+          onNew={() => startNew(scenario)}
+          onOpen={openChat}
+          onRename={history.rename}
+          onDelete={handleDelete}
+        />
+      }
+    >
       <ChatPane
         key={sessionId}
         runtime={runtime}
@@ -127,6 +132,6 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
         restore={restore}
         onSnapshot={onSnapshot}
       />
-    </div>
+    </AppShell>
   );
 }

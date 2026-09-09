@@ -70,7 +70,7 @@ export function ChatPane({
   const reviewLabel = end.hasStoredLesson ? "Ver tu lección" : "Finalizar y ver lección";
 
   return (
-    <main className="flex h-screen flex-1 flex-col bg-background">
+    <main className="flex h-full min-h-0 flex-1 flex-col bg-background">
       <div className="flex items-center gap-2 pr-4">
         <div className="flex-1">
           <ChatHeader

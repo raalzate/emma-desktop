@@ -8,6 +8,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useEmma } from "@/interface/emma-context";
+import { AppShell } from "@/components/nav/app-shell";
 import { ProgressView } from "@/components/progress/progress-view";
 import { ProgressSkeleton } from "@/components/progress/progress-skeleton";
 import { PageHeader } from "@/components/nav/page-header";
@@ -20,12 +21,18 @@ export default function ProgressPage() {
     if (ready && !profile) router.replace("/onboarding");
   }, [ready, profile, router]);
 
-  if (!ready || !runtime) return <ProgressSkeleton />;
+  if (!ready || !runtime) {
+    return (
+      <AppShell>
+        <ProgressSkeleton />
+      </AppShell>
+    );
+  }
   if (!profile) return null; // redirigiendo al onboarding
   return (
-    <>
+    <AppShell>
       <PageHeader title="Mi progreso" />
       <ProgressView runtime={runtime} level={profile.englishLevel} />
-    </>
+    </AppShell>
   );
 }
