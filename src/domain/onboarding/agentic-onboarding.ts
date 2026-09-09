@@ -59,7 +59,9 @@ const TURN_SYSTEM =
   "message, and NEVER ask again about something you already know. If their " +
   "last answer was ambiguous, ask a quick clarifying follow-up instead. " +
   "NEVER reveal you are an AI, and NEVER mention JSON, fields, prompts or " +
-  "data extraction in your visible message. After your message, on a new " +
+  "data extraction in your visible message. Never write notes to yourself " +
+  "about the task, and never use parentheses to comment on what you are " +
+  "doing or on the response you expect. After your message, on a new " +
   "final line, output exactly `DATA: {json}` with a compact JSON object " +
   "containing any of these keys you can confidently infer from ONLY the " +
   "last exchange below: name (string), role (string), yearsInRole " +
@@ -72,8 +74,10 @@ export function buildTurnPrompt(
   ctx: OnboardingContext,
   lastEmma: string,
   lastUser: string,
+  skip: readonly (keyof OnboardingContext)[] = [],
 ): { system: string; user: string } {
-  const missing = missingFields(ctx);
+  // `skip`: campos abandonados tras el tope de intentos — no se vuelven a pedir.
+  const missing = missingFields(ctx).filter((f) => !skip.includes(f));
   const known = Object.entries(ctx)
     .filter(([, v]) => v !== undefined && String(v).trim() !== "")
     .map(([k, v]) => `- ${k}: ${v}`)
@@ -194,13 +198,19 @@ export function parseTurn(raw: string): { message: string; extracted: Onboarding
   return { message, extracted: parseContext(found.json) };
 }
 
-/** Quita restos de JSON, fences y el prefijo "Emma:" que a veces añade el modelo. */
+// Marcas de que un paréntesis es una nota del modelo sobre su tarea, no charla.
+const META_NOTE_RE =
+  /\((?=[^)]*\b(?:placeholder|actual response|real goal|prompt|instruction|extraction|json|data line|as an ai|note to self)\b)[^)]*\)/gi;
+
+/** Quita restos de JSON, fences, notas meta y el prefijo "Emma:" que añade el modelo. */
 function cleanMessage(text: string): string {
   return text
     .replace(/```[a-z]*\n?/gi, "")
     .replace(/```/g, "")
     .replace(/\{[\s\S]*\}/g, "")
+    .replace(META_NOTE_RE, "")
     .replace(/^Emma:\s*/i, "")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 

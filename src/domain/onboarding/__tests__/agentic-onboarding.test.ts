@@ -246,3 +246,24 @@ describe("agentic-onboarding — buildPauseSummary", () => {
   });
 });
 
+describe("agentic-onboarding — parseTurn limpia meta-texto del modelo", () => {
+  it("descarta la nota entre paréntesis sobre su propia tarea (visto en la app)", () => {
+    const raw =
+      "Hello! It's a pleasure to meet you!\n\nSo, what is your name?\n\n" +
+      "(I'll use this as a placeholder for the actual response, but the real goal is to get to know you better!)";
+    const { message } = parseTurn(raw);
+    expect(message).not.toMatch(/placeholder/i);
+    expect(message).not.toMatch(/actual response/i);
+    expect(message).toMatch(/what is your name/i);
+  });
+
+  it("no toca paréntesis normales de conversación", () => {
+    const { message } = parseTurn("I love Python (my favorite!). What about you?");
+    expect(message).toBe("I love Python (my favorite!). What about you?");
+  });
+
+  it("el system prohíbe explicitamente las notas sobre la tarea", () => {
+    const { system } = buildTurnPrompt({}, "", "");
+    expect(system).toMatch(/never write notes/i);
+  });
+});

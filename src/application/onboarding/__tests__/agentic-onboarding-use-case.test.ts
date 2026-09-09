@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import type { LlmGenerate, LlmGenerateArgs } from "@/domain/ai/llm-port";
 import type { OnboardingIo, OnboardingRepository } from "@/domain/onboarding/i-onboarding-repository";
 import { emptyProfile } from "@/domain/profile/user-profile";
-import { INSTANT_GREETING } from "@/domain/onboarding/agentic-onboarding";
+import { INSTANT_GREETING, REQUIRED_FIELDS } from "@/domain/onboarding/agentic-onboarding";
 import { runAgenticOnboarding } from "../agentic-onboarding-use-case";
 
 function makeRepo(overrides: Partial<OnboardingRepository> = {}) {
@@ -248,20 +248,45 @@ describe("runAgenticOnboarding — red de extracción (AC2)", () => {
 });
 
 describe("runAgenticOnboarding — tope por campo (AC3)", () => {
-  it("ningún campo se pregunta una tercera vez aunque la red también falle", async () => {
+  it("abandona el campo tras 2 intentos en vez de insistir o inventarlo", async () => {
+    // Ni el turno emite DATA ni la red logra extraer: el campo es irrecuperable.
+    // Guardar el texto crudo sería inventar (es lo que metía basura en skills),
+    // así que el campo se abandona y el perfil queda incompleto y retomable.
     const llm: LlmGenerate = async (args) => {
-      if (isTurnCall(args)) return "Just chatting, no data at all."; // nunca emite DATA
-      throw new Error("comprehend down"); // la red de extracción también falla
+      if (isTurnCall(args)) return "Just chatting, no data at all.";
+      throw new Error("extracción caída");
     };
-    const { repo, saved } = makeRepo();
-    // Respuestas siempre sustantivas: cada intento debería resolver o forzar el campo.
+    const { repo, saved, state } = makeRepo();
     const { io, asked } = makeIo(["Ada", "Ada again", "Ada once more"]);
+
+    const res = await runAgenticOnboarding({ llm, io, repo, maxTurns: 6 });
+
+    // El objetivo del prompt cambia de campo: ningún campo se pide 3 veces.
+    const goals = asked.length;
+    expect(goals).toBeLessThanOrEqual(1 + REQUIRED_FIELDS.length * 2);
+    expect(saved).toHaveLength(0); // nada inventado
+    expect(state.completed).toBe(false);
+    expect(res.completed).toBe(false);
+  });
+
+  it("no vuelve a pedir un campo abandonado: el objetivo pasa al siguiente", async () => {
+    const goalsSeen: string[] = [];
+    const llm: LlmGenerate = async (args) => {
+      if (isTurnCall(args)) {
+        const goal = /Next detail to learn: ([^.]+)\./.exec(args.prompt)?.[1] ?? "wrap-up";
+        goalsSeen.push(goal);
+        return "Just chatting.";
+      }
+      throw new Error("extracción caída");
+    };
+    const { repo } = makeRepo();
+    const { io } = makeIo(["algo", "otra cosa", "y otra"]);
 
     await runAgenticOnboarding({ llm, io, repo, maxTurns: 6 });
 
-    // A lo sumo 2 preguntas sobre "name": al segundo intento se acepta el texto crudo.
-    expect(asked.filter((q) => /name/i.test(q)).length).toBeLessThanOrEqual(2);
-    expect(saved.some((s) => s.step === "name")).toBe(true);
+    // name se pide 2 veces y luego el objetivo cambia (no queda clavado).
+    expect(goalsSeen.filter((g) => g.includes("first name"))).toHaveLength(2);
+    expect(new Set(goalsSeen).size).toBeGreaterThan(1);
   });
 });
 
@@ -284,5 +309,48 @@ describe("runAgenticOnboarding — warmup en segundo plano", () => {
     expect(warmupCalls).toHaveLength(1);
     holder.resolveWarmup?.();
     await promise;
+  });
+});
+
+describe("runAgenticOnboarding — la red no inventa datos", () => {
+  it("no rellena skills con la respuesta a otra pregunta (sesión real, #154)", async () => {
+    // Reproduce lo visto en la app: el turno captura el rol y la red intentaba
+    // meter ese mismo texto en `skills`, cerrando el onboarding sin preguntarlo.
+    const llm: LlmGenerate = async (args) => {
+      if (!isTurnCall(args)) {
+        // extracción estricta: el texto NO trae skills → el modelo dice NONE
+        if (args.prompt.includes("Does the following text contain")) return "NONE";
+        return "warmup";
+      }
+      return 'Great!\nDATA: {"name":"Raul","role":"Architect Solution","techStack":"AWS, Microservices"}';
+    };
+    const { repo, saved, state } = makeRepo();
+    const { io, asked, notified } = makeIo(["I am an architect solution"]);
+
+    const res = await runAgenticOnboarding({ llm, io, repo, maxTurns: 2 });
+
+    expect(res.context.skills).toBeUndefined();
+    expect(saved.map((s) => s.step)).not.toContain("skills");
+    expect(state.completed).toBe(false);
+    // sigue preguntando en vez de cerrar con un perfil inventado
+    expect(asked.length).toBeGreaterThan(1);
+    expect(notified[0]).not.toMatch(/first real workplace scenario/i);
+  });
+
+  it("acepta el valor cuando la extracción estricta sí encuentra el dato", async () => {
+    const llm: LlmGenerate = async (args) => {
+      if (!isTurnCall(args)) {
+        if (args.prompt.includes("Does the following text contain")) return "meetings";
+        return "warmup";
+      }
+      return 'Nice!\nDATA: {"name":"Raul","role":"Dev","techStack":"AWS"}';
+    };
+    const { repo, saved } = makeRepo();
+    const { io } = makeIo(["I want to practice meetings"]);
+
+    const res = await runAgenticOnboarding({ llm, io, repo, maxTurns: 2 });
+
+    expect(res.context.skills).toBe("Meetings");
+    expect(saved.map((s) => s.step)).toContain("skills");
   });
 });
