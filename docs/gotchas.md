@@ -21,6 +21,46 @@ Mecanismo: <el comando que ahora falla si alguien lo repite — o "ninguno ejecu
 
 ---
 
+### GOTCHA: el gate completo no se podía correr en un git worktree
+
+Síntoma: `pnpm gate` dentro de un worktree muere en la primera señal —
+  `Error: ENOTDIR: not a directory, lstat '<worktree>/.git/gate-dirty'` en
+  `scripts/harness-selftest.mjs` — y termina en `GATE ROJO — señales fallidas:
+  self-test del arnés`. Las otras siete señales salen verdes. Se pagó preparando
+  el release v0.2.0: el árbol principal tenía trabajo sin commitear de otra rama,
+  así que el único lugar limpio para verificar era un worktree, y ahí el gate no
+  corría.
+Causa:   el marcador del gate (`gate.marker = .git/gate-dirty`) se resolvía con
+  `path.join(REPO_ROOT, marker)` en cuatro lugares. En un worktree `.git` es un
+  ARCHIVO con una línea `gitdir: …`, no un directorio: escribir debajo es ENOTDIR.
+Regla:   ninguna ruta bajo `.git/` se arma a mano; la resuelve git
+  (`--git-common-dir`), que además devuelve el MISMO directorio para el árbol
+  principal y para cada worktree — un marcador por repo, no uno por árbol.
+Mecanismo: `scripts/gate-marker.mjs` es el único resolvedor (lo usan `gate.sh`,
+  los hooks y el self-test) y `scripts/__tests__/gate-marker.test.ts` monta un
+  worktree real y falla si alguien vuelve a componer la ruta con `path.join`.
+  El self-test suma el caso «el marcador del gate cae en un directorio real».
+
+---
+
+### GOTCHA: la vitrina se publicó sin un archivo y el workflow terminó en verde
+
+Síntoma: `https://raalzate.github.io/emma-desktop/ultima-version.js` devuelve 404
+  y la página se queda sin el bloque de versión, mientras el workflow `pages`
+  figura «success». El HTML publicado sí pedía el script.
+Causa:   el paso de publicación enumeraba los archivos a commitear (index.html,
+  styles.css, img, .nojekyll). Un archivo nuevo dentro de `site/` no entra en esa
+  lista y nada lo nota: publicar de menos no es un error para git.
+Regla:   lo que se publica es el directorio `site/` completo, y el job compara lo
+  publicado contra el origen antes de empujar.
+Mecanismo: `.github/workflows/pages.yml` agrega el directorio entero y corta con
+  `PAGES ROJO` si `find` sobre `site/` no coincide con `git ls-files`;
+  `scripts/__tests__/pages-publica-todo.test.ts` falla si alguien vuelve a
+  enumerar archivos, si desaparece la comparación, o si la página referencia un
+  archivo que no existe.
+
+---
+
 ### GOTCHA: `next dev` moría al recompilar Tailwind — config ESM llamando `require()`
 
 Síntoma: `pnpm electron-dev` muere a los minutos con `ReferenceError: require is not

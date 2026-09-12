@@ -117,6 +117,8 @@ if [ "$MODE" = "fast" ]; then
   exit 0
 fi
 
-MARKER=$(node -p 'JSON.parse(require("fs").readFileSync(".claude/harness.config.json","utf8")).gate.marker || ".git/gate-dirty"' 2>/dev/null)
+# La ruta del marcador la resuelve scripts/gate-marker.mjs: dentro de un git
+# worktree `.git` es un archivo y la ruta literal no existe.
+MARKER=$(node scripts/gate-marker.mjs 2>/dev/null)
 [ -n "$MARKER" ] && rm -f "$MARKER"
 echo "GATE VERDE — entregable."

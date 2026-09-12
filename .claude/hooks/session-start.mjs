@@ -9,7 +9,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { readInput, loadConfig, allow, REPO_ROOT } from "./harness.mjs";
+import { readInput, loadConfig, allow, REPO_ROOT, gateMarkerPath } from "./harness.mjs";
 
 await readInput();
 const config = loadConfig() ?? {};
@@ -36,7 +36,7 @@ if (hooksPath !== ".githooks") {
 }
 
 // Alerta: gate pendiente de una sesión anterior.
-const marker = path.join(REPO_ROOT, config.gate?.marker ?? ".git/gate-dirty");
+const marker = gateMarkerPath(config);
 if (fs.existsSync(marker)) {
   lines.push(`- ⚠️ Gate pendiente de una sesión anterior: corré \`${config.gate?.command ?? "npm run gate"}\`.`);
 }

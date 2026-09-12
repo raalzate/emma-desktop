@@ -25,6 +25,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { resolveGateMarker } from "./gate-marker.mjs";
 
 const REPO_ROOT = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 const abs = (p) => path.join(REPO_ROOT, p);
@@ -350,7 +351,19 @@ if (hookFiles.has("reuse-guard.mjs")) {
 
 // 3e. El hook Stop no deja cerrar con el gate pendiente.
 if (hookFiles.has("gate-stop.mjs") && config.gate?.marker) {
-  const marker = abs(config.gate.marker);
+  // El marcador se resuelve con git, no con path.join: dentro de un worktree
+  // `.git` es un ARCHIVO y escribir `.git/gate-dirty` muere con ENOTDIR — con
+  // eso el gate completo no se podía correr en un worktree (release v0.2.0).
+  const marker = resolveGateMarker(config.gate.marker, REPO_ROOT);
+  const carpetaMarcador = path.dirname(marker);
+  if (fs.existsSync(carpetaMarcador) && fs.statSync(carpetaMarcador).isDirectory()) {
+    ok("el marcador del gate cae en un directorio real (sirve en worktrees)");
+  } else {
+    bad(
+      "el marcador del gate cae en un directorio real",
+      `\`${carpetaMarcador}\` no es un directorio: el gate no puede correr acá`,
+    );
+  }
   const existia = fs.existsSync(marker);
   try {
     fs.mkdirSync(path.dirname(marker), { recursive: true });
