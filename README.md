@@ -4,6 +4,13 @@ Port de **EMMA** (tutora de inglés conversacional para profesionales de TI) des
 Python/Chainlit a una app de escritorio **Electron + Next.js + TypeScript**, con IA
 **local e híbrida**.
 
+## Vitrina
+
+La página pública del proyecto (qué hace EMMA, capturas de la app corriendo y la
+descarga) vive en `site/` y se publica en
+**https://raalzate.github.io/emma-desktop/** con el workflow
+`.github/workflows/pages.yml`.
+
 ## Objetivo
 
 Conservar **el 100% de las funcionalidades** de EMMA, reimplementadas con la misma
