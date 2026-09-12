@@ -4,16 +4,18 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-09-01
+- **Fecha del último gate completo:** 2026-09-12
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** ninguno — v0.1.0 se retiró (dmg roto, gotcha 2026-08-31)
-  y v0.1.1 quedó construida en BORRADOR sin publicar (3 instaladores listos). v0.2.0
-  en curso (milestone «v0.2.0 — Flujo conversacional», issues #106/#119): lección
-  persistida, escena narrada, bucle agéntico sin contradicciones («LLM juzga, código
-  decide») e invariantes de conversación deterministas. Publicar el borrador es gesto
-  del humano.
+- **Último release publicado:** v0.1.0 (retirada de hecho: dmg roto, gotcha 2026-08-31).
+  v0.1.1 quedó en BORRADOR con sus 3 instaladores. El borrador de v0.2.0 construido el
+  2026-09-09 se borró junto con su tag —nunca fue público— para rehacerlo sobre la main
+  que ya trae el icono nuevo. Publicar un borrador sigue siendo gesto del humano.
+- **Vitrina pública:** https://raalzate.github.io/emma-desktop/ — sitio estático en
+  `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
+  botones de descarga apuntan a la última release publicada (la API de GitHub los
+  reescribe con el instalador de cada plataforma; sin red cae a `/releases/latest`).
 
 ## Señales
 
