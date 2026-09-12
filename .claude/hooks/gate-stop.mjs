@@ -7,8 +7,7 @@
  * cuando TODAS las señales salen verdes.
  */
 import fs from "node:fs";
-import path from "node:path";
-import { readInput, loadConfig, deny, allow, REPO_ROOT } from "./harness.mjs";
+import { readInput, loadConfig, deny, allow, gateMarkerPath } from "./harness.mjs";
 
 const input = await readInput();
 const config = loadConfig();
@@ -17,7 +16,7 @@ if (!config) allow();
 // Si el propio hook ya bloqueó una vez y el agente sigue en loop, no insistir.
 if (input?.stop_hook_active) allow();
 
-const marker = path.join(REPO_ROOT, config.gate?.marker ?? ".git/gate-dirty");
+const marker = gateMarkerPath(config);
 if (!fs.existsSync(marker)) allow();
 
 deny(

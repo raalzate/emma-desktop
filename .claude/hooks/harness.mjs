@@ -14,6 +14,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** Raíz del repo: dos niveles arriba de .claude/hooks/ (fileURLToPath: rutas con espacios). */
+import { resolveGateMarker } from "../../scripts/gate-marker.mjs";
+
 export const REPO_ROOT = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
 export const CONFIG_PATH = path.join(REPO_ROOT, ".claude", "harness.config.json");
@@ -88,11 +90,20 @@ export function underAny(relPath, prefixes) {
   return (prefixes ?? []).some((p) => relPath === p || relPath.startsWith(p.endsWith("/") ? p : `${p}/`));
 }
 
+/**
+ * Ruta absoluta del marcador del gate. Pasa por `scripts/gate-marker.mjs` porque
+ * dentro de un git worktree `.git` es un archivo, no un directorio: resolverlo a
+ * mano rompe con ENOTDIR (ver el gotcha del release v0.2.0).
+ */
+export function gateMarkerPath(config) {
+  return resolveGateMarker(config?.gate?.marker, REPO_ROOT);
+}
+
 /** Marca que hay código editado sin gate verde (lo lee el hook Stop). */
 export function markGateDirty(config) {
   const marker = config?.gate?.marker;
   if (!marker) return;
-  const abs = path.join(REPO_ROOT, marker);
+  const abs = gateMarkerPath(config);
   try {
     fs.mkdirSync(path.dirname(abs), { recursive: true });
     fs.writeFileSync(abs, new Date().toISOString());

@@ -54,5 +54,17 @@ jobs:
           # él sin que nada fallara. Acá el directorio es lo que se acaba de
           # copiar de `site/`, nada más.
           git add --all -- .
-          git commit -m "chore(pages): publica site/ desde ${GITHUB_SHA::7}" || exit 0
+          git commit -m "chore(pages): publica site/ desde ${GITHUB_SHA::7}" || true
+
+          # El freno: lo publicado tiene que ser EXACTAMENTE el contenido de
+          # site/. Sin esta comparación, publicar de menos termina en verde y el
+          # 404 lo descubre un visitante (pasó con `ultima-version.js`).
+          origen=$(cd "$GITHUB_WORKSPACE/site" && find . -type f | sort)
+          publicado=$(git ls-files | grep -v '^\.nojekyll$' | sed 's|^|./|' | sort)
+          if [ "$origen" != "$publicado" ]; then
+            echo "PAGES ROJO — lo publicado no coincide con site/:"
+            diff <(echo "$origen") <(echo "$publicado") || true
+            exit 1
+          fi
+
           git push origin gh-pages
