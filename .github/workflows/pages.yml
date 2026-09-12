@@ -49,6 +49,10 @@ jobs:
           # .nojekyll: sin él, GitHub Pages pasa el sitio por Jekyll y descarta
           # las rutas que empiezan con guion bajo.
           touch .nojekyll
-          git add index.html styles.css img .nojekyll
+          # Todo el directorio, no una lista de nombres: enumerarlos dejó fuera
+          # `ultima-version.js` el día que se agregó, y la página se publicó sin
+          # él sin que nada fallara. Acá el directorio es lo que se acaba de
+          # copiar de `site/`, nada más.
+          git add --all -- .
           git commit -m "chore(pages): publica site/ desde ${GITHUB_SHA::7}" || exit 0
           git push origin gh-pages
