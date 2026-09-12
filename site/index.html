@@ -19,7 +19,7 @@
 
 <header class="barra">
   <div class="envoltura">
-    <a class="marca" href="#">emma<span>.</span></a>
+    <a class="marca" href="#"><img src="img/icon.png" alt="" width="32" height="32" />emma<span>.</span></a>
     <nav>
       <a href="#como-funciona">Cómo funciona</a>
       <a href="#la-app">La app por dentro</a>
@@ -34,7 +34,7 @@
 <section class="portada">
   <div class="envoltura portada-rejilla">
     <div>
-      <p class="sello"><i class="punto"></i> Beta pública · macOS, Windows y Linux</p>
+      <p class="sello"><i class="punto"></i> <span data-version-sello>Beta pública · macOS, Windows y Linux</span></p>
       <h1>Hablás inglés todos los días en el trabajo. Practicalo igual.</h1>
       <p class="entradilla">
         EMMA te pone en una escena de trabajo —una daily, un code review, una entrevista—
@@ -233,22 +233,25 @@
       Los instaladores de las tres plataformas viven en la página de releases del proyecto.
     </p>
     <div class="plataformas">
-      <article class="plataforma">
+      <article class="plataforma" data-so="mac">
         <h3>macOS</h3>
         <p>Imagen .dmg para Apple Silicon.</p>
         <a class="boton boton-primario" href="https://github.com/raalzate/emma-desktop/releases/latest">Ir a la descarga</a>
       </article>
-      <article class="plataforma">
+      <article class="plataforma" data-so="win">
         <h3>Windows</h3>
         <p>Instalador .exe de 64 bits.</p>
         <a class="boton boton-primario" href="https://github.com/raalzate/emma-desktop/releases/latest">Ir a la descarga</a>
       </article>
-      <article class="plataforma">
+      <article class="plataforma" data-so="linux">
         <h3>Linux</h3>
         <p>AppImage portable.</p>
         <a class="boton boton-primario" href="https://github.com/raalzate/emma-desktop/releases/latest">Ir a la descarga</a>
       </article>
     </div>
+    <p class="version" data-version-linea>
+      Los botones llevan a la última versión publicada.
+    </p>
     <p class="requisitos">
       Al abrirla por primera vez, EMMA descarga el modelo local (entre 2 y 3 GB). Necesitás una
       GPU con WebGPU y unos 8 GB de RAM para el modelo liviano, 16 GB para el recomendado.
@@ -273,6 +276,8 @@
     </nav>
   </div>
 </footer>
+
+<script src="ultima-version.js"></script>
 
 </body>
 </html>
