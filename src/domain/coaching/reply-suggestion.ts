@@ -18,7 +18,7 @@ export interface ReplySuggestion {
   levelHint: LevelHint;
 }
 
-// El system prompt se preserva VERBATIM del original Python (no traducir).
+// El system prompt va en inglés y no se traduce: está afinado contra el modelo.
 export const SUGGEST_REPLIES_SYSTEM_PROMPT =
   "You are a language coach inside a workplace English simulator. " +
   "Given the agent's last message, the agent's role, the user's CEFR level and the " +
@@ -42,8 +42,8 @@ export const SUGGEST_REPLIES_ANSWER_RULES =
   "(a task, a ticket, a date). Never echo the agent's wording back and never " +
   "produce the agent's own questions as suggestions.";
 
-// Apéndice adicional (NO forma parte del prompt verbatim de Python): se
-// concatena al system SOLO cuando el aprendiz ya tiene un borrador en el
+// Apéndice adicional (NO forma parte del system base): se concatena
+// SOLO cuando el aprendiz ya tiene un borrador en el
 // composer, para que las 3 sugerencias respeten su intención en vez de
 // ignorarla (ver FR-004..006 de specs/002-chat-experience/spec.md).
 export const SUGGEST_REPLIES_WITH_DRAFT_APPENDIX =

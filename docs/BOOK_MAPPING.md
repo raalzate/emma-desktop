@@ -91,8 +91,8 @@ sus retos los criterios de cierre.
 `src/lib/situations-data-curriculum.ts`): `system_walkthrough`, `tech_comparison`,
 `documentation_workshop`, `meeting_recap`, `multi_team_sync`, `slack_thread`,
 `salary_negotiation`. Nota: `slack_thread` y `multi_team_sync` eran
-referenciados por `domain/goals/goal-context.ts` sin existir (legado Python) —
-crearlos reparó esa inconsistencia.
+referenciados por `domain/goals/goal-context.ts` sin existir — crearlos reparó
+esa inconsistencia.
 
 La unidad activa se resuelve por sesión con
 `domain/curriculum/unit-catalog.ts` (`unitForSession`) y se inyecta al system

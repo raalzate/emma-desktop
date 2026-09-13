@@ -1,7 +1,6 @@
 /**
- * Plantillas de preguntas del onboarding — versión primaria y de reintento
- * (portado VERBATIM de onboarding_prompts_data.py). Los textos en inglés se
- * preservan tal cual para no alterar el tono del coach.
+ * Plantillas de preguntas del onboarding — versión primaria y de reintento.
+ * Los textos van en inglés: son la voz de Emma, no andamiaje de UI.
  */
 
 /** Contexto de campos ya recogidos (claves = nombres de paso, snake_case). */
@@ -10,7 +9,7 @@ export type QuestionContext = Record<string, string | number | undefined>;
 type Template = (ctx: QuestionContext) => string;
 export type TemplatePair = readonly [primary: Template, retry: Template];
 
-// ctx.get(key, default) de Python: valor si existe, si no el fallback.
+// Valor del contexto si existe y no está vacío; si no, el fallback.
 function get(ctx: QuestionContext, key: string, fallback: string): string {
   const value = ctx[key];
   return value === undefined || value === null || value === "" ? fallback : String(value);

@@ -1,8 +1,7 @@
 /**
- * Genera el saludo personalizado (portado de welcome_use_case.py + welcome_graph.py,
- * sin LangGraph). El pipeline original hacía prompt → LLM → TTS → persistir; aquí
- * la porción portada es la generación del texto (2-3 frases). El LLM SOLO se
- * invoca vía el puerto inyectado `LlmGenerate`.
+ * Genera el saludo personalizado: 2-3 frases construidas desde el perfil. El
+ * LLM SOLO se invoca vía el puerto inyectado `LlmGenerate`; la voz y la
+ * persistencia son de quien llama.
  */
 
 import type { LlmGenerate } from "@/domain/ai/llm-port";

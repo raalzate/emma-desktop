@@ -1,5 +1,5 @@
 /**
- * Presupuestos de tokens por tipo de generación de IA (portado de src/config/ai_config.py).
+ * Presupuestos de tokens por tipo de generación de IA.
  *
  * EMMA descompone las generaciones complejas en cadenas de llamadas focalizadas;
  * cada paso tiene su propio tope. La ventana total del modelo local se configura

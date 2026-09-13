@@ -1,8 +1,7 @@
 /**
- * Caso de uso de transcripción con guarda de duración (port de
- * transcribe_audio_use_case.py). El ASR llega inyectado como el puerto
- * Transcribe; si el audio es demasiado corto o la transcripción falla, se
- * devuelve un resultado vacío (degradación silenciosa).
+ * Caso de uso de transcripción con guarda de duración. El ASR llega inyectado
+ * como el puerto Transcribe; si el audio es demasiado corto o la transcripción
+ * falla, se devuelve un resultado vacío (degradación silenciosa).
  */
 
 import { TranscriptionResult } from "@/domain/audio/audio-session";

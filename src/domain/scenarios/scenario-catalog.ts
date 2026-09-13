@@ -1,9 +1,9 @@
 /**
  * Acceso al catálogo de escenarios: búsqueda por tipo y filtrado por nivel CEFR.
  *
- * El "why": replica `spec_for` y la query `cefr_levels LIKE '%level%'` del
- * ScenarioRepository Python. Como los rangos son contiguos, "incluye el nivel"
- * equivale a que el índice del nivel caiga entre el mínimo y el máximo del rango.
+ * El "why": cada escenario declara un RANGO de niveles, no una lista. Como los
+ * rangos son contiguos, "incluye el nivel" equivale a que el índice del nivel
+ * caiga entre el mínimo y el máximo del rango — sin recorrer la escalera.
  */
 
 import { CEFR_LADDER, type CefrLevel } from "@/domain/cefr/cefr-ladder";

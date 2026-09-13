@@ -1,5 +1,5 @@
 /**
- * Perfil del aprendiz (portado de la tabla `user_context`).
+ * Perfil del aprendiz: el contexto con el que se personaliza toda la práctica.
  *
  * Se recoge en el onboarding conversacional (name → age → role → years_in_role →
  * tech_stack → skills). El nivel de inglés NO se pregunta: arranca en A1 y sube

@@ -64,7 +64,7 @@ describe("onboarding-state — getNextStep", () => {
     expect(getNextStep("skills")).toBeNull();
   });
 
-  it("reinicia desde el principio ante un paso desconocido (paridad con el .py)", () => {
+  it("reinicia desde el principio ante un paso desconocido", () => {
     // @ts-expect-error — probamos entrada inválida a propósito
     expect(getNextStep("nonexistent")).toBe("name");
   });

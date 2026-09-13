@@ -1,7 +1,6 @@
 /**
- * Selección de voz TTS a partir del nivel CEFR y el género
- * (portado VERBATIM de voice_config.py). Los identificadores EdgeTTS se
- * preservan tal cual.
+ * Selección de voz TTS a partir del nivel CEFR y el género. Los identificadores
+ * son los de EdgeTTS y se escriben tal cual: cualquier cambio los rompe.
  */
 
 const DEFAULT_VOICE = "en-US-EmmaNeural";

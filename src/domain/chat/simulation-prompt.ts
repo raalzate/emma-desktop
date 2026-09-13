@@ -1,10 +1,9 @@
 /**
- * Ensambla el prompt de sistema de la simulación (portado de
- * src/domain/chat/simulation_prompt.py → build_simulation_prompt).
+ * Ensambla el prompt de sistema de la simulación.
  *
- * Mismo orden de secciones y mismo texto verbatim que el original. La API nueva
- * recibe objetos de dominio tipados (Scenario/SituationVariant/UserProfile) en
- * vez de dicts sueltos; el mapeo se documenta en cada sección.
+ * El orden de las secciones es parte del contrato con el modelo local pequeño:
+ * recibe objetos de dominio tipados (Scenario/SituationVariant/UserProfile) y
+ * el mapeo a texto se documenta en cada sección.
  */
 
 import type { CefrLevel } from "@/domain/cefr/cefr-ladder";

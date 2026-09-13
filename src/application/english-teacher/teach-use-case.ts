@@ -90,7 +90,8 @@ async function runChain(
     const sections = await generateSections(llm, request, onProgress);
     return successResult(request, sections, start);
   } catch {
-    // Una llamada de sección falló → resultado de error (igual que el servicio Python).
+    // Una llamada de sección falló → resultado de error: la lección se muestra
+    // incompleta antes que romper la pantalla.
     return errorResult(request, start);
   }
 }

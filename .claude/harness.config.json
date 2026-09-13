@@ -41,7 +41,7 @@
       {
         "name": "tests (vitest)",
         "command": ["pnpm", "test"],
-        "why": "comportamiento del dominio y la aplicación; paridad con EMMA Python"
+        "why": "el comportamiento del dominio y la aplicación vive fijado acá: si cambia sin querer, esta señal es la única que lo nota"
       },
       {
         "name": "build de producción",

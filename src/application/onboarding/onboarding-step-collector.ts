@@ -1,6 +1,5 @@
 /**
- * Colector de un paso del onboarding con reintento, skip y comprehend por LLM
- * (portado de onboarding_step_collector.py).
+ * Colector de un paso del onboarding con reintento, skip y comprehend por LLM.
  *
  * Dos intentos: el intento 0 ofrece guía y vuelve a preguntar; el 1 es final.
  * `skip` en un paso saltable marca el paso; en `name` (crítico) re-pregunta.

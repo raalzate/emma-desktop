@@ -4,7 +4,7 @@
  * Cada llamada de sección devuelve texto suelto y con deriva de formato (el
  * modelo local pone las claves en negrita, omite prefijos, se salta el separador
  * `::`). Estos parsers son deliberadamente tolerantes; el renderizado vive en
- * teaching-markdown.ts. Reflejan la leniencia del original en Python 1:1.
+ * teaching-markdown.ts.
  */
 
 import type {
@@ -31,7 +31,7 @@ const BOLD_HEADER = /^(?:\*{1,2}\s*(.+?)\s*\*{1,2}|#{1,4}\s+(.+))$/;
 const STRUCTURE_HEADER = /^structure\s*\d*\s*:\s*(.+)$/i;
 const NON_LABELS = ["PATTERN", "EXAMPLE", "WHY", "STRUCTURE", "TIP", "PHRASE"];
 
-// splitlines() de Python: rompe en \r\n, \r y \n.
+// Rompe en \r\n, \r y \n: el modelo mezcla finales de línea.
 const splitLines = (raw: string): string[] => raw.split(/\r\n|\r|\n/);
 const stripEnds = (s: string, chars: RegExp): string => s.replace(chars, "");
 const startsWithAny = (s: string, prefixes: string[]): boolean =>

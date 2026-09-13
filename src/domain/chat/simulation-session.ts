@@ -1,7 +1,6 @@
 /**
- * Objetos de valor de la sesión de simulación (portado de
- * src/domain/chat/simulation_session.py): contador de turnos, búfer de errores
- * silenciosos e historial de chat con tope. Puro: helpers inmutables que
+ * Objetos de valor de la sesión de simulación: contador de turnos, búfer de
+ * errores silenciosos e historial de chat con tope. Puro: helpers inmutables que
  * devuelven una sesión nueva (sin mutar la de entrada).
  */
 

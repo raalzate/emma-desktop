@@ -5,14 +5,15 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
 - **Fecha del último gate completo:** 2026-09-13
-- **Rama:** `fix/onboarding-extraccion-bucle` (rebasada sobre `main`, pendiente de fusionar)
+- **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.2.0 (2026-09-12, marcada Latest). v0.1.0 quedó
-  retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1 sigue en BORRADOR con sus 3
-  instaladores. v0.2.1 en curso (milestone «v0.2.1 — Correcciones de onboarding y chat»,
-  issues #154/#159/#160/#161): el onboarding deja de repreguntar en bucle y la escena
-  deja de responder con amnesia. Publicar un borrador sigue siendo gesto del humano.
+- **Último release publicado:** v0.2.1 (2026-09-13, marcada Latest): el onboarding deja de
+  repreguntar en bucle, la escena reformula en vez de responder con amnesia, karaoke por
+  palabra y fantasma del typeahead visible (milestone «v0.2.1 — Correcciones de onboarding
+  y chat», issues #154/#159/#160/#161). v0.1.0 quedó retirada de hecho (dmg roto, gotcha
+  2026-08-31) y v0.1.1 sigue en BORRADOR con sus 3 instaladores. Publicar un borrador sigue
+  siendo gesto del humano.
 - **Vitrina pública:** https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
   botones de descarga apuntan a la última release publicada (la API de GitHub los

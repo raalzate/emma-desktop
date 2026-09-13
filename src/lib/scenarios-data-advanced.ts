@@ -1,7 +1,7 @@
 import type { Scenario } from "@/domain/scenarios/scenario";
 
 // 15 escenarios avanzados (B2 -> C1): reviews, liderazgo, hiring.
-// roleSystemPrompt copiado verbatim del seed Python (ajustado al LLM local pequeno).
+// roleSystemPrompt afinado contra el LLM local pequeno: no reescribir a la ligera.
 export const SCENARIOS_ADVANCED: Scenario[] = [
   {
     scenarioType: "retrospective",

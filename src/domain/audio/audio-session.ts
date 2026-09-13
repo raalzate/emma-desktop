@@ -2,8 +2,7 @@
  * Value objects de captura de audio: detección de silencio por energía RMS y
  * acumulación de chunks. Dominio puro — opera sobre muestras PCM (int16 en
  * number[]) y dBFS, sin Web APIs (getUserMedia/AudioContext viven en el
- * renderer). Port de audio_session.py + audio_signal.py + la lógica de silencio
- * de interface/audio_handler.py.
+ * renderer).
  */
 
 import {

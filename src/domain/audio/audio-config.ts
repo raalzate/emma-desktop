@@ -1,6 +1,5 @@
 /**
- * Umbrales de captura de audio (port de config/audio_config.py).
- * Dominio puro: números crudos, sin Web APIs.
+ * Umbrales de captura de audio. Dominio puro: números crudos, sin Web APIs.
  */
 
 /** Por debajo de -40 dBFS se considera silencio. */
