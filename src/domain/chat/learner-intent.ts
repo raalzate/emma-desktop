@@ -36,8 +36,16 @@ const GREETING_ONLY_TAIL =
 const META_MARKERS: RegExp[] = [
   /\bwhat (?:does|do) .{0,40}\bmean\b/i,
   /\bhow (?:do|would) (?:i|you) say\b/i,
-  /\bcan you (?:repeat|say that again|speak slower|explain that)\b/i,
+  // Pedido de reparación: "can/could/would you repeat|rephrase|clarify…". Se
+  // exige el pronombre en "explain it/that" a propósito: "can you explain the
+  // ticket?" es trabajo real de la escena, no un problema de idioma.
+  /\b(?:can|could|would|will)\s+you\s+(?:please\s+)?(?:repeat|rephrase|clarify|speak\s+slower|slow\s+down|say\s+that\s+again)\b/i,
+  /\b(?:can|could|would|will)\s+you\s+(?:please\s+)?explain\s+(?:it|that|this)\b/i,
   /\b(?:say|repeat) that again\b/i,
+  /\bwhat do you mean\b/i,
+  /\bone more time\b/i,
+  /\bi'?m lost\b/i,
+  /\b(?:i )?did\s?n[o']?t\s+(?:catch|get|hear|understand)\s+(?:that|it|you)\b/i,
   /\bi don'?t (?:understand|get it)\s*[.!?]?$/i,
   /\bi don'?t know (?:what|how) to (?:say|answer|write|reply)\b/i,
   /\bwhat should i (?:say|answer|write|reply)\b/i,
