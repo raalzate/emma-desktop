@@ -20,6 +20,10 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useKaraoke } from "./use-karaoke";
+import {
+  sentenceWordTokens,
+  type SentenceSpan,
+} from "@/domain/chat/transcript-sentences";
 import { formatTime } from "./chat-time";
 import type { VoiceGender } from "@/domain/chat-settings/chat-settings";
 import type { Protopersona } from "@/domain/personas/protopersona";
@@ -47,20 +51,24 @@ function Avatar({ name }: { name?: string }) {
   );
 }
 
-// Transcripción por ORACIONES: la activa se resalta como bloque y cada oración
-// con audio es clicable para repetirla (FR-010/011). Las sin audio (solo
-// símbolos) se muestran pero no reaccionan al clic.
+// Transcripción por ORACIONES con karaoke por PALABRA: la oración activa se
+// resalta como bloque (contexto) y la palabra que suena con contraste real —
+// el fondo suave por sí solo no se percibía en mensajes de una o dos oraciones.
+// Cada oración con audio es clicable para repetirla (FR-010/011); las sin audio
+// (solo símbolos) se muestran pero no reaccionan al clic.
 function Transcript({
   sentences,
   active,
+  activeWord,
   onPick,
 }: {
-  sentences: { text: string; wordCount: number }[];
+  sentences: SentenceSpan[];
   active: number;
+  activeWord: number;
   onPick: (i: number) => void;
 }) {
   return (
-    <p className="mt-2 text-sm leading-relaxed">
+    <p className="mt-2 text-[15px] leading-relaxed">
       {sentences.map((s, i) => {
         const clickable = s.wordCount > 0;
         return (
@@ -77,7 +85,19 @@ function Transcript({
               i === active && "bg-primary-soft text-primary-deep",
             )}
           >
-            {s.text}{" "}
+            {sentenceWordTokens(s).map((w, j) => (
+              <span
+                key={j}
+                className={cn(
+                  "rounded px-0.5 transition-colors",
+                  w.wordIndex !== null &&
+                    w.wordIndex === activeWord &&
+                    "bg-primary font-semibold text-primary-foreground",
+                )}
+              >
+                {w.text}{" "}
+              </span>
+            ))}
           </span>
         );
       })}
@@ -119,6 +139,7 @@ export function EmmaBubble({ text, at, gender, persona, onTeach, onTranslate }: 
           <Transcript
             sentences={k.sentences}
             active={k.activeSentence}
+            activeWord={k.activeWord}
             onPick={(i) => {
               setOpen(true);
               k.playSentence(i);

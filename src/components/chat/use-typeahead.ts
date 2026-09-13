@@ -59,7 +59,9 @@ export function useTypeahead(
     // `stale` invalida la respuesta si el efecto se rehace (texto nuevo, envío…).
     let stale = false;
     const id = setTimeout(async () => {
-      const suffix = await runtime.complete(context, text);
+      // Sin este catch, un fallo del LLM (sin red, motor ocupado) dejaba una
+      // promesa rechazada sin manejar y el fantasma no aparecía nunca más.
+      const suffix = await runtime.complete(context, text).catch(() => "");
       if (stale) return;
       // A partir de B1 solo se muestra una pista: la frase la produce el aprendiz.
       setGhost(hintForLevel(joinSuffix(text, suffix), level));

@@ -78,13 +78,13 @@ export function Composer({ onSend, busy, context, sceneContext, level, scenarioT
           <div className="relative flex-1 rounded-[14px] border border-border bg-card">
             {/*
               El overlay debe calcar la caja del textarea (mismo padding y el
-              mismo salto tipográfico `text-base md:text-sm`): con un tamaño
+              mismo salto tipográfico `text-base md:text-[15px]`): con un tamaño
               fijo, el fantasma se desalineaba del texto bajo el breakpoint md.
               El borde vive en el contenedor; textarea y overlay van sin borde.
             */}
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-0 whitespace-pre-wrap break-words px-3 py-2 text-base text-muted md:text-sm"
+              className="pointer-events-none absolute inset-0 whitespace-pre-wrap break-words px-3 py-2 text-base text-muted-foreground/60 md:text-[15px]"
             >
               <span className="invisible">{text}</span>
               {ghost}
@@ -119,9 +119,12 @@ export function Composer({ onSend, busy, context, sceneContext, level, scenarioT
             <Send />
           </Button>
         </div>
-        {/* Línea persistente (FR-021): atajos + recordatorio de inmersión, en mono. */}
+        {/* Línea persistente (FR-021): atajos + recordatorio de inmersión, en
+            mono. El segmento de TAB es el único condicional: anunciar un atajo
+            que no hace nada es lo que dejaba al aprendiz sin saber qué era TAB. */}
         <p className="mt-2 font-code text-[11px] tracking-wide text-muted-foreground">
-          TAB acepta la sugerencia · ENTER envía · La conversación es solo en inglés
+          {ghost && "TAB acepta la sugerencia · "}
+          ENTER envía · La conversación es solo en inglés
         </p>
       </div>
     </div>
