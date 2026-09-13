@@ -2,7 +2,6 @@
 
 Tutora de inglés conversacional local-first. **Electron + Next.js 15 + React 18 +
 TypeScript 5**, IA local (Gemma/LiteRT-LM WebGPU) e híbrida (nube opcional).
-Puerto del proyecto Python/Chainlit conservando el 100% de las funcionalidades.
 
 Documentos de referencia:
 - Arquitectura y capas → `docs/ARCHITECTURE.md`
@@ -116,8 +115,8 @@ mantiene el dominio testeable sin IO. Ver `teach-use-case.ts` como ejemplo canó
 5. **Funciones pequeñas y puras** — una responsabilidad; extrae helpers privados.
    Guard clauses temprano en lugar de anidar.
 6. **Tipado estricto** — sin `any`. `typecheck` debe pasar (`pnpm typecheck`).
-7. **Paridad de funcionalidad** — este port conserva el 100% del comportamiento
-   de EMMA (Python). Al cambiar lógica de negocio, verifica paridad.
+7. **Comportamiento estable** — lo que ya vive en pruebas es el contrato. Al
+   cambiar lógica de negocio, actualiza la prueba que lo fija y dilo en el commit.
 8. **Inmersión 100% + andamiaje en español** — la conversación de práctica es
    solo en inglés (EMMA nunca cambia de idioma); tooltips, botones, ayudas y
    mensajes de sistema de la UI van en español. Ver Artículo 9 de la constitución.

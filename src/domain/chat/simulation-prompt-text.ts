@@ -1,6 +1,5 @@
 /**
- * Texto VERBATIM del prompt de simulación (portado de src/domain/chat/simulation_prompt.py
- * y src/interface/simulation_kickoff.py). Aislado aquí para que el ensamblador
+ * Texto del prompt de simulación. Aislado aquí para que el ensamblador
  * (simulation-prompt.ts) respete el límite de 150 líneas. NO reescribir estas
  * cadenas: son directivas afinadas contra el modelo local pequeño.
  */

@@ -1,8 +1,7 @@
 # EMMA Desktop
 
-Port de **EMMA** (tutora de inglés conversacional para profesionales de TI) desde
-Python/Chainlit a una app de escritorio **Electron + Next.js + TypeScript**, con IA
-**local e híbrida**.
+**EMMA** es una tutora de inglés conversacional para profesionales de TI: una app
+de escritorio **Electron + Next.js + TypeScript** con IA **local e híbrida**.
 
 ## Vitrina
 
@@ -24,8 +23,8 @@ patrón de escalado de IA (router local/remoto).
   bajo `app://` en producción y por el dev-server en desarrollo.
 - **React 18 + TypeScript 5 + Tailwind 3 + shadcn/Radix** — componentes.
 - **IA local: Gemma 4 (`.litertlm`) vía `@litert-lm/core` en el renderer (WebGPU)** —
-  reemplaza a `llama-cpp-python`. Modelos descargados a `userData/models/litert`,
-  servidos por el protocolo `litert-model://`.
+  modelos descargados a `userData/models/litert`, servidos por el protocolo
+  `litert-model://`.
 - **IA remota (híbrida, opcional): Gemini / OpenAI / Anthropic** — llaves cifradas
   con `safeStorage` en el proceso main; llamadas por `fetch` (sin SDKs).
 - **STT: Whisper vía `@huggingface/transformers`** en el renderer (reemplaza a
@@ -45,9 +44,9 @@ patrón de escalado de IA (router local/remoto).
 El dominio depende SOLO del puerto `LlmGenerate` (`src/domain/ai/llm-port.ts`); el
 adaptador `src/lib/ai/llm-adapter.ts` lo implementa sobre el router.
 
-## Mapa de funcionalidades (paridad con EMMA)
+## Mapa de funcionalidades
 
-| Funcionalidad EMMA | Módulo en emma-desktop |
+| Funcionalidad | Módulo en emma-desktop |
 |---|---|
 | Onboarding conversacional (6 pasos) | `domain/onboarding`, `application/onboarding` |
 | Conversación por turnos con Emma (inmersión) | `domain/chat`, `application/chat` |

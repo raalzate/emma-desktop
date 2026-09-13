@@ -5,7 +5,7 @@
  * en blanco de más entre frase y traducción.
  */
 
-// System prompt preservado VERBATIM del original Python (no traducir).
+// System prompt en inglés: no se traduce, el formato de salida depende de él.
 export const SYSTEM_PROMPT =
   "You are a professional translator. " +
   "Translate the user's text into the requested language sentence by sentence. " +

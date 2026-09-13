@@ -1,9 +1,9 @@
 /**
- * Constructor del prompt del saludo personalizado (portado VERBATIM de
- * prompt_builder.py). El prompt en inglés se preserva tal cual.
+ * Constructor del prompt del saludo personalizado. El prompt va en inglés y no
+ * se traduce: es la voz de Emma, no andamiaje de UI.
  *
- * En el .py el prompt se poblaba desde UserWelcomeContext; aquí se toma directo
- * del UserProfile. `goals` (learning goals) se deriva de `skills`.
+ * Se puebla directo del UserProfile; `goals` (learning goals) se deriva de
+ * `skills`.
  */
 
 import type { UserProfile } from "@/domain/profile/user-profile";

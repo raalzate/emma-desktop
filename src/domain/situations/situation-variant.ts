@@ -8,7 +8,7 @@
 
 import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
 
-// Tono/urgencia de la variante (enum StrEnum en Python → unión de literales aquí).
+// Tono/urgencia de la variante, como unión de literales (sin enum: se serializa).
 export type SituationCharacter = "incident" | "onboarding" | "routine" | "conflict";
 
 export const SITUATION_CHARACTERS = ["incident", "onboarding", "routine", "conflict"] as const;

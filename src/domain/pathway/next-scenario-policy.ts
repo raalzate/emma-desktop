@@ -71,8 +71,8 @@ function reasonFor(
 /**
  * Elige el item pendiente de mayor score; el orden de catálogo rompe empates.
  *
- * Determinista: se conserva el primer elemento maximal (orden de catálogo) para
- * scores iguales, igual que el `max` de Python.
+ * Determinista: para scores iguales se conserva el primer elemento maximal
+ * (orden de catálogo), así la recomendación no baila entre ejecuciones.
  *
  * `currentWeek` es opcional y retrocompatible: si se pasa, da un boost (+2) a
  * los escenarios que ejercitan la(s) unidad(es) del plan de 24 semanas

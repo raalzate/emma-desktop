@@ -1,7 +1,13 @@
 # Arquitectura — EMMA Desktop
 
 Arquitectura **por capas + hexagonal (puertos y adaptadores)**. Objetivo:
-dominio testeable sin IO, IA intercambiable (local/nube), paridad con EMMA (Python).
+dominio testeable sin IO, IA intercambiable (local/nube) y comportamiento
+estable fijado por pruebas.
+
+> EMMA Desktop nació como reescritura de un prototipo anterior de la misma
+> tutora. Ese prototipo no forma parte de este repo y no está disponible para
+> contrastar nada: el comportamiento vigente es el que fijan las pruebas de
+> `pnpm test`, no el recuerdo de aquella versión.
 
 ## Regla de dependencias
 

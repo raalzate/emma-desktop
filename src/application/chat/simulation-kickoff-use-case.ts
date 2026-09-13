@@ -1,10 +1,9 @@
 /**
- * Caso de uso: apertura de la simulación (portado de
- * src/interface/simulation_kickoff.py → kickoff_simulation).
+ * Caso de uso: apertura de la simulación.
  *
  * Envía la señal de escena para que EMMA hable primero, en su rol, sin que el
  * usuario tenga que iniciar. Reutiliza runChatTurn (mismo tope de 60s + streaming)
- * con historial vacío. Devuelve el texto recortado (el original hace .strip()).
+ * con historial vacío.
  */
 
 import { kickoffCue } from "@/domain/chat/simulation-prompt-text";

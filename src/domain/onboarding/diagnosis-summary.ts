@@ -1,6 +1,6 @@
 /**
  * Agrega las notas de error del onboarding en un diagnóstico amable para el
- * aprendiz (portado de diagnosis_summary.py, FR-009/010). Determinista.
+ * aprendiz (FR-009/010). Determinista.
  */
 
 export const DISPLAY_CAP = 3;

@@ -1,6 +1,6 @@
 /**
- * Constructores de prompts para la extracción de valores del onboarding
- * (portado VERBATIM de comprehend_prompts.py).
+ * Constructores de prompts para la extracción de valores del onboarding.
+ * Los textos van en inglés y no se traducen: son directivas para el modelo.
  */
 
 import type { StepExtractionSchema } from "@/domain/onboarding/step-extraction-schema";

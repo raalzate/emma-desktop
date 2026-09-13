@@ -1,9 +1,9 @@
 /**
  * Selector de situación — política de compatibilidad pura.
  *
- * El "why": replica SituationSelector.filter_by_compat del origen Python:
+ * El "why": una variante es compatible cuando
  *   nivel ∈ v.cefrLevels  AND  (v.stackHints vacío  OR  v.stackHints ∩ {stack} ≠ ∅)
- * sumando "no retirada" y "no excluida". Como aquí `stack` es un único tag, la
+ * sumando "no retirada" y "no excluida". Como `stack` es un único tag, la
  * intersección de conjuntos se reduce a `stackHints.includes(stack)`.
  * Se elige la primera coincidencia (o null si el pool queda vacío).
  */

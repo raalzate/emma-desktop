@@ -92,7 +92,7 @@ function checkPurity(relPath, content) {
     if (!layer.dir || !underDir(relPath, layer.dir)) continue;
     if ((layer.except ?? []).includes(relPath)) continue;
     for (const mod of layer.forbiddenImports ?? []) {
-      // import ... from "mod"  ·  require("mod")  ·  import "mod"  ·  from mod import (python)
+      // import ... from "mod"  ·  require("mod")  ·  import "mod"  ·  import/from mod sin comillas
       const pattern = new RegExp(
         `(from\\s+['"]${escape(mod)}|require\\(\\s*['"]${escape(mod)}|import\\s+['"]${escape(mod)}|^\\s*(import|from)\\s+${escape(mod)}\\b)`,
         "m",

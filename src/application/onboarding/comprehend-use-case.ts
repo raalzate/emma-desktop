@@ -1,6 +1,6 @@
 /**
  * Extracción del valor normalizado de un campo del onboarding a partir de una
- * respuesta en lenguaje natural (portado de comprehend_use_case.py).
+ * respuesta en lenguaje natural.
  *
  * El LLM SOLO se invoca vía el puerto inyectado `LlmGenerate`. La descomposición
  * es deliberada: una llamada corta y focalizada (~50 tokens) por paso.

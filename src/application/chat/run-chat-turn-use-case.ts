@@ -1,16 +1,12 @@
 /**
- * Caso de uso: un turno de chat de simulación (portado de
- * src/application/chat/chat_use_case.py + chat_graph.py + interface/chat_runner.py).
+ * Caso de uso: un turno de chat de simulación.
  *
- * Se elimina LangGraph: era un único nodo `generate_response` que hacía streaming.
- * Aquí llamamos directamente al puerto LlmGenerate. El puerto sólo acepta un
- * `prompt` único (no un array de mensajes), así que el historial se pliega dentro
- * del prompt como transcripción — aproximación necesaria a los `message_history`
- * del servicio Python (system + historial + usuario).
+ * El puerto `LlmGenerate` sólo acepta un `prompt` único (no un array de
+ * mensajes), así que el historial se pliega dentro del prompt como
+ * transcripción: system + historial + mensaje del aprendiz.
  *
- * Se preserva la degradación con tope de 60s: si el LLM se pasa del presupuesto,
- * devolvemos los tokens parciales ya emitidos o, si no hay ninguno, un mensaje
- * amable (idéntico al original).
+ * Degradación con tope de 60s: si el LLM se pasa del presupuesto, devolvemos
+ * los tokens parciales ya emitidos o, si no hay ninguno, un mensaje amable.
  */
 
 import { LLM_TIMEOUT_SECONDS } from "@/config/session-config";
@@ -26,7 +22,7 @@ import { stripRepeatedOpener } from "@/domain/chat/repetition-guard";
 import { polishChatReply } from "@/domain/chat/chat-brevity";
 import { CHAT_MAX_TOKENS } from "@/domain/shared/token-budgets";
 
-/** Mensaje de degradación cuando el modelo se cuelga (verbatim del original). */
+/** Mensaje de degradación cuando el modelo se cuelga: en personaje, no técnico. */
 const FALLBACK = "EMMA is having trouble responding right now. Please try again.";
 
 /** Tope de brevedad: EMMA responde en simulación con máximo 3 oraciones. */

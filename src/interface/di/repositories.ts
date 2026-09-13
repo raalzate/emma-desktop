@@ -1,5 +1,5 @@
 /**
- * Raíz de composición de repositorios (equivalente a dependencies.py del original).
+ * Raíz de composición de repositorios: el único lugar que conoce los concretos.
  * Construye los adaptadores del almacén JSON y devuelve el bundle inyectable en los
  * casos de uso. `goals` se hidrata async por su puerto síncrono.
  */

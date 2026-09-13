@@ -1,7 +1,6 @@
 /**
  * Motor de estados del onboarding — orquesta el progreso por pasos y escribe en
- * el repositorio de perfil inyectado (portado de
- * onboarding_state_engine_use_case.py, sin LangGraph).
+ * el repositorio de perfil inyectado.
  *
  * El nivel de inglés NO se pregunta: el perfil arranca en A1 (emptyProfile) y
  * sube por escenarios, así que aquí no se asigna ningún nivel.

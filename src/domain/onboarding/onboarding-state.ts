@@ -1,5 +1,5 @@
 /**
- * Máquina de estados del onboarding conversacional (portado de onboarding_state.py).
+ * Máquina de estados del onboarding conversacional.
  *
  * El nivel de inglés NO se pregunta: todos arrancan en A1 y suben por escenarios.
  * Los 6 pasos van en orden fijo; solo `name` es crítico (no se puede saltar).
@@ -41,7 +41,7 @@ export function canSkip(step: OnboardingStep): boolean {
 export function getNextStep(lastCompleted: OnboardingStep | null): OnboardingStep | null {
   if (lastCompleted === null) return ONBOARDING_STEPS[0];
   const idx = ONBOARDING_STEPS.indexOf(lastCompleted);
-  // Paso desconocido → reiniciar desde el principio (paridad con el .py).
+  // Paso desconocido (perfil viejo o dato corrupto) → reiniciar desde el principio.
   if (idx === -1) return ONBOARDING_STEPS[0];
   const nextIdx = idx + 1;
   return nextIdx < ONBOARDING_STEPS.length ? ONBOARDING_STEPS[nextIdx] : null;

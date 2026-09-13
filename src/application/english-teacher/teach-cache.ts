@@ -1,5 +1,5 @@
 /**
- * Caché en memoria de resultados de enseñanza (reemplaza al dict + SHA de Python).
+ * Caché en memoria de resultados de enseñanza.
  *
  * La clave combina un hash del texto de Emma, el idioma de explicación y un hash
  * del historial reciente — dos entradas con el mismo texto pero distinto contexto
@@ -29,9 +29,9 @@ function cacheKey(request: TeachingRequest): string {
   return `${textDigest}:${request.explainLanguage}:${hashHex(histBlob)}`;
 }
 
-// Hash síncrono (sin Node crypto): FNV-1a de 32 bits en hex. Reemplaza al SHA-256
-// truncado de Python — aquí solo es una clave de caché en memoria, no un digest
-// criptográfico, así que una función determinista y rápida es suficiente.
+// Hash síncrono (sin Node crypto): FNV-1a de 32 bits en hex. Es una clave de
+// caché en memoria, no un digest criptográfico, así que una función
+// determinista y rápida es suficiente.
 function hashHex(input: string): string {
   let h = 0x811c9dc5;
   for (let i = 0; i < input.length; i++) {

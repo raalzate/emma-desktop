@@ -1,6 +1,6 @@
 # Constitución del proyecto — EMMA Desktop
 
-**Versión 1.4.0** · Reglas **no negociables**. Cualquier PR o cambio (humano o agente) debe
+**Versión 1.5.0** · Reglas **no negociables**. Cualquier PR o cambio (humano o agente) debe
 cumplirlas. Versionado por enmiendas. Las convenciones del día a día viven en `CLAUDE.md`;
 el arnés que hace cumplir esto, en `.claude/harness.config.json` y `scripts/`.
 
@@ -59,13 +59,14 @@ Sin `any`. Los contratos públicos llevan tipos explícitos.
 *Mecanismo:* `pnpm typecheck` (app + electron) en el gate + regla ANY de
 `node scripts/repo-lint.mjs` sobre `src/domain` y `src/application`.
 
-## Artículo 6 — Paridad con EMMA · REVIEW
+## Artículo 6 — Comportamiento estable · REVIEW
 
-Este proyecto porta EMMA (Python) conservando el 100% del comportamiento. Cambios de lógica de
-negocio verifican paridad con el comportamiento original.
+El comportamiento que ya vive en pruebas es el contrato: cambiar lógica de negocio sin
+actualizar (o añadir) la prueba que lo fija es romperlo en silencio. Si un cambio altera
+comportamiento a propósito, el commit lo dice y la prueba cambia con él.
 
-*Mecanismo:* las pruebas de `pnpm test` fijan el comportamiento ya portado; la paridad de lo
-nuevo la juzga una persona contra el proyecto Python.
+*Mecanismo:* `pnpm test` en el gate falla si el comportamiento fijado cambia; que la prueba
+nueva describa lo que el usuario percibe lo juzga una persona.
 
 ## Artículo 7 — Spec antes de código · REVIEW
 
@@ -171,3 +172,7 @@ escala con el diagnóstico. Fallar rápido y con causa vale más que degradar en
   en español. Se reformula la línea: **ficción en inglés, producto en español** (issue #106), y
   el artículo gana freno parcial — regla `ESCENA` del lint para el contenido de escena y
   `andamiaje-espanol.test.ts` para que el andamiaje no se traduzca.
+- **v1.5.0** (2026-09-13) — El Artículo 6 exigía «verificar paridad con el proyecto original»,
+  una instrucción que nadie puede ejecutar: ese prototipo no está disponible en este repo ni en
+  la forja. Se reformula como **comportamiento estable**, fijado por las pruebas del gate, y se
+  quitan del código y de los docs las referencias al prototipo previo (issue #163).

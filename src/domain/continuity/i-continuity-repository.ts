@@ -1,10 +1,9 @@
 /**
  * Puertos que necesita el resumen de continuidad, declarados en el dominio para
  * que la aplicación no importe nada de infraestructura (patrón hexagonal).
- * Equivalen al bundle SessionSummaryPorts del original Python.
  */
 
-/** Un paso persistido del hilo Chainlit (mensaje de usuario/IA, etc.). */
+/** Un paso persistido del hilo (mensaje de usuario/IA, etc.). */
 export interface ContinuityThreadStep {
   type?: string;
   [key: string]: unknown;
@@ -18,7 +17,7 @@ export interface ContinuityThread {
   steps?: ContinuityThreadStep[];
 }
 
-/** latest_thread(user_identifier) -> thread o null (capa de datos Chainlit). */
+/** latest_thread(user_identifier) -> thread o null (capa de datos). */
 export type LatestThread = (userIdentifier: unknown) => Promise<ContinuityThread | null>;
 
 /** parse_scenario_type(tags) -> scenario_type o null (convención de tags). */

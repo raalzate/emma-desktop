@@ -54,7 +54,7 @@ describe("buildCompletePartialReplyPrompt", () => {
   });
 });
 
-describe("system prompts (verbatim del original)", () => {
+describe("system prompts (texto fijado: el formato de salida depende de él)", () => {
   it("el prompt de sugerencias pide exactamente 3 continuaciones en JSON", () => {
     expect(SUGGEST_REPLIES_SYSTEM_PROMPT).toContain("exactly 3 short reply continuations");
     expect(SUGGEST_REPLIES_SYSTEM_PROMPT).toContain("JSON array of 3 strings");

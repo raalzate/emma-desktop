@@ -1,7 +1,6 @@
 /**
- * Metadatos de extracción por paso para el comprehend con LLM
- * (portado de step_extraction_schema.py). `description` y `constraints` se usan
- * VERBATIM dentro del prompt de extracción.
+ * Metadatos de extracción por paso para el comprehend con LLM. `description` y
+ * `constraints` se usan VERBATIM dentro del prompt de extracción.
  */
 
 export type ExtractionType = "str" | "int" | "cefr";

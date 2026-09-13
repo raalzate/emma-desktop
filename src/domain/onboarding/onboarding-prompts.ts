@@ -1,6 +1,5 @@
 /**
- * API pública de las preguntas del onboarding y el resumen del perfil
- * (portado de onboarding_prompts.py).
+ * API pública de las preguntas del onboarding y el resumen del perfil.
  */
 
 import { ONBOARDING_STEPS } from "@/domain/onboarding/onboarding-state";

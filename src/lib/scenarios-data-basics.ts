@@ -1,7 +1,7 @@
 import type { Scenario } from "@/domain/scenarios/scenario";
 
 // 17 escenarios basicos (A1 -> B1): saludos, comunicacion diaria, trabajo en pareja.
-// roleSystemPrompt copiado verbatim del seed Python (ajustado al LLM local pequeno).
+// roleSystemPrompt afinado contra el LLM local pequeno: no reescribir a la ligera.
 export const SCENARIOS_BASICS: Scenario[] = [
   {
     scenarioType: "daily_standup",

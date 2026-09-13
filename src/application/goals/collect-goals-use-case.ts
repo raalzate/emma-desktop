@@ -5,7 +5,7 @@ import { GoalContextBuilder, type GoalContext } from "@/domain/goals/goal-contex
 import type { IGoalRepository } from "@/domain/goals/i-goal-repository";
 import { createUserGoal, type UserGoal } from "@/domain/goals/user-goal";
 
-// Puertos de I/O inyectados: preguntan al usuario y envían mensajes (Chainlit-like).
+// Puertos de I/O inyectados: preguntan al usuario y envían mensajes.
 export type AskUserFunc = (args: { content: string }) => Promise<{ output: string }>;
 export type MessageFunc = (args: { content: string }) => { send: () => Promise<void> };
 
@@ -32,7 +32,7 @@ function parseSelection(raw: string): string[] {
   return tokens;
 }
 
-/** Timestamp ISO-8601 UTC sin milisegundos ni sufijo, como strftime del original. */
+/** Timestamp ISO-8601 UTC sin milisegundos ni sufijo: formato del almacén JSON. */
 function nowIso(): string {
   return new Date().toISOString().slice(0, 19);
 }
