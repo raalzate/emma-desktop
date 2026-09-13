@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
 import path from 'path';
 import { isDev, appServe } from './config';
 import { assetsDir } from './paths';
+import { loadProductionRenderer } from './load-renderer';
 
 /** Crea la ventana principal de EMMA y su menú nativo (ES). */
 export function createMainWindow(): BrowserWindow {
@@ -34,7 +35,9 @@ export function createMainWindow(): BrowserWindow {
     win.loadURL(process.env.ELECTRON_RENDERER_URL || 'http://localhost:3000');
     win.webContents.openDevTools();
   } else {
-    appServe(win).then(() => win.loadURL('app://-'));
+    // La cadena maneja su propio rechazo (ver main/load-renderer.ts): sin eso,
+    // abortar la carga al salir imprimía el MISMO ERR_FAILED que `app://-` roto.
+    void loadProductionRenderer(win, appServe);
     if (process.env.EMMA_DEV_TOOLS === '1') win.webContents.openDevTools();
   }
 
