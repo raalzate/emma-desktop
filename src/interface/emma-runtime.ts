@@ -68,7 +68,7 @@ export interface EmmaRuntime {
     /** Categorías de error débiles del aprendiz (ver tutorContext): activa TUTOR AWARENESS. */
     weakErrorCategories?: string[];
   }): string;
-  chatTurn(a: { system: string; history: ChatTurn[]; userMessage: string; sessionId?: string; characterAnchor?: string; sceneCue?: string; validateReply?: (reply: string) => boolean; onToken?: (c: string) => void }): Promise<string>;
+  chatTurn(a: { system: string; history: ChatTurn[]; userMessage: string; sessionId?: string; characterAnchor?: string; sceneCue?: string; validateReply?: (reply: string) => boolean; allowRestate?: boolean; onToken?: (c: string) => void }): Promise<string>;
   kickoff(system: string, sessionId?: string, learnerName?: string): Promise<string>;
   /** Observa el turno del aprendiz: el LLM etiqueta, el código decide. */
   observeTurn(a: Omit<ObserveTurnArgs, "llm">): ReturnType<typeof observeTurn>;

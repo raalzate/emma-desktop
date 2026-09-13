@@ -48,13 +48,27 @@ export default function OnboardingPage() {
       </div>
       {flow.done ? (
         <div className="space-y-2 pb-2 text-center duration-500 animate-in fade-in slide-in-from-bottom-2">
-          <Button size="lg" className="gap-2 px-8" onClick={() => router.push("/")}>
-            Ver mi primera escena
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Te mostraré el escenario antes de empezar a conversar.
-          </p>
+          {flow.completed ? (
+            <>
+              <Button size="lg" className="gap-2 px-8" onClick={() => router.push("/")}>
+                Ver mi primera escena
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Te mostraré el escenario antes de empezar a conversar.
+              </p>
+            </>
+          ) : (
+            <>
+              <Button size="lg" className="gap-2 px-8" onClick={() => window.location.reload()}>
+                Seguir configurando
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Nos falta un dato para armar tu primera escena. Retomamos donde quedamos.
+              </p>
+            </>
+          )}
         </div>
       ) : (
         <OnboardingComposer disabled={flow.thinking} onSend={flow.submit} />

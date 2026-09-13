@@ -69,4 +69,8 @@ if (r.status !== 0) {
   console.error('SMOKE ROJO — la app de producción no cargó (did-fail-load o body vacío).');
   process.exit(1);
 }
+// NO se intenta detectar aquí los rechazos sin manejar de la carga: con la
+// salida tuberiada el aviso de Node se pierde en el buffer cuando la sonda
+// llama a `app.exit()`, así que el chequeo daría verde justo cuando importa.
+// El freno de eso es un test: `main/__tests__/carga-renderer.test.ts`.
 console.log('SMOKE VERDE — el renderer de producción cargó con contenido.');

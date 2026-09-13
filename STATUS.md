@@ -4,14 +4,15 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-09-12
-- **Rama:** `main`
+- **Fecha del último gate completo:** 2026-09-13
+- **Rama:** `fix/onboarding-extraccion-bucle` (rebasada sobre `main`, pendiente de fusionar)
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.1.0 (retirada de hecho: dmg roto, gotcha 2026-08-31).
-  v0.1.1 quedó en BORRADOR con sus 3 instaladores. El borrador de v0.2.0 construido el
-  2026-09-09 se borró junto con su tag —nunca fue público— para rehacerlo sobre la main
-  que ya trae el icono nuevo. Publicar un borrador sigue siendo gesto del humano.
+- **Último release publicado:** v0.2.0 (2026-09-12, marcada Latest). v0.1.0 quedó
+  retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1 sigue en BORRADOR con sus 3
+  instaladores. v0.2.1 en curso (milestone «v0.2.1 — Correcciones de onboarding y chat»,
+  issues #154/#159/#160/#161): el onboarding deja de repreguntar en bucle y la escena
+  deja de responder con amnesia. Publicar un borrador sigue siendo gesto del humano.
 - **Vitrina pública:** https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
   botones de descarga apuntan a la última release publicada (la API de GitHub los
@@ -26,7 +27,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Lint de convenciones | `node scripts/repo-lint.mjs` | verde — PUREZA (domain/application/infrastructure), ANY, SECRETO, CONSOLE, ONLY, INCIDENTE |
 | Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en issues de GitHub; sin `specs/` en el repo |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
-| Tests | `pnpm test` | verde — 1097 pruebas en 134 archivos |
+| Tests | `pnpm test` | verde — 1238 pruebas en 161 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
 | Smoke de producción | `pnpm smoke` | verde — Electron carga `app://-` con contenido (camino empaquetado); OMITIDA donde no hay binario de Electron (gate de CI) |
 

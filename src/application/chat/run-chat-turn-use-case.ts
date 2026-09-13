@@ -18,12 +18,9 @@ import type { LlmGenerate } from "@/domain/ai/llm-port";
 import { capHistory, type ChatTurn } from "@/domain/chat/simulation-session";
 import { layerHistory } from "@/domain/chat/history-layers";
 import { buildSceneMemory, renderSceneMemory } from "@/domain/chat/scene-memory";
+import { buildGroundedRecovery } from "@/domain/chat/scene-recovery";
 import { sanitizeReply, hasNonLatinScript } from "@/domain/chat/sanitize-reply";
-import {
-  hasIdentityLeak,
-  removeIdentityLeak,
-  pickRecovery,
-} from "@/domain/chat/identity-guard";
+import { hasIdentityLeak, removeIdentityLeak } from "@/domain/chat/identity-guard";
 import { isGreeting, stripRepeatedGreeting } from "@/domain/chat/greeting-guard";
 import { stripRepeatedOpener } from "@/domain/chat/repetition-guard";
 import { polishChatReply } from "@/domain/chat/chat-brevity";
@@ -83,6 +80,27 @@ function buildPrompt(
   );
 }
 
+/**
+ * Consulta SELECTIVA del contexto para el último intento: memoria de escena +
+ * la línea que hay que reformular, nada más. El prompt completo (transcripción
+ * entera + directiva) es justo lo que el modelo pequeño no logra atender cuando
+ * ya falló dos veces; recortarlo a lo imprescindible es lo que salva el hilo.
+ */
+function buildRestatePrompt(
+  history: ChatTurn[],
+  userMessage: string,
+  lastAssistantLine: string,
+): string {
+  const memory = renderSceneMemory(buildSceneMemory(history));
+  return (
+    (memory ? `${memory}\n\n` : "") +
+    `Your last line was: "${lastAssistantLine}"\n` +
+    `The learner answered: "${userMessage}" — they did not follow you.\n\n` +
+    "Say that same thing again in simpler words and hand the turn back. " +
+    "ONE short line of spoken dialogue — nothing else."
+  );
+}
+
 export interface RunChatTurnArgs {
   llm: LlmGenerate;
   system: string;
@@ -100,6 +118,13 @@ export interface RunChatTurnArgs {
   sceneCue?: string;
   /** Verify del loop: false ⇒ la respuesta se rechaza y se reintenta. */
   validateReply?: (reply: string) => boolean;
+  /**
+   * Turno de REPARACIÓN: el aprendiz no siguió a la persona y la orden es decir
+   * lo mismo con palabras más simples. Los guardias anti-repetición no pueden
+   * vetar eso — vetaban las dos generaciones y el turno caía en la recuperación
+   * amnésica, que es exactamente «perder el hilo».
+   */
+  allowRestate?: boolean;
   onToken?: (chunk: string) => void;
 }
 
@@ -114,14 +139,18 @@ function cleanReply(
   alreadyGreeted: boolean,
   previousAssistantTurns: readonly string[],
   learnerGreeted: boolean,
+  allowRestate = false,
 ): string {
   const sane = sanitizeReply(raw);
   const noLeak = removeIdentityLeak(sane);
-  const inCharacter = stripRepeatedOpener(
-    stripRepeatedGreeting(noLeak, alreadyGreeted, { learnerGreeted }),
-    previousAssistantTurns,
-  );
+  const greetingSafe = stripRepeatedGreeting(noLeak, alreadyGreeted, { learnerGreeted });
+  // En reparación se conserva el opener y se admite repetir: reformular lo
+  // propio ES la orden del turno.
+  const inCharacter = allowRestate
+    ? greetingSafe
+    : stripRepeatedOpener(greetingSafe, previousAssistantTurns);
   const polished = polishChatReply(inCharacter, maxSentences);
+  if (allowRestate) return polished;
   const last = previousAssistantTurns[previousAssistantTurns.length - 1]?.trim();
   return polished === last ? "" : polished;
 }
@@ -183,13 +212,14 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
   // El aprendiz saludó en este turno: la persona puede devolver el saludo. Sin
   // esto, responder "hi, good morning" con una pregunta seca era lo normal.
   const learnerGreeted = isGreeting(args.userMessage);
-  const clean = (raw: string): string => {
+  const clean = (raw: string, allowRestate = args.allowRestate ?? false): string => {
     const cleaned = cleanReply(
       raw,
       CHAT_REPLY_MAX_SENTENCES,
       alreadyGreeted,
       previousAssistant,
       learnerGreeted,
+      allowRestate,
     );
     if (cleaned && args.validateReply && !args.validateReply(cleaned)) return "";
     return cleaned;
@@ -223,7 +253,27 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
   );
   const secondTry = retry === TIMEOUT ? "" : clean(retry);
   if (secondTry) return secondTry;
-  // Dos generaciones inválidas → recuperación EN PERSONAJE, nunca la misma
-  // línea dos turnos seguidos (el fallback técnico rompería la inmersión).
-  return pickRecovery(previousAssistant[previousAssistant.length - 1] ?? "");
+  const lastAssistantLine = previousAssistant[previousAssistant.length - 1] ?? "";
+  // TERCER intento con contexto recortado: reformular la propia línea. Es el
+  // pedido más fácil que existe para el modelo y mantiene el hilo; se limpia en
+  // modo restate porque repetir es, aquí, lo que se ordenó.
+  if (lastAssistantLine) {
+    const restated = await withTimeout(
+      args.llm({
+        prompt: buildRestatePrompt(args.history, args.userMessage, lastAssistantLine),
+        system: args.system,
+        maxTokens: CHAT_MAX_TOKENS,
+        sessionId: args.sessionId,
+      }),
+      LLM_TIMEOUT_SECONDS * 1000,
+    );
+    const thirdTry = restated === TIMEOUT ? "" : clean(restated, true);
+    if (thirdTry) return thirdTry;
+  }
+  // Tres generaciones inválidas → recuperación ANCLADA al hilo: se retoma la
+  // pregunta que quedó abierta en vez de declarar amnesia.
+  return buildGroundedRecovery({
+    openQuestion: buildSceneMemory(args.history).openQuestion,
+    lastAssistantTurn: lastAssistantLine,
+  });
 }

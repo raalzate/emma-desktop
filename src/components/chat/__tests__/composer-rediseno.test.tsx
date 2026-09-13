@@ -1,9 +1,10 @@
 /**
  * FR-021/022 (rediseño «Café sereno»): el composer es una superficie blanca
- * con borde y radio 14px, el typeahead fantasma va en text-muted, los botones
+ * con borde y radio 14px, el typeahead fantasma va en text-muted-foreground atenuado, los botones
  * de mic (con borde) y enviar (azul) son circulares, y bajo el composer vive
- * la línea mono PERSISTENTE «TAB acepta la sugerencia · ENTER envía · La
- * conversación es solo en inglés» (ya no condicional al fantasma).
+ * la línea mono PERSISTENTE «ENTER envía · La conversación es solo en inglés»,
+ * con el segmento de TAB solo cuando hay fantasma que aceptar (enmienda de
+ * coherencia: ver composer-hint-coherente.test.tsx).
  *
  * Los hooks de IA/voz y el contexto de Emma se mockean: aquí solo se fija la
  * presentación; sus contratos no cambian (FR-022).
@@ -39,7 +40,7 @@ function render(): string {
   );
 }
 
-const LINEA = "TAB acepta la sugerencia · ENTER envía · La conversación es solo en inglés";
+const PERSISTENTE = "ENTER envía · La conversación es solo en inglés";
 
 describe("Composer (rediseño Café sereno)", () => {
   it("el contenedor es superficie blanca con borde y radio 14px (FR-022)", () => {
@@ -48,8 +49,11 @@ describe("Composer (rediseño Café sereno)", () => {
     expect(html).toMatch(/rounded-\[14px\][^"]*bg-card|bg-card[^"]*rounded-\[14px\]/);
   });
 
-  it("el fantasma del typeahead usa text-muted (FR-022)", () => {
-    expect(render()).toMatch(/text-muted[" ]/);
+  // INCIDENTE: `text-muted` es el token de FONDO lino (#EDEBE4); sobre la
+  // tarjeta blanca el fantasma quedaba invisible y el atajo TAB parecía roto.
+  // El fantasma es TEXTO: va con el token de texto atenuado.
+  it("el fantasma del typeahead usa text-muted-foreground atenuado (FR-022)", () => {
+    expect(render()).toMatch(/text-muted-foreground\/\d+/);
   });
 
   it("mic y enviar son circulares: mic con borde, enviar azul (FR-022)", () => {
@@ -63,20 +67,21 @@ describe("Composer (rediseño Café sereno)", () => {
     expect(enviar).toContain("bg-primary");
   });
 
-  it("la línea de ayuda mono es persistente y reemplaza el hint condicional (FR-021)", () => {
+  it("la línea de ayuda mono es persistente; el segmento TAB es condicional (FR-021)", () => {
     const html = render();
+    // Con fantasma (el mock lo da) se anuncia TAB; ENTER e inmersión son fijos.
     expect(html).toContain("TAB acepta la sugerencia");
     expect(html).toContain("ENTER envía");
     expect(html).toContain("La conversación es solo en inglés");
-    expect(html).toMatch(/font-code[^"]*"[^>]*>TAB|<p[^>]*font-code/);
+    expect(html).toMatch(/font-code[^"]*"[^>]*>|<p[^>]*font-code/);
     const src = fs.readFileSync(
       path.join(process.cwd(), "src/components/chat/composer.tsx"),
       "utf8",
     );
     expect(src).not.toContain("Pulsa Tab para aceptar la sugerencia");
-    // La línea no depende del fantasma: vive fuera de todo condicional `ghost &&`.
-    expect(src).toContain(LINEA);
-    expect(src).not.toMatch(/ghost\s*&&[^\n]*TAB acepta/);
+    // La parte persistente NO depende del fantasma; el atajo TAB sí.
+    expect(src).toContain(PERSISTENTE);
+    expect(src).toMatch(/ghost\s*&&\s*"TAB acepta la sugerencia · "/);
   });
 
   it("los contratos de useTypeahead/useSuggestions/useVoiceInput siguen intactos (FR-022)", () => {

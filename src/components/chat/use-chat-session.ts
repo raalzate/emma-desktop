@@ -379,6 +379,10 @@ export function useChatSession(d: Deps) {
           !isReaskingCovered(r, sceneState.current, {
             deepeningOn: deepen ? deepeningTarget(sceneState.current)?.id : undefined,
           }),
+        // Reparación: la orden es decir lo mismo más simple, así que los
+        // guardias anti-repetición no pueden vetar la respuesta (si lo hacen,
+        // el turno cae en la recuperación y la escena parece amnésica).
+        allowRestate: intent === "meta",
         onToken: (c) => setStreaming((s) => s + c),
       });
       setMessages((m) => [...m, { role: "assistant", content: reply, at: Date.now() }]);

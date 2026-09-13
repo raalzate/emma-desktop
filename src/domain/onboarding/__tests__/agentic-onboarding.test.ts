@@ -11,6 +11,7 @@ import {
   mergeContext,
   normalizeContext,
   buildClosingSummary,
+  buildPauseSummary,
   type OnboardingContext,
 } from "../agentic-onboarding";
 
@@ -139,6 +140,29 @@ describe("agentic-onboarding — parseTurn", () => {
     expect(message).toBe("Cool!");
     expect(extracted).toEqual({});
   });
+
+  it("extrae la línea DATA aunque no esté al final (texto después de ella)", () => {
+    const raw = 'Wow!\nDATA: {"skills":"microservices"}\nHope that helps!';
+    const { message, extracted } = parseTurn(raw);
+    expect(message).toBe("Wow!\nHope that helps!");
+    expect(extracted).toEqual({ skills: "microservices" });
+    expect(message).not.toMatch(/DATA:/);
+  });
+
+  it("extrae JSON de un fence ```json sin prefijo DATA:", () => {
+    const raw = 'Nice!\n```json\n{"skills": "microservices"}\n```';
+    const { message, extracted } = parseTurn(raw);
+    expect(message).toBe("Nice!");
+    expect(extracted).toEqual({ skills: "microservices" });
+    expect(message).not.toMatch(/`/);
+  });
+
+  it("extrae JSON desnudo en su propia línea (sin DATA: ni fence)", () => {
+    const raw = 'Nice one!\n{"skills": "microservices"}';
+    const { message, extracted } = parseTurn(raw);
+    expect(message).toBe("Nice one!");
+    expect(extracted).toEqual({ skills: "microservices" });
+  });
 });
 
 describe("agentic-onboarding — mergeContext", () => {
@@ -204,5 +228,42 @@ describe("agentic-onboarding — buildClosingSummary", () => {
   it("funciona con contexto parcial sin lanzar", () => {
     expect(() => buildClosingSummary({})).not.toThrow();
     expect(buildClosingSummary({})).toMatch(/first real workplace scenario/i);
+  });
+});
+
+describe("agentic-onboarding — buildPauseSummary", () => {
+  it("cierra sin inventar perfil y anuncia que se retoma", () => {
+    const pause = buildPauseSummary({ name: "Ada" });
+    expect(pause).toMatch(/Ada/);
+    expect(pause).not.toMatch(/professional/i);
+    expect(pause).not.toMatch(/first real workplace scenario/i);
+    expect(pause).toMatch(/pick this up/i);
+  });
+
+  it("funciona sin nombre y no lanza", () => {
+    expect(() => buildPauseSummary({})).not.toThrow();
+    expect(buildPauseSummary({})).toMatch(/pick this up/i);
+  });
+});
+
+describe("agentic-onboarding — parseTurn limpia meta-texto del modelo", () => {
+  it("descarta la nota entre paréntesis sobre su propia tarea (visto en la app)", () => {
+    const raw =
+      "Hello! It's a pleasure to meet you!\n\nSo, what is your name?\n\n" +
+      "(I'll use this as a placeholder for the actual response, but the real goal is to get to know you better!)";
+    const { message } = parseTurn(raw);
+    expect(message).not.toMatch(/placeholder/i);
+    expect(message).not.toMatch(/actual response/i);
+    expect(message).toMatch(/what is your name/i);
+  });
+
+  it("no toca paréntesis normales de conversación", () => {
+    const { message } = parseTurn("I love Python (my favorite!). What about you?");
+    expect(message).toBe("I love Python (my favorite!). What about you?");
+  });
+
+  it("el system prohíbe explicitamente las notas sobre la tarea", () => {
+    const { system } = buildTurnPrompt({}, "", "");
+    expect(system).toMatch(/never write notes/i);
   });
 });

@@ -14,6 +14,8 @@ export const CHAT_MAX_TOKENS = 512;
 export const OBSERVE_MAX_TOKENS = 80;
 export const WELCOME_MAX_TOKENS = 150;
 export const COMPREHEND_MAX_TOKENS = 50;
+/** Red de extracción estricta del onboarding: un valor o NONE, nada más. */
+export const STRICT_EXTRACTION_MAX_TOKENS = 20;
 /** Un solo turno de onboarding: mensaje corto + línea DATA final. */
 export const ONBOARDING_TURN_MAX_TOKENS = 220;
 /** Mini-historia inmersiva de la escena (2-4 frases en español). */

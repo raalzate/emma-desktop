@@ -59,7 +59,9 @@ const TURN_SYSTEM =
   "message, and NEVER ask again about something you already know. If their " +
   "last answer was ambiguous, ask a quick clarifying follow-up instead. " +
   "NEVER reveal you are an AI, and NEVER mention JSON, fields, prompts or " +
-  "data extraction in your visible message. After your message, on a new " +
+  "data extraction in your visible message. Never write notes to yourself " +
+  "about the task, and never use parentheses to comment on what you are " +
+  "doing or on the response you expect. After your message, on a new " +
   "final line, output exactly `DATA: {json}` with a compact JSON object " +
   "containing any of these keys you can confidently infer from ONLY the " +
   "last exchange below: name (string), role (string), yearsInRole " +
@@ -72,8 +74,10 @@ export function buildTurnPrompt(
   ctx: OnboardingContext,
   lastEmma: string,
   lastUser: string,
+  skip: readonly (keyof OnboardingContext)[] = [],
 ): { system: string; user: string } {
-  const missing = missingFields(ctx);
+  // `skip`: campos abandonados tras el tope de intentos — no se vuelven a pedir.
+  const missing = missingFields(ctx).filter((f) => !skip.includes(f));
   const known = Object.entries(ctx)
     .filter(([, v]) => v !== undefined && String(v).trim() !== "")
     .map(([k, v]) => `- ${k}: ${v}`)
@@ -114,21 +118,99 @@ export function parseContext(raw: string): OnboardingContext {
   }
 }
 
-const DATA_LINE_RE = /\n?\s*DATA:\s*(\{[\s\S]*\})\s*$/i;
+const DATA_LINE_RE = /DATA:/i;
+const FENCE_RE = /```(?:json)?\s*\n?([\s\S]*?)```/i;
 
-/** Separa el mensaje visible de la línea `DATA: {json}` que cierra el turno. */
-export function parseTurn(raw: string): { message: string; extracted: OnboardingContext } {
-  const trimmed = raw.trim();
-  const match = trimmed.match(DATA_LINE_RE);
-  if (!match) return { message: cleanMessage(trimmed), extracted: {} };
-  return { message: cleanMessage(trimmed.slice(0, match.index)), extracted: parseContext(match[1]) };
+interface JsonSpan {
+  before: string;
+  after: string;
+  json: string;
 }
 
-/** Quita restos de JSON sueltos y el prefijo "Emma:" que a veces añade el modelo. */
+/** Busca el JSON balanceado (cuenta llaves) que arranca en `start`. */
+function findBalancedJson(text: string, start: number): { json: string; end: number } | null {
+  if (text[start] !== "{") return null;
+  let depth = 0;
+  for (let i = start; i < text.length; i++) {
+    if (text[i] === "{") depth++;
+    else if (text[i] === "}") {
+      depth--;
+      if (depth === 0) return { json: text.slice(start, i + 1), end: i + 1 };
+    }
+  }
+  return null; // llave sin cerrar: no es JSON válido
+}
+
+/** Caso 1: línea `DATA: {json}` en cualquier posición del texto (no solo al final). */
+function extractAfterDataPrefix(text: string): JsonSpan | null {
+  const idx = text.search(DATA_LINE_RE);
+  if (idx === -1) return null;
+  const braceStart = text.indexOf("{", idx);
+  if (braceStart === -1) return null;
+  const balanced = findBalancedJson(text, braceStart);
+  if (!balanced) return null;
+  return { before: text.slice(0, idx).trimEnd(), after: text.slice(balanced.end).trimStart(), json: balanced.json };
+}
+
+/** Caso 2: JSON dentro de un fence ```json ... ``` sin prefijo `DATA:`. */
+function extractFromFence(text: string): JsonSpan | null {
+  const match = text.match(FENCE_RE);
+  if (!match || match.index === undefined) return null;
+  const inner = match[1].trim();
+  const braceStart = inner.indexOf("{");
+  const balanced = braceStart === -1 ? null : findBalancedJson(inner, braceStart);
+  const json = balanced ? balanced.json : inner;
+  return {
+    before: text.slice(0, match.index).trimEnd(),
+    after: text.slice(match.index + match[0].length).trimStart(),
+    json,
+  };
+}
+
+/** Caso 3: JSON desnudo, solo en su propia línea (sin `DATA:` ni fence). */
+function extractBareJsonLine(text: string): JsonSpan | null {
+  const lines = text.split("\n");
+  let offset = 0;
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (trimmedLine.startsWith("{") && trimmedLine.endsWith("}")) {
+      const braceStart = text.indexOf("{", offset);
+      const balanced = findBalancedJson(text, braceStart);
+      if (balanced) {
+        return {
+          before: text.slice(0, offset).trimEnd(),
+          after: text.slice(balanced.end).trimStart(),
+          json: balanced.json,
+        };
+      }
+    }
+    offset += line.length + 1; // +1 por el "\n" que se pierde al hacer split
+  }
+  return null;
+}
+
+/** Separa el mensaje visible del JSON de extracción, sin importar cómo lo formateó el modelo. */
+export function parseTurn(raw: string): { message: string; extracted: OnboardingContext } {
+  const trimmed = raw.trim();
+  const found = extractAfterDataPrefix(trimmed) ?? extractFromFence(trimmed) ?? extractBareJsonLine(trimmed);
+  if (!found) return { message: cleanMessage(trimmed), extracted: {} };
+  const message = cleanMessage([found.before, found.after].filter((s) => s.length > 0).join("\n"));
+  return { message, extracted: parseContext(found.json) };
+}
+
+// Marcas de que un paréntesis es una nota del modelo sobre su tarea, no charla.
+const META_NOTE_RE =
+  /\((?=[^)]*\b(?:placeholder|actual response|real goal|prompt|instruction|extraction|json|data line|as an ai|note to self)\b)[^)]*\)/gi;
+
+/** Quita restos de JSON, fences, notas meta y el prefijo "Emma:" que añade el modelo. */
 function cleanMessage(text: string): string {
   return text
+    .replace(/```[a-z]*\n?/gi, "")
+    .replace(/```/g, "")
     .replace(/\{[\s\S]*\}/g, "")
+    .replace(META_NOTE_RE, "")
     .replace(/^Emma:\s*/i, "")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
@@ -247,6 +329,18 @@ export function normalizeContext(ctx: OnboardingContext): OnboardingContext {
   const skills = normalizeList(ctx.skills);
   if (skills) out.skills = skills;
   return out;
+}
+
+/**
+ * Cierre honesto cuando el contexto quedó incompleto (tope de turnos): ni
+ * inventa perfil ni promete la primera escena — anuncia que se retoma.
+ */
+export function buildPauseSummary(ctx: OnboardingContext): string {
+  const name = ctx.name ? `, ${ctx.name}` : "";
+  return (
+    `No worries${name} — let's pick this up in a moment and finish getting you set up. ` +
+    "I'll remember what you've told me so far."
+  );
 }
 
 /** Resumen de cierre sintetizado (no eco literal) que invita a la primera simulación. */

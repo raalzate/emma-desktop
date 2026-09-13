@@ -28,6 +28,8 @@ export interface Karaoke {
   sentences: SentenceSpan[];
   /** Índice de la oración que está sonando, -1 si ninguna. */
   activeSentence: number;
+  /** Índice GLOBAL de la palabra que está sonando, -1 si ninguna. */
+  activeWord: number;
   playing: boolean;
   loading: boolean;
   available: boolean;
@@ -157,6 +159,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
   return {
     sentences: script.sentences,
     activeSentence: sentenceIndexAtWord(script.sentences, activeWord),
+    activeWord,
     playing,
     loading,
     available: speakable && (edgeTtsAvailable() || ttsAvailable()),
