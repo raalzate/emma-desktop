@@ -1,0 +1,39 @@
+flowchart LR
+  subgraph agg_Aprendiz["Aprendiz"]
+    ini_terminar(("Termina la sesión<br><i>Evento de Inicio</i>"))
+    fin_veredicto(("Recibe el veredicto<br><i>Evento de Fin</i>"))
+  end
+  subgraph agg_Cierre_de_sesion["Cierre de sesión"]
+    arma_metrica("Resume lo practicado<br><i>Tarea</i>")
+    ispass_ui("Juzga si aprobó<br><i>Tarea</i>")
+    gw_marcar{"¿Aprobó o subió?<br><i>Compuerta Exclusiva</i>"}
+    marca_passed("Marca el escenario<br><i>Tarea</i>")
+    recomienda("Elige el próximo<br><i>Subproceso</i>")
+  end
+  subgraph agg_Tutora_EMMA["Tutora EMMA"]
+    filtra_errores("Separa lo corregible<br><i>Tarea</i>")
+    evalua("Actualiza racha y nivel<br><i>Tarea</i>")
+    lecion("Enseña y reporta<br><i>Tarea</i>")
+    tarjetas_srs("Deja repaso pendiente<br><i>Tarea</i>")
+    metricas("Registra el avance<br><i>Tarea</i>")
+    recomendaciones("Sugiere qué practicar<br><i>Tarea</i>")
+    store_progreso[("Historial del aprendiz<br><i>Almacén de Datos</i>")]
+  end
+  marca_passed -->|"¿y ahora qué?"| recomienda
+  gw_marcar -->|"passed o promoted"| marca_passed
+  gw_marcar -->|"ninguna: no se marca"| recomienda
+  filtra_errores -->|"errores accionables"| lecion
+  lecion -->|"luego (secuencial)"| tarjetas_srs
+  tarjetas_srs -->|"falle o no"| metricas
+  metricas -->|"falle o no"| recomendaciones
+  tarjetas_srs -->|"guarda tarjetas"| store_progreso
+  metricas -->|"guarda el avance"| store_progreso
+  evalua -->|"racha y nivel"| store_progreso
+  marca_passed -->|"escenario superado"| store_progreso
+  store_progreso -->|"ruta, metas y errores"| recomienda
+  recomienda -->|"escenario o nada"| fin_veredicto
+  ini_terminar -->|"cierra la escena"| arma_metrica
+  arma_metrica -->|"turnos y errores"| filtra_errores
+  recomendaciones -->|"reporte y lección"| ispass_ui
+  ispass_ui -->|"decide el nivel"| evalua
+  evalua -->|"resultado"| gw_marcar

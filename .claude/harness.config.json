@@ -34,6 +34,11 @@
         "why": "los artefactos SDD viven en las issues de GitHub: un spec o plan suelto bajo specs/ parte el registro en dos"
       },
       {
+        "name": "diagramas sincronizados",
+        "command": ["node", "scripts/diagrams-check.mjs"],
+        "why": "los diagramas viven en una app fuera del repo: renombrar una función no los toca y el dibujo sigue afirmando algo que ya no es cierto (2026-09-15: tres de cuatro vistas BPMN describían secuencias que el código no ejecuta)"
+      },
+      {
         "name": "typecheck (app + electron)",
         "command": ["pnpm", "typecheck"],
         "why": "vitest transpila por archivo y no type-checkea: un import inválido pasa los tests y rompe el build; además main/preload compilan con otro tsconfig"
@@ -292,6 +297,13 @@
   },
   "status": {
     "file": "STATUS.md"
+  },
+  "diagrams": {
+    "$comment": "Arquitectura viva: las vistas viven en Processflow Architect (proyecto «EMMA Desktop»), que está FUERA del repo. Cada vista deja su instantánea en `dir`. LO QUE SE LEE EN EL LIENZO va en lenguaje de producto («Propone 3 respuestas»): una caja que dice `src/lib/ai/router.ts` no le sirve a quien lee el proceso. El ancla al código vive SÓLO en la instantánea, en el campo `codigo` (`ruta/archivo.ts:símbolo`), y el puente entre las dos caras es el `id` del elemento. `scripts/diagrams-check.mjs` verifica las tres cosas: que cada caja tenga descripción, que no hable en rutas del repo, y que su ancla apunte a un archivo y un símbolo que existen. Se ancla en el SÍMBOLO y no en la línea a propósito: la línea se corre en cada edición y un freno con rojos falsos termina desactivado.",
+    "dir": "docs/diagramas",
+    "project": "EMMA Desktop",
+    "anchorFormat": "ruta/al/archivo.ts:símbolo",
+    "reason": "un diagrama que describe código que ya no existe es peor que no tener diagrama: se lee con la misma confianza y manda al lector al lugar equivocado. Y uno que sólo nombra archivos no es un diagrama de proceso: es un índice del repo con cajas."
   },
   "sdd": {
     "$comment": "Flujo SDD genérico del repo: spec → checklist → plan → testify → tasks → implement, redactado por el subagente spec-author e implementado por tdd-engineer. `phases` queda vacío porque no hay skills verificables en skillRoots; el valor está en `routes`.",

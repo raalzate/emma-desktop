@@ -21,6 +21,34 @@ Mecanismo: <el comando que ahora falla si alguien lo repite — o "ninguno ejecu
 
 ---
 
+### GOTCHA: los diagramas de arquitectura afirmaban secuencias que el código no ejecuta
+
+Síntoma: cuatro vistas BPMN recién subidas a Processflow Architect leían bien y estaban
+  validadas, y al contrastarlas contra los callers tres eran falsas: «Voz y pronunciación»
+  modelaba `transcribeAudio`/`checkSpokenAttempt`, que no tienen caller de producción (el
+  renderer llama al adaptador Whisper directo en `src/components/chat/use-voice-input.ts`);
+  «Ruta y progresión» dibujaba una compuerta paralela donde `emma-runtime.ts` corre las dos
+  persistencias en secuencia, cada una en su try/catch; «Turno de chat» dibujaba las
+  sugerencias como un paso secuencial cuando son un `useEffect` con el borrador debounceado.
+Causa:   los NODOS se sacaron leyendo los casos de uso, pero las SECUENCIAS entre casos de uso
+  se compusieron sin leer el orquestador (`src/interface/emma-runtime.ts`) ni los hooks que los
+  llaman. Un caso de uso dice lo que hace; sólo su caller dice cuándo y en qué orden se ejecuta
+  — o si no se ejecuta nunca.
+Regla:   antes de dibujar un flujo, se leen los CALLERS del código, no sólo el módulo. Y lo que
+  se lee en el lienzo va en lenguaje de producto («Propone 3 respuestas»), no en rutas del repo:
+  una caja que dice `src/lib/ai/router.ts` no le dice nada a quien lee el proceso. El ancla al
+  código vive sólo en la instantánea del repo, y apunta a un SÍMBOLO, nunca a un número de línea:
+  la línea se corre en cada edición y un freno con rojos falsos termina desactivado.
+Mecanismo: `node scripts/diagrams-check.mjs` (señal «diagramas sincronizados» del gate) lee las
+  instantáneas de `docs/diagramas/` y falla si una caja no tiene descripción, si su nombre o su
+  descripción hablan en rutas del repo, o si su ancla apunta a un archivo o un símbolo que ya no
+  existe. El self-test del arnés le pone los tres cebos (archivo borrado, símbolo renombrado y
+  caja que habla en rutas) y verifica que muerda. Lo que NO puede verificar una máquina —que la
+  secuencia dibujada sea la que el caller ejecuta— queda como revisión humana: es por eso que la
+  regla de leer los callers está escrita acá.
+
+---
+
 ### GOTCHA: el gate completo no se podía correr en un git worktree
 
 Síntoma: `pnpm gate` dentro de un worktree muere en la primera señal —

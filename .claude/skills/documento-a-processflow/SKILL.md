@@ -7,7 +7,7 @@ description: Convierte un documento de proyecto/negocio (PDF, Word, Markdown, pr
 
 - **Transporte:** HTTP — la app está conectada en `http://127.0.0.1:7331/mcp`. `export_to_app` carga el diagrama DIRECTO en el lienzo.
 - **Workspace del servidor:** `/Users/raul.alzate/Library/Application Support/processflow-architect/mcp-workspace`
-- **Herramientas disponibles:** list_notations, describe_notation, list_orgs, create_org, use_org, rename_org, delete_org, move_diagram, create_diagram, list_diagrams, use_diagram, get_diagram, add_container, add_node, add_edge, update_element, set_element_spec, get_element_spec, spec_to_markdown, review_specs, update_edge, remove_edge, remove_element, validate_diagram, review_diagram, suggest_views, record_ambiguity, resolve_ambiguity, set_project_meta, add_read_model, remove_read_model, relayout_diagram, render_mermaid, get_app_state, list_artifacts, get_artifact, list_views, get_view, list_skills, install_skill, export_to_app, export_as_view, use_project, delete_view, rename_view, export_mermaid_view, import_diagram.
+- **Herramientas disponibles:** list_notations, describe_notation, list_orgs, create_org, use_org, rename_org, delete_org, move_diagram, create_diagram, list_diagrams, use_diagram, get_diagram, add_container, add_node, add_fragment, add_edge, update_element, set_element_spec, get_element_spec, spec_to_markdown, review_specs, update_edge, remove_edge, remove_element, validate_diagram, review_diagram, suggest_views, record_ambiguity, attach_source, list_sources, read_source, remove_source, resolve_ambiguity, set_project_meta, add_read_model, remove_read_model, relayout_diagram, render_mermaid, get_app_state, list_artifacts, get_artifact, list_views, get_view, list_skills, install_skill, export_to_app, export_as_view, use_project, delete_view, rename_view, export_mermaid_view, import_diagram.
 - **Notación por defecto:** `ddd` (sólo cuando el usuario no declara intención).
 - **Tamaño legible por vista:** ~40 elementos; más allá, corta con `suggest_views`.
 - **Cupo de vistas por proyecto:** 50.
@@ -91,6 +91,28 @@ la columna «cita» es obligatoria, es la que sostiene la revisión humana:
 Esa cita se pasa tal cual en el parámetro `source` de `add_node` /
 `add_container`. La app la muestra en la descripción del elemento: el revisor
 lee «elemento ← fuente» sin volver al PDF.
+
+### Adjuntá el documento, no sólo su nombre
+
+Una cita a un archivo que la app no tiene es un puntero colgante: el humano que
+revisa desde la app —y el agente que ahí le responde— no puede abrirlo. Antes de
+citar líneas de un documento, **adjuntá su texto** con `attach_source`:
+
+```
+attach_source { name: "contratos/07-pagos.md", origin: "PDF del cliente",
+                text: "<el texto del documento>" }
+add_node { name: "Pasarela", type: "Componente",
+           source: "contratos/07-pagos.md:36" }
+```
+
+- Citá con el **mismo nombre** con el que adjuntaste: así la ficha del elemento
+  muestra el fragmento y el agente de la app puede leerlo con `read_source`.
+- `list_sources` dice qué hay adjunto (sin traer el texto); `read_source` relee
+  un rango; `remove_source` lo quita sin borrar las citas.
+- `validate_diagram` avisa con **FUENTE-SIN-ADJUNTAR** cuando una caja cita un
+  documento que no está: es la señal de que la evidencia se quedó afuera.
+- Adjuntá lo que **sostiene el diagrama**, no la biblioteca entera: el tope son
+  20 documentos de 60 000 caracteres y lo que pase se recorta.
 
 ## 2 · Ambigüedades: una sola ronda, registrada
 
@@ -265,9 +287,16 @@ set_element_spec { id: "c4-api-pagos", spec: {
 
 - Lo que el documento **no decide, no se inventa**: `needsClarification: true` en
   ese requisito, y además registrá la ambigüedad con `record_ambiguity`.
-- `get_element_spec` antes de reescribir (no pises lo que puso una persona),
-  `spec_to_markdown` para pegar el contrato en una issue, y `review_specs` antes
-  de dar el portafolio por terminado.
+- **Es una pasada propia, después de crear las cajas.** Un portafolio de
+  diagramas sin specs devuelve al documento a la persona que lo trajo: en la app,
+  el agente lee el contrato con `read_element`, y si no hay spec sólo puede
+  responder con el resumen de la descripción.
+- `get_element_spec` antes de reescribir (no pises lo que puso una persona), o
+  `set_element_spec { merge: true }` para ir completando caja por caja sin releer
+  el contrato entero. `spec_to_markdown` para pegar el contrato en una issue.
+- **`review_specs` cierra la pasada**: además de los elementos sin spec, marca
+  criterios sin número (no medibles) y requisitos que nombran tecnología. Nada se
+  entrega hasta que devuelva lista vacía o le declares la excepción al usuario.
 
 ## 4 · Validar calidad (no sólo validez)
 

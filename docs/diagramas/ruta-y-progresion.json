@@ -1,0 +1,27 @@
+{
+  "vista": "BPMN · Ruta y progresión",
+  "notacion": "bpmn",
+  "proyecto": "EMMA Desktop",
+  "revisado": "2026-09-15",
+  "resumen": "El cierre corre TODO en secuencia —corregir, enseñar, dejar repaso, medir, sugerir—, ningún guardado puede impedirlo, y recién después se decide racha, nivel, escenario superado y qué practicar ahora.",
+  "elementos": [
+    { "id": "aprendiz", "nombre": "Aprendiz", "tipo": "Carril", "descripcion": "Termina de practicar y recibe su reporte, su lección y qué hacer después.", "codigo": "src/components/chat/use-finish-session.ts:useFinishSession" },
+    { "id": "usefinishsession", "nombre": "Cierre de sesión", "tipo": "Carril", "descripcion": "El orden del cierre: primero el balance de lo practicado, después la decisión de nivel y la sugerencia de qué sigue.", "codigo": "src/components/chat/use-finish-session.ts:useFinishSession" },
+    { "id": "emmaruntime", "nombre": "Tutora EMMA", "tipo": "Carril", "descripcion": "Lo que la tutora hace al cerrar: corregir, enseñar, dejar repaso y medir el avance.", "codigo": "src/interface/emma-runtime.ts:createEmmaRuntime" },
+    { "id": "store-json", "nombre": "Datos del aprendiz", "tipo": "Carril", "descripcion": "Historial, racha, nivel, ruta y metas: todo en el equipo de la persona.", "codigo": "src/interface/emma-runtime.ts:repos" },
+    { "id": "ini-terminar", "nombre": "Termina la sesión", "tipo": "Evento de Inicio", "descripcion": "La persona da por cerrada la conversación.", "codigo": "src/components/chat/use-finish-session.ts:finish" },
+    { "id": "arma-metrica", "nombre": "Resume lo practicado", "tipo": "Tarea", "descripcion": "Cuántos turnos sostuvo la persona y cuántos errores cometió: es la base de la decisión de nivel.", "codigo": "src/components/chat/use-finish-session.ts:metric" },
+    { "id": "filtra-errores", "nombre": "Separa lo corregible", "tipo": "Tarea", "descripcion": "De todo lo que EMMA calló durante la conversación, sólo lo que vale una corrección llega al reporte.", "codigo": "src/interface/emma-runtime.ts:isActionableCorrection" },
+    { "id": "lecion", "nombre": "Enseña y reporta", "tipo": "Tarea", "descripcion": "La lección va en inglés hablado; el reporte resume la escena, el nivel, los turnos y los errores.", "codigo": "src/interface/emma-runtime.ts:composeSessionSummary" },
+    { "id": "tarjetas-srs", "nombre": "Deja repaso pendiente", "tipo": "Tarea", "descripcion": "Los errores quedan como tarjetas para otro día. Si el guardado falla, la sesión cierra igual.", "codigo": "src/interface/emma-runtime.ts:captureSessionErrors" },
+    { "id": "metricas", "nombre": "Registra el avance", "tipo": "Tarea", "descripcion": "Tiempo de reacción, intervención más larga y densidad de error. Se hace después del repaso, no a la vez; un fallo tampoco bloquea el cierre.", "codigo": "src/interface/emma-runtime.ts:trackSessionMetrics" },
+    { "id": "recomendaciones", "nombre": "Sugiere qué practicar", "tipo": "Tarea", "descripcion": "Ejercicio, repaso, par mínimo o escenario para esa unidad. Si no se pueden calcular, el cierre sigue sin ellas.", "codigo": "src/interface/emma-runtime.ts:resolveTutorContext" },
+    { "id": "store-progreso", "nombre": "Historial del aprendiz", "tipo": "Almacén de Datos", "descripcion": "Sesiones medidas, errores por categoría, racha, nivel y escenarios superados.", "codigo": "src/interface/emma-runtime.ts:sessionMetricsRepo" },
+    { "id": "ispass-ui", "nombre": "Juzga si aprobó", "tipo": "Tarea", "descripcion": "Turnos sostenidos y errores cometidos contra lo que se espera en ese nivel.", "codigo": "src/components/chat/use-finish-session.ts:isPass" },
+    { "id": "evalua", "nombre": "Actualiza racha y nivel", "tipo": "Tarea", "descripcion": "Aprobar suma a la racha, fallar la reinicia. Al completarla se sube de peldaño y la racha vuelve a cero.", "codigo": "src/interface/emma-runtime.ts:EvaluateProgressionUseCase" },
+    { "id": "gw-marcar", "nombre": "¿Aprobó o subió?", "tipo": "Compuerta Exclusiva", "descripcion": "Cualquiera de las dos cosas da el escenario por superado.", "codigo": "src/components/chat/use-finish-session.ts:markPassed" },
+    { "id": "marca-passed", "nombre": "Marca el escenario", "tipo": "Tarea", "descripcion": "Queda como superado en la ruta del nivel y deja de aparecer como pendiente.", "codigo": "src/interface/emma-runtime.ts:MarkScenarioPassedUseCase" },
+    { "id": "recomienda", "nombre": "Elige el próximo", "tipo": "Subproceso", "descripcion": "Cruza lo pendiente de la ruta, las metas declaradas, los errores que se repiten y la semana del plan de 24 semanas. Puede no haber ninguno.", "codigo": "src/interface/emma-runtime.ts:RecommendNextScenarioUseCase" },
+    { "id": "fin-veredicto", "nombre": "Recibe el veredicto", "tipo": "Evento de Fin", "descripcion": "«Subiste de nivel», «escenario superado» o «seguí practicando», con el reporte, la lección y la sugerencia de qué hacer ahora.", "codigo": "src/components/chat/use-finish-session.ts:verdictOf" }
+  ]
+}
