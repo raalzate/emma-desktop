@@ -1,0 +1,28 @@
+{
+  "vista": "BPMN · Repaso SRS",
+  "notacion": "bpmn",
+  "proyecto": "EMMA Desktop",
+  "revisado": "2026-09-15",
+  "resumen": "Los errores que EMMA calló durante la práctica se vuelven tarjetas de producción; otro día, la tanda trae sólo lo vencido, primero lo más frágil y con tope de 15.",
+  "elementos": [
+    { "id": "aprendiz", "nombre": "Aprendiz", "tipo": "Carril", "descripcion": "Quien repasa: intenta volver a producir lo que antes le salió mal.", "codigo": "src/components/practice/srs-review.tsx:SrsReview" },
+    { "id": "ui-de-repaso", "nombre": "Pantalla de repaso", "tipo": "Carril", "descripcion": "Muestra una tarjeta a la vez y recoge si la persona acertó o no.", "codigo": "src/components/practice/srs-review.tsx:SrsReview" },
+    { "id": "casos-de-uso-srs", "nombre": "Repaso espaciado", "tipo": "Carril", "descripcion": "Las reglas del método: qué toca hoy, en qué orden y cómo se mueve una tarjeta según el resultado.", "codigo": "src/application/srs/review-session-use-case.ts:startReviewSession" },
+    { "id": "store-json", "nombre": "Datos del aprendiz", "tipo": "Carril", "descripcion": "Todo queda en el equipo de la persona; nada se sube.", "codigo": "src/application/srs/review-session-use-case.ts:ISrsRepository" },
+    { "id": "ini-practica", "nombre": "Termina la práctica", "tipo": "Evento de Inicio", "descripcion": "Al cerrar una conversación quedan los errores que EMMA calló para no interrumpir.", "codigo": "src/application/srs/capture-session-errors-use-case.ts:captureSessionErrors" },
+    { "id": "crea-tarjetas", "nombre": "Convierte errores en tarjetas", "tipo": "Tarea", "descripcion": "Cada error corregible se vuelve una tarjeta de producción: habrá que volver a decirlo bien, no sólo reconocerlo.", "codigo": "src/application/srs/capture-session-errors-use-case.ts:buildCardsFromErrors" },
+    { "id": "guarda-nuevas", "nombre": "Guarda sólo lo nuevo", "tipo": "Tarea", "descripcion": "Lo que ya estaba no se duplica. Si el guardado falla, la sesión cierra igual.", "codigo": "src/application/srs/review-session-use-case.ts:addCards" },
+    { "id": "store-tarjetas", "nombre": "Tarjetas de repaso", "tipo": "Almacén de Datos", "descripcion": "Cada tarjeta recuerda cuántas veces se acertó y cuándo toca volver a verla.", "codigo": "src/application/srs/review-session-use-case.ts:ISrsRepository" },
+    { "id": "ini-repaso", "nombre": "Abre el repaso", "tipo": "Evento de Inicio", "descripcion": "La persona entra a repasar, normalmente otro día.", "codigo": "src/components/practice/srs-review.tsx:SrsReview" },
+    { "id": "arma-sesion", "nombre": "Arma la tanda del día", "tipo": "Tarea", "descripcion": "Lo vencido para hoy, de más frágil a más asentado, con tope de 15 tarjetas.", "codigo": "src/application/srs/review-session-use-case.ts:startReviewSession" },
+    { "id": "gw-vencidas", "nombre": "¿Hay algo vencido?", "tipo": "Compuerta Exclusiva", "descripcion": "Sólo entra lo que toca hoy: repasar antes de tiempo no consolida.", "codigo": "src/application/srs/review-session-use-case.ts:dueCards" },
+    { "id": "muestra-tarjeta", "nombre": "Muestra la tarjeta", "tipo": "Tarea", "descripcion": "Una por vez, con la consigna de producir la frase antes de ver la respuesta.", "codigo": "src/components/practice/srs-review.tsx:SrsReview" },
+    { "id": "responde", "nombre": "Intenta producirla", "tipo": "Tarea", "descripcion": "La persona dice o escribe la frase y se califica a sí misma contra la respuesta.", "codigo": "src/components/practice/srs-review.tsx:answerCard" },
+    { "id": "gw-acierta", "nombre": "¿Le salió?", "tipo": "Compuerta Exclusiva", "descripcion": "El resultado decide cuándo vuelve a aparecer la tarjeta.", "codigo": "src/application/srs/review-session-use-case.ts:answerCard" },
+    { "id": "sube-caja", "nombre": "Espacia el repaso", "tipo": "Tarea", "descripcion": "La tarjeta se considera más asentada y tarda más en volver.", "codigo": "src/application/srs/review-session-use-case.ts:reviewCard" },
+    { "id": "baja-caja", "nombre": "Vuelve al principio", "tipo": "Tarea", "descripcion": "Lo que falla reaparece pronto: es justo lo que hay que practicar.", "codigo": "src/application/srs/review-session-use-case.ts:reviewCard" },
+    { "id": "gw-quedan", "nombre": "¿Quedan tarjetas?", "tipo": "Compuerta Exclusiva", "descripcion": "La tanda sigue hasta agotar lo vencido de hoy.", "codigo": "src/components/practice/srs-review.tsx:SrsReview" },
+    { "id": "fin-repaso", "nombre": "Tanda completa", "tipo": "Evento de Fin", "descripcion": "El repaso del día terminó.", "codigo": "src/components/practice/srs-review.tsx:SrsReview" },
+    { "id": "fin-sin-vencidas", "nombre": "Nada por repasar", "tipo": "Evento de Fin", "descripcion": "Hoy no toca: se dice claro en vez de inventar ejercicio.", "codigo": "src/application/srs/review-session-use-case.ts:dueCards" }
+  ]
+}

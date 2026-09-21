@@ -65,8 +65,20 @@ servidor MCP activo en `http://127.0.0.1:7331/mcp`).
   qué", no el "dónde está la función".
 - Vistas actuales del proyecto: **C4** (contexto + contenedores, modelo base),
   **BPMN · Onboarding ReAct**, **UML · Estados ReAct**, **BPMN · Simulación y
-  feedback**. Cada elemento cita su fuente (`archivo:línea`): contrastá contra
-  el código antes de confiar en un diagrama viejo.
+  feedback**, **BPMN · Turno de chat**, **BPMN · Repaso SRS**, **BPMN · Ruta y
+  progresión** y **BPMN · Voz y pronunciación**.
+- **Lo que se lee en el lienzo va en lenguaje de producto**, no en rutas del
+  repo: «Propone 3 respuestas», no `suggest-replies-use-case.ts`. Una caja que
+  nombra un archivo no le dice nada a quien lee el proceso.
+- El ancla al código vive **sólo** en la instantánea de cada vista
+  (`docs/diagramas/`, campo `codigo` con `ruta/al/archivo.ts:símbolo`, nunca
+  número de línea); el puente entre el lienzo y el repo es el `id` del elemento.
+  La señal `diagramas sincronizados` del gate (`node scripts/diagrams-check.mjs`)
+  falla si una caja no tiene descripción, si habla en rutas, o si su ancla apunta
+  a un archivo o símbolo que ya no existe.
+- Al dibujar un flujo, **leé los CALLERS del código, no sólo el módulo**: un caso
+  de uso dice lo que hace, pero sólo su caller dice cuándo corre — o si no corre
+  nunca (gotcha 2026-09-15). Tras tocar una vista, reescribí su instantánea.
 - **Tras un cambio estructural** (capa nueva, proceso Electron, puerto, flujo
   de casos de uso): actualizá la vista afectada con el skill
   `disenar-diagrama` (`.claude/skills/disenar-diagrama/`) y exportá con

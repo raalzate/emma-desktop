@@ -7,7 +7,7 @@ description: Diseña UN diagrama (Event Storming DDD, BPMN, C4 o UML) en Process
 
 - **Transporte:** HTTP — la app está conectada en `http://127.0.0.1:7331/mcp`. `export_to_app` carga el diagrama DIRECTO en el lienzo.
 - **Workspace del servidor:** `/Users/raul.alzate/Library/Application Support/processflow-architect/mcp-workspace`
-- **Herramientas disponibles:** list_notations, describe_notation, list_orgs, create_org, use_org, rename_org, delete_org, move_diagram, create_diagram, list_diagrams, use_diagram, get_diagram, add_container, add_node, add_edge, update_element, set_element_spec, get_element_spec, spec_to_markdown, review_specs, update_edge, remove_edge, remove_element, validate_diagram, review_diagram, suggest_views, record_ambiguity, resolve_ambiguity, set_project_meta, add_read_model, remove_read_model, relayout_diagram, render_mermaid, get_app_state, list_artifacts, get_artifact, list_views, get_view, list_skills, install_skill, export_to_app, export_as_view, use_project, delete_view, rename_view, export_mermaid_view, import_diagram.
+- **Herramientas disponibles:** list_notations, describe_notation, list_orgs, create_org, use_org, rename_org, delete_org, move_diagram, create_diagram, list_diagrams, use_diagram, get_diagram, add_container, add_node, add_fragment, add_edge, update_element, set_element_spec, get_element_spec, spec_to_markdown, review_specs, update_edge, remove_edge, remove_element, validate_diagram, review_diagram, suggest_views, record_ambiguity, attach_source, list_sources, read_source, remove_source, resolve_ambiguity, set_project_meta, add_read_model, remove_read_model, relayout_diagram, render_mermaid, get_app_state, list_artifacts, get_artifact, list_views, get_view, list_skills, install_skill, export_to_app, export_as_view, use_project, delete_view, rename_view, export_mermaid_view, import_diagram.
 - **Notación por defecto:** `ddd` (sólo cuando el usuario no declara intención).
 - **Tamaño legible por vista:** ~40 elementos; más allá, corta con `suggest_views`.
 - **Cupo de vistas por proyecto:** 50.
@@ -226,6 +226,28 @@ artefacto real. Poné propiedades cuando la fuente las da o cuando estás modela
 desde código; no las inventes: una url adivinada es peor que ninguna, y para eso
 está `pendiente`.
 
+### Adjuntá el documento, no sólo su nombre
+
+Una cita a un archivo que la app no tiene es un puntero colgante: el humano que
+revisa desde la app —y el agente que ahí le responde— no puede abrirlo. Antes de
+citar líneas de un documento, **adjuntá su texto** con `attach_source`:
+
+```
+attach_source { name: "contratos/07-pagos.md", origin: "PDF del cliente",
+                text: "<el texto del documento>" }
+add_node { name: "Pasarela", type: "Componente",
+           source: "contratos/07-pagos.md:36" }
+```
+
+- Citá con el **mismo nombre** con el que adjuntaste: así la ficha del elemento
+  muestra el fragmento y el agente de la app puede leerlo con `read_source`.
+- `list_sources` dice qué hay adjunto (sin traer el texto); `read_source` relee
+  un rango; `remove_source` lo quita sin borrar las citas.
+- `validate_diagram` avisa con **FUENTE-SIN-ADJUNTAR** cuando una caja cita un
+  documento que no está: es la señal de que la evidencia se quedó afuera.
+- Adjuntá lo que **sostiene el diagrama**, no la biblioteca entera: el tope son
+  20 documentos de 60 000 caracteres y lo que pase se recorta.
+
 ### Especificación: qué debe hacer la caja y cómo se sabe
 
 Cada elemento puede llevar su **contrato**, que en la app se ve en el tab «Spec»
@@ -246,8 +268,17 @@ set_element_spec { id: "c4-api-pagos", spec: {
   criteria: [ { texto: "99 % de los cobros se resuelven en un intento" } ] } }
 ```
 
-- **Reemplaza** la spec anterior: para cambiar una parte, `get_element_spec`,
-  editás y volvés a mandarla. Una spec vacía borra la que hubiera.
+- **La spec no es opcional ni es el final del trabajo: es una PASADA propia.**
+  Creá primero los elementos y las relaciones; después volvé caja por caja a
+  escribir el contrato. Lo que no quepa en el nombre va a la `description`, pero
+  lo que el documento DECIDE —qué debe hacer, con qué se verifica— va acá: la
+  descripción la lee el humano de reojo, la spec la lee quien construye.
+- Por defecto **reemplaza** la spec anterior. Para completarla sin reescribirla,
+  `set_element_spec { merge: true }`: lo que mandás pisa (nombre, estado) o se
+  suma (historias, requisitos, criterios, entidades, casos límite) y lo que no
+  mandás se conserva. Un ítem con el mismo texto se reemplaza en su sitio, así
+  reintentar no duplica ni renumera los `FR-00N` que alguien ya citó afuera.
+  Sin `merge`, una spec vacía borra la que hubiera.
 - Lo que la fuente **no decide, no se inventa**: el requisito se marca
   `needsClarification: true` y queda visible como pendiente.
 - Los requisitos van sin tecnología («El sistema MUST …») y los criterios de
@@ -255,8 +286,15 @@ set_element_spec { id: "c4-api-pagos", spec: {
 - `spec_to_markdown` devuelve la plantilla lista para pegar en una issue o un PR
   (de un elemento, o de todo el diagrama sin `id`).
 - `review_specs` dice qué elementos no tienen spec, cuáles tienen requisitos sin
-  ningún criterio con el que verificarlos, cuáles tienen historias sin escenarios
-  y qué quedó por aclarar. Pasalo antes de dar el diseño por terminado.
+  ningún criterio con el que verificarlos, cuáles tienen historias sin
+  escenarios, **qué criterio no tiene ningún número** (no se puede medir), **qué
+  requisito nombra una tecnología** (dice el cómo, no el qué) y qué quedó por
+  aclarar. **Es el cierre de la pasada de spec: no des el diseño por terminado
+  hasta que lo que devuelve sea lista vacía o una excepción que le declarás al
+  usuario en una línea.**
+- En la app, el agente lee ese contrato con `read_element`: si la spec está
+  vacía, lo único que va a poder contestarle al humano es el resumen de la
+  descripción. Escribir la spec ES lo que hace útil al diagrama después.
 
 Si el diagrama crece, `suggest_views`: dice si conviene cortarlo por
 contenedor/fase (legible hasta ~40 elementos) y qué mirada complementaria

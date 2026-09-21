@@ -1,0 +1,27 @@
+{
+  "vista": "BPMN · Voz y pronunciación",
+  "notacion": "bpmn",
+  "proyecto": "EMMA Desktop",
+  "revisado": "2026-09-15",
+  "resumen": "Un mismo mecanismo de micrófono sirve al chat y al laboratorio: se graba, se transcribe sin salir del equipo y, según desde dónde se grabó, el texto entra como nota de voz o se compara con lo que había que pronunciar. Queda declarada la deuda: la comprobación de duración mínima no corre en el camino real.",
+  "elementos": [
+    { "id": "aprendiz", "nombre": "Aprendiz", "tipo": "Carril", "descripcion": "Habla: para conversar con EMMA o para medir su pronunciación.", "codigo": "src/components/chat/use-voice-input.ts:useVoiceInput" },
+    { "id": "usevoiceinput", "nombre": "Grabación de voz", "tipo": "Carril", "descripcion": "El mecanismo de micrófono que comparten el chat y el laboratorio de pronunciación.", "codigo": "src/components/chat/use-voice-input.ts:useVoiceInput" },
+    { "id": "whisper-local", "nombre": "Dictado local", "tipo": "Carril", "descripcion": "Reconocimiento de voz que corre en el equipo: el audio nunca sale de la máquina.", "codigo": "src/components/chat/use-voice-input.ts:whisper-transcribe" },
+    { "id": "lab-de-pronunciacion", "nombre": "Lab de pronunciación", "tipo": "Carril", "descripcion": "Pares mínimos y shadowing: el dictado como detector barato y honesto de errores de pronunciación.", "codigo": "src/components/practice/minimal-pair-lab.tsx:useSpokenAttempt" },
+    { "id": "ini-toggle", "nombre": "Toca el micrófono", "tipo": "Evento de Inicio", "descripcion": "Un mismo botón empieza y termina la grabación.", "codigo": "src/components/chat/use-voice-input.ts:toggle" },
+    { "id": "getusermedia", "nombre": "Pide permiso y graba", "tipo": "Tarea", "descripcion": "Sin permiso de micrófono no hay grabación posible.", "codigo": "src/components/chat/use-voice-input.ts:getUserMedia" },
+    { "id": "err-permiso", "nombre": "Sin permiso de micro", "tipo": "Evento de Error", "descripcion": "Se avisa en español qué revisar, sin romper la pantalla.", "codigo": "src/components/practice/minimal-pair-lab.tsx:AttemptState" },
+    { "id": "detiene", "nombre": "Suelta el micrófono", "tipo": "Evento Intermedio", "descripcion": "Termina de hablar y empieza el procesamiento.", "codigo": "src/components/chat/use-voice-input.ts:MediaRecorder" },
+    { "id": "resamplea", "nombre": "Prepara el audio", "tipo": "Tarea", "descripcion": "Se deja en el formato que el dictado entiende y se guarda una copia reproducible para la burbuja.", "codigo": "src/components/chat/use-voice-input.ts:toPcm16k" },
+    { "id": "whisper", "nombre": "Transcribe sin subir nada", "tipo": "Tarea", "descripcion": "Todo ocurre en el equipo. La primera vez tarda más porque carga el modelo.", "codigo": "src/components/chat/use-voice-input.ts:transcribe" },
+    { "id": "gw-texto", "nombre": "¿Se entendió algo?", "tipo": "Compuerta Exclusiva", "descripcion": "Si el dictado no devolvió texto, no se manda nada: el silencio no se convierte en mensaje vacío.", "codigo": "src/components/chat/use-voice-input.ts:onResult" },
+    { "id": "gw-modo", "nombre": "¿Desde dónde grabó?", "tipo": "Compuerta Exclusiva", "descripcion": "El mismo mecanismo sirve a dos propósitos: conversar o medir la pronunciación.", "codigo": "src/components/chat/use-voice-input.ts:onResult" },
+    { "id": "nota-voz", "nombre": "Va como nota de voz", "tipo": "Tarea", "descripcion": "Lo transcrito entra como mensaje del turno y el audio queda reproducible en la burbuja.", "codigo": "src/components/chat/use-voice-input.ts:audioUrl" },
+    { "id": "compara", "nombre": "Compara con lo esperado", "tipo": "Tarea", "descripcion": "Se contrasta lo que la máquina oyó contra el texto que había que pronunciar.", "codigo": "src/components/practice/minimal-pair-lab.tsx:checkPronunciation" },
+    { "id": "sin-texto", "nombre": "No te entendí", "tipo": "Tarea", "descripcion": "Vale como resultado, no como falla: si la máquina no te entiende, un humano tampoco.", "codigo": "src/components/practice/minimal-pair-lab.tsx:expectingRef" },
+    { "id": "fin-veredicto", "nombre": "Ve su veredicto", "tipo": "Evento de Fin", "descripcion": "Verde si la máquina lo entendió; si no, qué oyó en su lugar. En el reto largo, palabra por palabra.", "codigo": "src/components/practice/minimal-pair-lab.tsx:PronounceCheck" },
+    { "id": "fin-chat", "nombre": "Sigue la conversación", "tipo": "Evento de Fin", "descripcion": "El turno continúa como si lo hubiera escrito.", "codigo": "src/components/chat/use-voice-input.ts:useVoiceInput" },
+    { "id": "deuda-casos-uso", "nombre": "Deuda conocida", "tipo": "Anotación", "descripcion": "Hay una comprobación de duración mínima —pensada para descartar toques accidentales del micrófono— con su lógica probada, pero la pantalla llama al dictado directo: hoy esa comprobación no corre.", "codigo": "src/application/audio/transcribe-audio-use-case.ts:transcribeAudio" }
+  ]
+}

@@ -1,0 +1,51 @@
+flowchart LR
+  subgraph agg_Aprendiz["Aprendiz"]
+    ini_mensaje(("Envía su mensaje<br><i>Evento de Inicio</i>"))
+    elige_chip("Elige o redacta<br><i>Tarea</i>")
+    fin_respuesta(("Sigue la conversación<br><i>Evento de Fin</i>"))
+  end
+  subgraph agg_Pantalla_de_chat["Pantalla de chat"]
+    pide_sugerencias("Sugiere mientras escribe<br><i>Tarea</i>")
+    stream_burbuja("Aparece en la burbuja<br><i>Tarea</i>")
+  end
+  subgraph agg_Tutora_EMMA["Tutora EMMA"]
+    genera_chips("Propone 3 respuestas<br><i>Tarea</i>")
+    arma_prompt("Reconstruye la escena<br><i>Tarea</i>")
+    gw_stream{"¿Apertura segura?<br><i>Compuerta Exclusiva</i>"}
+    fallback("Disculpa en personaje<br><i>Tarea</i>")
+    sanea_valida("Limpia y controla<br><i>Tarea</i>")
+    gw_valida{"¿La respuesta sirve?<br><i>Compuerta Exclusiva</i>"}
+    reintento_nudge("Pide otra versión<br><i>Tarea</i>")
+    reformula("Dilo más simple<br><i>Tarea</i>")
+    recuperacion("Retoma la pregunta<br><i>Tarea</i>")
+    gw_valida2{"¿Sirve el 2º intento?<br><i>Compuerta Exclusiva</i>"}
+    gw_valida3{"¿Sirve el 3º intento?<br><i>Compuerta Exclusiva</i>"}
+  end
+  subgraph agg_Modelo_de_lenguaje["Modelo de lenguaje"]
+    genera_llm("Escribe el diálogo<br><i>Tarea</i>")
+    timeout_60s(("Se pasa de un minuto<br><i>Evento Temporizador</i>"))
+  end
+  elige_chip -->|"envía"| ini_mensaje
+  gw_stream -->|"sospechosa: se oculta"| sanea_valida
+  sanea_valida -->|"revisa"| gw_valida
+  gw_valida -->|"suena a máquina"| reintento_nudge
+  reintento_nudge -->|"revisa de nuevo"| gw_valida2
+  gw_valida2 -->|"tampoco sirve"| reformula
+  reformula -->|"última revisión"| gw_valida3
+  gw_valida3 -->|"tres fallidos"| recuperacion
+  genera_llm -->|"tarda demasiado"| timeout_60s
+  pide_sugerencias -->|"pide ideas"| genera_chips
+  genera_chips -->|"muestra chips"| elige_chip
+  ini_mensaje -->|"su línea"| arma_prompt
+  arma_prompt -->|"escena + consigna"| genera_llm
+  genera_llm -->|"primeras palabras"| gw_stream
+  gw_stream -->|"apertura segura"| stream_burbuja
+  stream_burbuja -->|"línea completa"| sanea_valida
+  timeout_60s -->|"sin tokens parciales"| fallback
+  timeout_60s -->|"rescata lo dicho"| sanea_valida
+  gw_valida -->|"válida"| fin_respuesta
+  gw_valida2 -->|"válida"| fin_respuesta
+  gw_valida3 -->|"válida"| fin_respuesta
+  recuperacion -->|"sin declarar amnesia"| fin_respuesta
+  fallback -->|"nunca un error técnico"| fin_respuesta
+  elige_chip -->|"mientras teclea"| pide_sugerencias

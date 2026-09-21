@@ -528,6 +528,42 @@ if (config.tracker?.artifactsIn === "tracker" && fs.existsSync(abs("scripts/arti
   }
 }
 
+// 3g-ter. Un diagrama que cita código que ya no existe es rojo. Dos cebos en un directorio
+//     temporal (`--dir`, para no tocar el repo): una cita a un archivo borrado y un símbolo
+//     que el archivo real ya no contiene — las dos formas en que un diagrama se desincroniza.
+if (config.diagrams?.dir && fs.existsSync(abs("scripts/diagrams-check.mjs"))) {
+  const cebos = [
+    ["archivo que ya no existe", "src/application/chat/se-borro-este-archivo.ts:runChatTurn", "Hace algo"],
+    ["símbolo renombrado en el código", "src/application/chat/run-chat-turn-use-case.ts:funcionQueNadieDefinio", "Hace algo"],
+    // Tercer cebo: la caja habla en rutas del repo en vez de en lenguaje de producto —
+    // el defecto que hacía ilegible el diagrama aunque estuviera sincronizado.
+    ["caja que habla en rutas", "src/application/chat/run-chat-turn-use-case.ts:runChatTurn", "Llama a src/lib/ai/router.ts"],
+  ];
+  for (const [nombre, cita, descripcion] of cebos) {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "harness-diagramas-"));
+    try {
+      const dir = path.join(tmp, config.diagrams.dir);
+      fs.mkdirSync(dir, { recursive: true });
+      // El árbol real se enlaza para que el cebo del símbolo mida contra el código de verdad.
+      fs.symlinkSync(abs("src"), path.join(tmp, "src"), "dir");
+      fs.writeFileSync(
+        path.join(dir, "cebo.json"),
+        JSON.stringify({
+          vista: "Cebo",
+          notacion: "bpmn",
+          revisado: "2026-09-15",
+          elementos: [{ id: "cebo", nombre: "Cebo", tipo: "Tarea", descripcion, codigo: cita }],
+        }),
+      );
+      const res = spawnSync("node", [abs("scripts/diagrams-check.mjs"), "--dir", tmp], { encoding: "utf8" });
+      if (res.status !== 0) ok(`diagrams-check caza un diagrama desincronizado: ${nombre}`);
+      else bad(`diagrams-check caza un diagrama desincronizado: ${nombre}`, `exit 0 con el cebo puesto: ${res.stdout.trim()}`);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }
+}
+
 // 3g-bis. Un índice de documentación al que le falta un documento es rojo. El cebo es un
 //     CONFIG temporal cuyo índice apunta a un archivo que no enlaza nada: no se escribe
 //     en el árbol.

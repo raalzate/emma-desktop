@@ -27,6 +27,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Link-check de docs | `node scripts/docs-linkcheck.mjs` | verde — enlaces, rutas citadas, scripts npm/pnpm citados y honestidad BLOCKING de la constitución |
 | Lint de convenciones | `node scripts/repo-lint.mjs` | verde — PUREZA (domain/application/infrastructure), ANY, SECRETO, CONSOLE, ONLY, INCIDENTE |
 | Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en issues de GitHub; sin `specs/` en el repo |
+| Diagramas sincronizados | `node scripts/diagrams-check.mjs` | verde — 4 vistas BPMN, 77 elementos; cajas en lenguaje de producto y anclas que apuntan a código que existe |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
 | Tests | `pnpm test` | verde — 1238 pruebas en 161 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |

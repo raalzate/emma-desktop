@@ -1,0 +1,38 @@
+flowchart LR
+  subgraph agg_Aprendiz["Aprendiz"]
+    ini_toggle(("Toca el micrófono<br><i>Evento de Inicio</i>"))
+    detiene(("Suelta el micrófono<br><i>Evento Intermedio</i>"))
+    nota_voz("Va como nota de voz<br><i>Tarea</i>")
+    fin_chat(("Sigue la conversación<br><i>Evento de Fin</i>"))
+  end
+  subgraph agg_Grabacion_de_voz["Grabación de voz"]
+    getusermedia("Pide permiso y graba<br><i>Tarea</i>")
+    resamplea("Prepara el audio<br><i>Tarea</i>")
+    gw_texto{"¿Se entendió algo?<br><i>Compuerta Exclusiva</i>"}
+  end
+  subgraph agg_Dictado_local["Dictado local"]
+    whisper("Transcribe sin subir nada<br><i>Tarea</i>")
+    deuda_casos_uso["Deuda conocida<br><i>Anotación</i>"]
+    compara("Compara con lo esperado<br><i>Tarea</i>")
+  end
+  subgraph agg_Lab_de_pronunciacion["Lab de pronunciación"]
+    gw_modo{"¿Desde dónde grabó?<br><i>Compuerta Exclusiva</i>"}
+    err_permiso(("Sin permiso de micro<br><i>Evento de Error</i>"))
+    sin_texto("No te entendí<br><i>Tarea</i>")
+    fin_veredicto(("Ve su veredicto<br><i>Evento de Fin</i>"))
+  end
+  nota_voz -->|"texto y audio"| fin_chat
+  deuda_casos_uso ---|"comprobación omitida"| whisper
+  sin_texto -->|"cuenta como no logrado"| fin_veredicto
+  err_permiso -->|"avisa y corta"| fin_veredicto
+  gw_texto -->|"hay transcripción"| gw_modo
+  compara -->|"qué se entendió"| fin_veredicto
+  ini_toggle -->|"empieza a grabar"| getusermedia
+  getusermedia -->|"permiso negado"| err_permiso
+  getusermedia -->|"grabando"| detiene
+  detiene -->|"audio grabado"| resamplea
+  resamplea -->|"manda a transcribir"| whisper
+  whisper -->|"lo que oyó"| gw_texto
+  gw_texto -->|"nada entendible"| sin_texto
+  gw_modo -->|"desde el chat"| nota_voz
+  gw_modo -->|"desde el lab"| compara
