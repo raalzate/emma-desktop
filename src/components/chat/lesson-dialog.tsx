@@ -13,7 +13,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Languages, Loader2, Play, RotateCcw, Square } from "lucide-react";
+import { ArrowRight, Check, Languages, ListPlus, Loader2, Play, RotateCcw, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PracticeRecommendation } from "@/domain/tutor/practice-recommender";
 import type { SessionChallenge } from "@/domain/curriculum/challenge-selection";
@@ -36,6 +36,12 @@ import { useKaraoke, type Karaoke } from "./use-karaoke";
 import { KaraokeTranscript } from "./karaoke-transcript";
 import { hasSpeakableContent } from "@/domain/tts/speakable-text";
 import { splitReportAtLesson } from "@/domain/feedback/report-sections";
+import {
+  draftFromChallenge,
+  draftFromRecommendation,
+} from "@/domain/lessons/lesson-todo-drafts";
+import type { LessonTodoDraft, LessonTodoOrigin } from "@/domain/lessons/lesson-todo";
+import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
 
 /** Voz reservada de Emma (tutora): siempre femenina, en-US-EmmaNeural. */
 const EMMA_VOICE = "en-US-EmmaNeural";
@@ -52,22 +58,6 @@ interface Props {
   onSelectScenario: (s: Scenario) => void;
   /** Abre la ayuda en español sobre un texto (reutiliza el TranslateDialog). */
   onTranslate: (text: string) => void;
-}
-
-/** Ruta de /practice preseleccionada para cada tipo de recomendación (kind "scenario" no navega aquí). */
-function practiceHrefFor(rec: PracticeRecommendation): string | null {
-  switch (rec.kind) {
-    case "exercise":
-      return `/practice?tab=exercises&unit=${rec.unit}&exercise=${rec.exerciseId}`;
-    case "srs-review":
-      return "/practice?tab=srs";
-    case "minimal-pair":
-      return `/practice?tab=pronunciation&contrast=${rec.contrastId}`;
-    case "checklist":
-      return `/practice?tab=assessment&level=${rec.level}`;
-    case "scenario":
-      return null;
-  }
 }
 
 /** Decisión metodológica de Emma en una línea legible (andamiaje: español). */
@@ -153,6 +143,37 @@ export function LessonKaraoke({
   );
 }
 
+/**
+ * «Anotar» en vez de «ir»: el diálogo NO se cierra al pulsar, así que el
+ * aprendiz sigue leyendo su feedback y la recomendación deja de perderse si no
+ * la atiende en ese momento (#172).
+ */
+function AnotarButton({
+  label,
+  draft,
+  added,
+  onAdd,
+}: {
+  label: string;
+  draft: LessonTodoDraft;
+  added: boolean;
+  onAdd: (draft: LessonTodoDraft) => void;
+}) {
+  return (
+    <Button
+      variant={added ? "secondary" : "outline"}
+      size="sm"
+      className="gap-1"
+      title={added ? "Ya está en tu lista de lecciones" : "Agregar a mis lecciones"}
+      disabled={added}
+      onClick={() => onAdd(draft)}
+    >
+      {added ? <Check className="h-3.5 w-3.5" /> : <ListPlus className="h-3.5 w-3.5" />}
+      {added ? "Anotada" : label}
+    </Button>
+  );
+}
+
 export function LessonDialog({
   view, open, onClose, scenario, situation, level, scenarios, onSelectScenario, onTranslate,
 }: Props) {
@@ -162,6 +183,29 @@ export function LessonDialog({
   const sessionChallenge = useSessionChallenge(open && !!view, scenario.scenarioType, level);
   // La lección sale del markdown del reporte: se renderiza en karaoke, no plana.
   const reportParts = splitReportAtLesson(view?.report ?? "");
+  const { add } = useLessonTodos();
+  // Marcar lo anotado sin recargar la lista entera: el diálogo sólo necesita
+  // saber qué botones ya se pulsaron en esta lectura del feedback.
+  const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
+  const lessonOrigin: LessonTodoOrigin = {
+    sessionAt: Date.now(),
+    scenarioType: scenario.scenarioType,
+    scenarioTitle: scenario.title,
+    situationTitle: situation?.title,
+  };
+  const challengeDraft = sessionChallenge
+    ? draftFromChallenge(
+        {
+          unit: sessionChallenge.unit.number,
+          instructionsEs: sessionChallenge.challenge.instructionsEs,
+        },
+        lessonOrigin,
+      )
+    : null;
+  const addTodo = (draft: LessonTodoDraft): void => {
+    void add(draft);
+    setAddedKeys((prev) => new Set(prev).add(`${draft.kind}:${draft.target}`));
+  };
 
   // Siguiente paso de la ruta: nunca el escenario que se acaba de jugar —
   // si la recomendación coincide, rota al siguiente del catálogo del nivel.
@@ -224,28 +268,19 @@ export function LessonDialog({
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Próximos pasos
               </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Anótalas y hazlas cuando quieras: quedan en «Mis lecciones».
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {view.recommendations.map((rec, i) => {
-                  const href = practiceHrefFor(rec);
-                  const target =
-                    rec.kind === "scenario"
-                      ? scenarios.find((s) => s.scenarioType === rec.scenarioType) ?? null
-                      : null;
-                  return (
-                    <Button
-                      key={`${rec.kind}-${i}`}
-                      variant="outline"
-                      size="sm"
-                      title={rec.reasonEs}
-                      onClick={() => {
-                        if (href) closeAnd(() => router.push(href));
-                        else if (target) closeAnd(() => onSelectScenario(target));
-                      }}
-                    >
-                      {rec.reasonEs}
-                    </Button>
-                  );
-                })}
+                {view.recommendations.map((rec, i) => (
+                  <AnotarButton
+                    key={`${rec.kind}-${i}`}
+                    label={rec.reasonEs}
+                    draft={draftFromRecommendation(rec, lessonOrigin)}
+                    onAdd={addTodo}
+                    added={addedKeys.has(`${rec.kind}:${draftFromRecommendation(rec, lessonOrigin).target}`)}
+                  />
+                ))}
               </div>
             </section>
           )}
@@ -264,18 +299,14 @@ export function LessonDialog({
                   <li key={i}>{c}</li>
                 ))}
               </ul>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() =>
-                  closeAnd(() =>
-                    router.push(`/practice?tab=challenges&unit=${sessionChallenge.unit.number}`),
-                  )
-                }
-              >
-                Ir al reto
-              </Button>
+              <div className="mt-2">
+                <AnotarButton
+                  label="Anotar el reto"
+                  draft={challengeDraft!}
+                  onAdd={addTodo}
+                  added={addedKeys.has(`challenge:${challengeDraft?.target}`)}
+                />
+              </div>
             </section>
           )}
         </div>

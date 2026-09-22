@@ -2,7 +2,8 @@
 
 /**
  * Ruta "Práctica": ejercicios cerrados, repaso SRS, laboratorio de
- * pronunciación, plan de estudio y autoevaluación en pestañas.
+ * pronunciación, plan de estudio, autoevaluación, retos y la lista de
+ * lecciones que EMMA anotó al cerrar cada sesión, en pestañas.
  */
 
 import { Suspense, useEffect } from "react";
@@ -17,6 +18,7 @@ import { MinimalPairLab } from "@/components/practice/minimal-pair-lab";
 import { StudyPlanView } from "@/components/practice/study-plan-view";
 import { SelfAssessmentView } from "@/components/practice/self-assessment-view";
 import { ChallengeView } from "@/components/practice/challenge-view";
+import { LessonTodoList } from "@/components/lessons/lesson-todo-list";
 
 // Mapa de la deep-link ?tab= (recomendaciones de Emma) al value real del Tab;
 // "assessment" es el alias usado en las recomendaciones para self-assessment.
@@ -42,6 +44,7 @@ function PracticeTabs() {
         <TabsTrigger value="plan">Plan de estudio</TabsTrigger>
         <TabsTrigger value="self-assessment">Autoevaluación</TabsTrigger>
         <TabsTrigger value="challenges">Retos</TabsTrigger>
+        <TabsTrigger value="lessons">Mis lecciones</TabsTrigger>
       </TabsList>
       <TabsContent value="exercises">
         <ExerciseDrill
@@ -63,6 +66,9 @@ function PracticeTabs() {
       </TabsContent>
       <TabsContent value="challenges">
         <ChallengeView initialUnit={initialUnit ? Number(initialUnit) : undefined} />
+      </TabsContent>
+      <TabsContent value="lessons">
+        <LessonTodoList />
       </TabsContent>
     </Tabs>
   );
