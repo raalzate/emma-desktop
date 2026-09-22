@@ -7,7 +7,7 @@
  */
 
 import type { LlmGenerate } from "@/domain/ai/llm-port";
-import { isActionableCorrection, type SilentError } from "@/domain/chat/silent-error";
+import { reportableCorrections, type SilentError } from "@/domain/chat/silent-error";
 import { hasNonLatinScript } from "@/domain/chat/sanitize-reply";
 import { LESSON_MAX_TOKENS } from "@/domain/shared/token-budgets";
 import { unitForSession } from "@/domain/curriculum/unit-catalog";
@@ -61,7 +61,7 @@ function validLesson(raw: string): string | null {
 
 /** Lección hablada personalizada de Emma EN INGLÉS, o null (el caller usa el respaldo). */
 export async function buildLesson(args: BuildLessonArgs): Promise<string | null> {
-  const meaningful = args.errors.filter(isActionableCorrection);
+  const meaningful = reportableCorrections(args.errors);
   if (meaningful.length === 0) return null;
   const errorLines = meaningful
     .map((e) => `- (${e.label}) Dijo: "${e.original.trim()}" → Correcto: "${e.corrected.trim()}"`)
