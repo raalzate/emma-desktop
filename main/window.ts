@@ -3,7 +3,7 @@ import path from 'path';
 import { isDev, appServe } from './config';
 import { assetsDir } from './paths';
 import { loadProductionRenderer } from './load-renderer';
-import { wireSpellCheckContextMenu } from './context-menu';
+import { buildContextMenuTemplate } from './context-menu';
 
 /** Crea la ventana principal de EMMA y su menú nativo (ES). */
 export function createMainWindow(): BrowserWindow {
@@ -28,6 +28,7 @@ export function createMainWindow(): BrowserWindow {
   }
   // Sin este menú, el subrayado rojo marca el error pero no dice cómo se escribe.
   wireSpellCheckContextMenu(win);
+
 
   // La IA local (LiteRT-LM/WebGPU) y el micrófono (dictado) requieren permisos.
   win.webContents.session.setPermissionRequestHandler((_wc, _permission, cb) => cb(true));
@@ -113,4 +114,17 @@ function setupMenu(win: BrowserWindow): void {
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+/** Cablea el menú contextual a la ventana: sin esto el template no se dibuja nunca. */
+function wireSpellCheckContextMenu(win: BrowserWindow): void {
+  const webContents = win.webContents;
+  webContents.on('context-menu', (_event, params) => {
+    const template = buildContextMenuTemplate(params, {
+      replaceMisspelling: (word) => webContents.replaceMisspelling(word),
+      addToDictionary: (word) => webContents.session.addWordToSpellCheckerDictionary(word),
+    });
+    if (template.length === 0) return;
+    Menu.buildFromTemplate(template).popup({ window: win });
+  });
 }

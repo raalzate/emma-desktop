@@ -1,10 +1,15 @@
-import { Menu, type BrowserWindow, type MenuItemConstructorOptions } from 'electron';
+import type { MenuItemConstructorOptions } from 'electron';
 
 /**
  * Menú contextual del composer. Chromium ya subraya el error de ortografía,
  * pero sin este handler la sugerencia del diccionario (`dictionarySuggestions`)
  * nunca llega a la pantalla: el aprendiz veía la marca roja y no cómo se
  * escribe bien. Etiquetas en español (andamiaje de UI, Artículo 9).
+ *
+ * Sólo el TEMPLATE vive acá, y con un import de tipos (que se borra al
+ * compilar): cargar `electron` en tiempo de ejecución rompe la prueba en CI,
+ * donde no hay binario de Electron instalado. El cableado, que sí necesita
+ * `Menu`, vive en `window.ts`.
  */
 
 /** Subconjunto de `ContextMenuParams` que el menú necesita: mantiene el builder testeable. */
@@ -57,17 +62,4 @@ export function buildContextMenuTemplate(
   );
 
   return template;
-}
-
-/** Cablea el menú a la ventana: sin esto el template no se dibuja nunca. */
-export function wireSpellCheckContextMenu(win: BrowserWindow): void {
-  const webContents = win.webContents;
-  webContents.on('context-menu', (_event, params) => {
-    const template = buildContextMenuTemplate(params, {
-      replaceMisspelling: (word) => webContents.replaceMisspelling(word),
-      addToDictionary: (word) => webContents.session.addWordToSpellCheckerDictionary(word),
-    });
-    if (template.length === 0) return;
-    Menu.buildFromTemplate(template).popup({ window: win });
-  });
 }
