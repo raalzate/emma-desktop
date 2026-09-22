@@ -3,6 +3,7 @@ import path from 'path';
 import { isDev, appServe } from './config';
 import { assetsDir } from './paths';
 import { loadProductionRenderer } from './load-renderer';
+import { wireSpellCheckContextMenu } from './context-menu';
 
 /** Crea la ventana principal de EMMA y su menú nativo (ES). */
 export function createMainWindow(): BrowserWindow {
@@ -17,6 +18,16 @@ export function createMainWindow(): BrowserWindow {
       webSecurity: isDev,
     },
   });
+
+  // Inmersión: lo que el aprendiz escribe es inglés, así que el diccionario es
+  // inglés — con el idioma del sistema (español) Chromium subrayaba la frase
+  // entera y no tenía una sola sugerencia útil. En macOS el corrector lo pone
+  // el sistema operativo y esta API es no-op.
+  if (process.platform !== 'darwin') {
+    win.webContents.session.setSpellCheckerLanguages(['en-US']);
+  }
+  // Sin este menú, el subrayado rojo marca el error pero no dice cómo se escribe.
+  wireSpellCheckContextMenu(win);
 
   // La IA local (LiteRT-LM/WebGPU) y el micrófono (dictado) requieren permisos.
   win.webContents.session.setPermissionRequestHandler((_wc, _permission, cb) => cb(true));
