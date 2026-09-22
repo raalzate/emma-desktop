@@ -14,11 +14,21 @@ export const GRAMMAR_SYSTEM =
   "conditional, present/future). Scan EVERY clause — if the text has an " +
   "'if...' conditional AND a request AND a question, give a SEPARATE structure " +
   "for each; do not stop after the first one. Use the learner's own text — " +
-  "never invent examples. For EACH structure output a block of EXACTLY these 4 " +
+  "never invent examples. For EACH structure output a block of EXACTLY these 8 " +
   "lines, blocks separated by one blank line, and nothing else:\n" +
   "STRUCTURE: <short name of the structure>\n" +
+  "TENSE: <the verb tense IN SPANISH, e.g. 'presente simple', 'pasado simple', " +
+  "'presente continuo'>\n" +
   "PATTERN: <a readable formula, e.g. 'Can you + (please) + base verb + object ?'>\n" +
   "EXAMPLE: <the exact fragment from the text that shows this structure>\n" +
+  "AFFIRMATIVE: <the SAME idea as a statement>\n" +
+  "NEGATIVE: <the SAME idea negated>\n" +
+  "QUESTION: <the SAME idea as a question>\n" +
+  "In the AFFIRMATIVE, NEGATIVE and QUESTION lines mark every verb: wrap the " +
+  "auxiliary verb as [aux:word] and the main verb as [main:word], keeping the " +
+  "rest of the sentence untouched — e.g. 'I [aux:am] not [main:working] today.' " +
+  "A sentence with no auxiliary marks only [main:word]. These three lines must " +
+  "express the SAME idea so the learner sees what moves.\n" +
   "WHY: <1-2 clear sentences IN SPANISH explaining when and why it is used, " +
   "plus — when one exists — the typical mistake a Spanish speaker makes with " +
   "it (e.g. dropping the subject, translating a preposition literally); " +

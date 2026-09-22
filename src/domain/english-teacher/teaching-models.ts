@@ -20,12 +20,39 @@ export interface PronunciationRow {
   translation: string;
 }
 
+/** Forma de la misma idea: lo que se mueve de lugar al negar o preguntar. */
+export type GrammarForm = "affirmative" | "negative" | "question";
+
+/** Papel del verbo en el ejemplo: el auxiliar es el que viaja al frente en la pregunta. */
+export type VerbRole = "auxiliary" | "main";
+
+export interface GrammarVerb {
+  text: string;
+  role: VerbRole;
+}
+
+/** Un ejemplo de la estructura en una forma concreta, con sus verbos marcados. */
+export interface GrammarExample {
+  form: GrammarForm;
+  /** Inglés ya limpio de marcas de verbo. */
+  english: string;
+  verbs: GrammarVerb[];
+}
+
 /** Una estructura gramatical detectada en el texto (explicada en español). */
 export interface GrammarStructure {
   label: string;
   pattern: string;
   example: string;
   explanation: string;
+  /** Tiempo verbal EN ESPAÑOL («presente simple»). Ausente si el modelo no lo dio. */
+  tense?: string;
+  /**
+   * Las tres formas de la misma idea. O está el trío completo con verbos
+   * marcados, o no está: la tarjeta degrada al formato de siempre antes que
+   * mostrar datos a medias (#168).
+   */
+  examples?: GrammarExample[];
 }
 
 /** Una respuesta alternativa sugerida al aprendiz, con nota de registro/tono. */
