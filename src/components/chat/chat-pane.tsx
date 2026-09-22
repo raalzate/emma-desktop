@@ -139,6 +139,8 @@ export function ChatPane({
               sceneContext={s.suggestionContext}
               level={s.level}
               scenarioType={scenario.scenarioType}
+              voiceRequirement={s.voiceRequirement}
+              onVoiceUnavailable={s.declareVoiceUnavailable}
             />
           )}
         </>
