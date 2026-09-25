@@ -32,7 +32,10 @@ import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { LessonView } from "./use-end-session";
-import { useKaraoke } from "./use-karaoke";
+import { useKaraoke, type Karaoke } from "./use-karaoke";
+import { KaraokeTranscript } from "./karaoke-transcript";
+import { hasSpeakableContent } from "@/domain/tts/speakable-text";
+import { splitReportAtLesson } from "@/domain/feedback/report-sections";
 
 /** Voz reservada de Emma (tutora): siempre femenina, en-US-EmmaNeural. */
 const EMMA_VOICE = "en-US-EmmaNeural";
@@ -97,6 +100,59 @@ function useSessionChallenge(active: boolean, scenarioType: string, level: CefrL
   return challenge;
 }
 
+/**
+ * La lección de Emma en karaoke, con el audio en la cabecera de su propia
+ * sección (#171): el control vivía arriba del reporte, lejos del texto que se
+ * escucha, y la lección se leía como markdown plano —ninguna pista de qué línea
+ * estaba sonando—. Sin autoplay: la lección nunca suena sola al abrir.
+ */
+export function LessonKaraoke({
+  karaoke,
+  lesson,
+  onTranslate,
+}: {
+  karaoke: Karaoke;
+  lesson: string;
+  onTranslate: () => void;
+}) {
+  const speakable = hasSpeakableContent(lesson);
+  return (
+    <div className="mt-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="mr-auto text-sm font-semibold">📚 Lección de Emma</p>
+        {speakable && (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-1"
+            disabled={!karaoke.available || karaoke.loading}
+            onClick={() => (karaoke.playing ? karaoke.stop() : karaoke.play())}
+          >
+            {karaoke.loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : karaoke.playing ? (
+              <Square className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+            {karaoke.playing ? "Detener" : "Escuchar a Emma"}
+          </Button>
+        )}
+        <Button variant="outline" size="sm" className="gap-1" onClick={onTranslate}>
+          <Languages className="h-4 w-4" /> Ayuda en español
+        </Button>
+      </div>
+      <KaraokeTranscript
+        sentences={karaoke.sentences}
+        active={karaoke.activeSentence}
+        activeWord={karaoke.activeWord}
+        onPick={(i) => karaoke.playSentence(i)}
+        seekable={karaoke.canSeek}
+      />
+    </div>
+  );
+}
+
 export function LessonDialog({
   view, open, onClose, scenario, situation, level, scenarios, onSelectScenario, onTranslate,
 }: Props) {
@@ -104,6 +160,8 @@ export function LessonDialog({
   // Audio de la lección con la voz de Emma (mismo motor que las burbujas).
   const karaoke = useKaraoke(view?.lesson ?? "", "feminine", EMMA_VOICE);
   const sessionChallenge = useSessionChallenge(open && !!view, scenario.scenarioType, level);
+  // La lección sale del markdown del reporte: se renderiza en karaoke, no plana.
+  const reportParts = splitReportAtLesson(view?.report ?? "");
 
   // Siguiente paso de la ruta: nunca el escenario que se acaba de jugar —
   // si la recomendación coincide, rota al siguiente del catálogo del nivel.
@@ -138,35 +196,15 @@ export function LessonDialog({
         <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-2">
           {/* Componente 1 — Enseñanza: correcciones + lección de Emma (audio). */}
           <section className="rounded-lg border bg-card p-4">
+            <Markdown>{reportParts.before}</Markdown>
             {view.lesson && (
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="gap-1"
-                  disabled={!karaoke.available || karaoke.loading}
-                  onClick={() => (karaoke.playing ? karaoke.stop() : karaoke.play())}
-                >
-                  {karaoke.loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : karaoke.playing ? (
-                    <Square className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                  {karaoke.playing ? "Detener" : "Escuchar a Emma"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1"
-                  onClick={() => onTranslate(view.lesson!)}
-                >
-                  <Languages className="h-4 w-4" /> Ayuda en español
-                </Button>
-              </div>
+              <LessonKaraoke
+                karaoke={karaoke}
+                onTranslate={() => onTranslate(view.lesson!)}
+                lesson={view.lesson}
+              />
             )}
-            <Markdown>{view.report}</Markdown>
+            {reportParts.after && <Markdown>{reportParts.after}</Markdown>}
           </section>
           {/* Componente 2 — Decisión de Emma: avanzar de nivel o repetir. */}
           <section className="rounded-lg border bg-muted/40 p-4">
