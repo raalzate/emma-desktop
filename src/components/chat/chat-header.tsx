@@ -8,7 +8,7 @@
  */
 
 import Link from "next/link";
-import { ArrowLeft, ChevronDown, Flag, Target } from "lucide-react";
+import { ArrowLeft, ChevronDown, Clapperboard, Flag, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -38,6 +38,11 @@ interface Props {
    */
   onFinishEarly?: () => void;
   finishEarlyDisabled?: boolean;
+  /**
+   * Abre la escena en un diálogo (#167). Sin handler el botón no se pinta: en
+   * la antesala la escena ya está entera en pantalla.
+   */
+  onShowScene?: () => void;
 }
 
 /** Contador de turnos del mockup: texto + hilera de puntos llenos/vacíos. */
@@ -64,7 +69,7 @@ function TurnDots({ turnCount, maxTurns }: { turnCount: number; maxTurns: number
 
 export function ChatHeader({
   scenarios, scenario, onSelect, level, situationTitle, turnCount, maxTurns, sceneGoals,
-  onFinishEarly, finishEarlyDisabled,
+  onFinishEarly, finishEarlyDisabled, onShowScene,
 }: Props) {
   const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
   return (
@@ -113,6 +118,18 @@ export function ChatHeader({
           <Target className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
           Objetivos {sceneGoals.done}/{sceneGoals.total}
         </span>
+      )}
+      {onShowScene && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1.5 whitespace-nowrap text-xs"
+          onClick={onShowScene}
+          title="Volver a leer dónde estás, con quién hablas y cuál es tu misión"
+        >
+          <Clapperboard className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+          Ver la escena
+        </Button>
       )}
       {onFinishEarly && (
         <Button

@@ -31,3 +31,28 @@ export function isActionableCorrection(e: SilentError): boolean {
   if (/^\(.*\)$/.test(corrected)) return false; // paréntesis meta puro
   return true;
 }
+
+/**
+ * Correcciones de superficie: el checker las devuelve igual que a las demás,
+ * pero una mayúscula inicial o un punto final no enseñan nada. Fuera del
+ * cierre, del histograma y de las recomendaciones (#170).
+ */
+const TRIVIAL_LABELS: ReadonlySet<ErrorLabel> = new Set([
+  "punctuation",
+  "capitalization",
+  "spacing",
+]);
+
+export function isTrivialCorrection(label: ErrorLabel): boolean {
+  return TRIVIAL_LABELS.has(label);
+}
+
+/**
+ * EL criterio de «error de la sesión»: real (no meta) y enseñable (no trivial).
+ * Se aplica una sola vez, en el borde donde entran al búfer — todo lo que
+ * consume el búfer (resumen, lección, histograma, métricas, nivel) ve la misma
+ * lista, para que no haya dos definiciones de error.
+ */
+export function reportableCorrections(errors: readonly SilentError[]): SilentError[] {
+  return errors.filter((e) => isActionableCorrection(e) && !isTrivialCorrection(e.label));
+}

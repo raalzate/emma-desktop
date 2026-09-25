@@ -3,6 +3,8 @@ import path from 'path';
 import { isDev, appServe } from './config';
 import { assetsDir } from './paths';
 import { loadProductionRenderer } from './load-renderer';
+import { buildContextMenuTemplate } from './context-menu';
+import { loadEnglishSpeller, toEnglishSpellParams, type EnglishSpeller } from './spell-english';
 
 /** Crea la ventana principal de EMMA y su menú nativo (ES). */
 export function createMainWindow(): BrowserWindow {
@@ -17,6 +19,17 @@ export function createMainWindow(): BrowserWindow {
       webSecurity: isDev,
     },
   });
+
+  // Inmersión: lo que el aprendiz escribe es inglés, así que el diccionario es
+  // inglés — con el idioma del sistema (español) Chromium subrayaba la frase
+  // entera y no tenía una sola sugerencia útil. En macOS el corrector lo pone
+  // el sistema operativo y esta API es no-op.
+  if (process.platform !== 'darwin') {
+    win.webContents.session.setSpellCheckerLanguages(['en-US']);
+  }
+  // Sin este menú, el subrayado rojo marca el error pero no dice cómo se escribe.
+  wireSpellCheckContextMenu(win);
+
 
   // La IA local (LiteRT-LM/WebGPU) y el micrófono (dictado) requieren permisos.
   win.webContents.session.setPermissionRequestHandler((_wc, _permission, cb) => cb(true));
@@ -102,4 +115,25 @@ function setupMenu(win: BrowserWindow): void {
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+/** Cablea el menú contextual a la ventana: sin esto el template no se dibuja nunca. */
+function wireSpellCheckContextMenu(win: BrowserWindow): void {
+  const webContents = win.webContents;
+  // Las sugerencias las pone el diccionario inglés propio, no el SO (ver spell-english.ts).
+  let speller: EnglishSpeller | null = null;
+  try {
+    speller = loadEnglishSpeller();
+  } catch (error) {
+    console.error('[spell] no se pudo cargar el diccionario inglés; se usan las sugerencias del SO', error);
+  }
+  webContents.on('context-menu', (_event, params) => {
+    const spellParams = speller ? toEnglishSpellParams(params, speller) : params;
+    const template = buildContextMenuTemplate(spellParams, {
+      replaceMisspelling: (word) => webContents.replaceMisspelling(word),
+      addToDictionary: (word) => webContents.session.addWordToSpellCheckerDictionary(word),
+    });
+    if (template.length === 0) return;
+    Menu.buildFromTemplate(template).popup({ window: win });
+  });
 }
