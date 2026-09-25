@@ -52,6 +52,7 @@ import { runAgenticOnboarding } from "@/application/onboarding/agentic-onboardin
 import type { OnboardingIo } from "@/domain/onboarding/i-onboarding-repository";
 import { createLlmGenerate } from "@/lib/ai/llm-adapter";
 import { createRepositories, USER_ID, type Repositories } from "./di/repositories";
+import { todayAsDays } from "./today";
 
 export interface EmmaRuntime {
   llm: LlmGenerate;
@@ -140,8 +141,6 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
   const recommend = new RecommendNextScenarioUseCase(repos.pathway, repos.goals, repos.errorStats);
   const sessionMetricsRepo = createSessionMetricsRepository();
 
-  const MS_PER_DAY = 86_400_000;
-  const todayAsDays = () => Math.floor(Date.now() / MS_PER_DAY);
 
   // Nivel del perfil, o "A1" si aún no existe (mismo respaldo que emptyProfile).
   async function resolveTutorContext(scenarioType?: string): Promise<GetTutorContextResult> {
