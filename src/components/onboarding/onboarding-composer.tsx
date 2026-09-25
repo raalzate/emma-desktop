@@ -41,6 +41,8 @@ export function OnboardingComposer({ disabled, onSend }: Props) {
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={onKeyDown}
         disabled={disabled}
+        lang="en"
+        spellCheck
         placeholder={disabled ? "Emma está escribiendo…" : 'Escribe tu respuesta (o "skip")…'}
         aria-label="Tu respuesta"
       />
