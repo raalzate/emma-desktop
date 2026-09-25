@@ -88,6 +88,7 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
         turnCount: snap.turnCount,
         completed: snap.completed,
         lesson: snap.lesson,
+        voiceOptOut: snap.voiceOptOut,
         createdAt: createdAt.current,
         updatedAt: Date.now(),
       };

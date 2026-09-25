@@ -91,6 +91,10 @@ describe("Composer (rediseño Café sereno)", () => {
     );
     expect(src).toContain("useTypeahead(runtime!, context, text, busy, level)");
     expect(src).toContain("useSuggestions({");
-    expect(src).toContain("useVoiceInput((t, audioUrl) => onSend(t, audioUrl))");
+    // La nota de voz sigue llegando a `onSend` con su audio; desde #169 el hook
+    // recibe además un segundo argumento para avisar en español cuando la
+    // grabación no deja nada utilizable.
+    expect(src).toMatch(/useVoiceInput\(\s*\n\s*\(t, audioUrl\) => \{/);
+    expect(src).toContain("onSend(t, audioUrl);");
   });
 });

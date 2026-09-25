@@ -29,14 +29,28 @@ async function toPcm16k(blob: Blob): Promise<Float32Array> {
  * URL del audio grabado, para enviar ambos a la IA (transcripción para procesar,
  * audio para reproducir en la burbuja).
  */
-export function useVoiceInput(onResult: (text: string, audioUrl: string) => void) {
+export function useVoiceInput(
+  onResult: (text: string, audioUrl: string) => void,
+  /** Aviso en español cuando la grabación no deja nada utilizable (#169). */
+  onProblem?: (mensajeEs: string) => void,
+) {
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [available, setAvailable] = useState(true);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
   async function start() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      // Sin micrófono o sin permiso: la UI necesita saberlo para ofrecer la
+      // salida de emergencia en un turno obligatoriamente hablado.
+      setAvailable(false);
+      onProblem?.("No se pudo usar el micrófono: revisa el permiso del sistema.");
+      return;
+    }
     const rec = new MediaRecorder(stream);
     chunksRef.current = [];
     rec.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
@@ -48,7 +62,12 @@ export function useVoiceInput(onResult: (text: string, audioUrl: string) => void
         const audioUrl = URL.createObjectURL(blob);
         const pcm = await toPcm16k(blob);
         const text = await transcribe(pcm);
+        // Transcripción vacía: el turno NO avanza y hay que poder reintentar,
+        // o el aprendiz queda atrapado en un turno hablado sin salida.
         if (text) onResult(text, audioUrl);
+        else onProblem?.("No se entendió nada de la grabación. Intenta de nuevo, más cerca del micrófono.");
+      } catch {
+        onProblem?.("No se pudo procesar la grabación. Intenta de nuevo.");
       } finally {
         setBusy(false);
       }
@@ -63,5 +82,5 @@ export function useVoiceInput(onResult: (text: string, audioUrl: string) => void
     setRecording(false);
   }
 
-  return { recording, busy, toggle: () => (recording ? stop() : start()) };
+  return { recording, busy, available, toggle: () => (recording ? stop() : void start()) };
 }

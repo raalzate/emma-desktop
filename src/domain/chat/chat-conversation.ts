@@ -20,6 +20,8 @@ export interface ChatConversation {
   completed?: boolean;
   /** Lección de cierre tal como Emma la entregó (no se regenera al reabrir). */
   lesson?: SessionLesson;
+  /** El aprendiz declaró que no puede hablar: los turnos hablados quedan abiertos (#169). */
+  voiceOptOut?: boolean;
   createdAt: number;
   updatedAt: number;
 }
