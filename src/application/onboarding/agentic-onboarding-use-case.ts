@@ -26,6 +26,8 @@ import {
   type OnboardingContext,
 } from "@/domain/onboarding/agentic-onboarding";
 import { buildStrictPrompts, parseStrictValue } from "@/domain/onboarding/strict-extraction";
+import { getQuestion } from "@/domain/onboarding/onboarding-prompts";
+import { LLM_TIMEOUT_SECONDS } from "@/config/session-config";
 
 const FIELD_STEP: Record<string, OnboardingStep> = {
   name: "name",
@@ -44,6 +46,8 @@ export interface AgenticOnboardingArgs {
   repo: OnboardingRepository;
   onProgress?: (captured: number, total: number) => void;
   maxTurns?: number;
+  /** Presupuesto de reloj por llamada al LLM (inyectable para pruebas). */
+  turnTimeoutMs?: number;
 }
 
 export interface AgenticOnboardingResult {
@@ -56,6 +60,7 @@ export async function runAgenticOnboarding(
 ): Promise<AgenticOnboardingResult> {
   const { llm, io, repo, onProgress } = args;
   const maxTurns = args.maxTurns ?? 12;
+  const budgetMs = args.turnTimeoutMs ?? LLM_TIMEOUT_SECONDS * 1000;
 
   void warmup(llm); // precarga el modelo en paralelo, no bloquea el saludo
 
@@ -77,14 +82,23 @@ export async function runAgenticOnboarding(
     attempts.set(targetField, attemptNumber);
 
     const { system, user } = buildTurnPrompt(ctx, lastEmma, lastUser, [...givenUp]);
-    const raw = await llm({ prompt: user, system, maxTokens: ONBOARDING_TURN_MAX_TOKENS });
-    const { message, extracted } = parseTurn(raw);
+    const raw = await generateWithBudget(
+      llm,
+      { prompt: user, system, maxTokens: ONBOARDING_TURN_MAX_TOKENS },
+      budgetMs,
+    );
+    // Si el modelo se cuelga o falla (visto en Linux sin WebGPU), el turno sigue
+    // con la pregunta determinista del campo: la UI nunca queda "pensando".
+    const { message, extracted } =
+      raw === null
+        ? { message: fallbackQuestion(targetField, ctx, attemptNumber), extracted: {} }
+        : parseTurn(raw);
 
     ctx = await mergeAndPersist(ctx, extracted, repo);
     // Red de extracción: si el modelo no emitió DATA para el campo pedido, el
     // código decide — no se depende de que el LLM recuerde emitir la línea.
     if (missingFields(ctx).includes(targetField)) {
-      ctx = await recoverField({ field: targetField, rawUser: lastUser, ctx, llm, repo });
+      ctx = await recoverField({ field: targetField, rawUser: lastUser, ctx, llm, repo, budgetMs });
     }
     // Agotado el tope, el campo se abandona: Emma pasa al siguiente en vez de
     // insistir o de guardar lo que el aprendiz dijo sobre otra cosa.
@@ -122,28 +136,76 @@ async function recoverField(args: {
   ctx: OnboardingContext;
   llm: LlmGenerate;
   repo: OnboardingRepository;
+  budgetMs: number;
 }): Promise<OnboardingContext> {
-  const { field, rawUser, ctx, llm, repo } = args;
+  const { field, rawUser, ctx, llm, repo, budgetMs } = args;
   const trimmedUser = rawUser.trim();
   if (!hasSubstance(trimmedUser)) return ctx;
 
   const step = FIELD_STEP[field];
   if (!step) return ctx;
-  const value = await extractStrict(llm, step, trimmedUser);
+  const value = await extractStrict(llm, step, trimmedUser, budgetMs);
   if (!value) return ctx; // el texto no traía el dato: se sigue preguntando
 
   return mergeAndPersist(ctx, { [field]: value } as OnboardingContext, repo);
 }
 
 /** Extracción que puede decir "acá no hay nada"; null en ese caso y ante fallo. */
-async function extractStrict(llm: LlmGenerate, step: OnboardingStep, rawAnswer: string): Promise<string | null> {
+async function extractStrict(
+  llm: LlmGenerate,
+  step: OnboardingStep,
+  rawAnswer: string,
+  budgetMs: number,
+): Promise<string | null> {
+  const { system, user } = buildStrictPrompts(step, rawAnswer);
+  const response = await generateWithBudget(
+    llm,
+    { prompt: user, system, maxTokens: STRICT_EXTRACTION_MAX_TOKENS },
+    budgetMs,
+  );
+  if (response === null) return null;
+  return parseStrictValue(response, rawAnswer);
+}
+
+/**
+ * Llama al LLM con presupuesto de reloj: null si falla o se pasa del tiempo.
+ * Sin esto, una generación que nunca termina deja el onboarding colgado —
+ * el chat ya tenía este freno (run-chat-turn-use-case), el onboarding no.
+ */
+async function generateWithBudget(
+  llm: LlmGenerate,
+  llmArgs: Parameters<LlmGenerate>[0],
+  budgetMs: number,
+): Promise<string | null> {
+  const budget = new Promise<null>((resolve) => {
+    setTimeout(() => resolve(null), budgetMs);
+  });
   try {
-    const { system, user } = buildStrictPrompts(step, rawAnswer);
-    const response = await llm({ prompt: user, system, maxTokens: STRICT_EXTRACTION_MAX_TOKENS });
-    return parseStrictValue(response ?? "", rawAnswer);
+    return await Promise.race([llm(llmArgs), budget]);
   } catch {
     return null;
   }
+}
+
+/** Pregunta determinista del campo pendiente, cuando el modelo no dio la suya. */
+function fallbackQuestion(
+  field: keyof OnboardingContext,
+  ctx: OnboardingContext,
+  attemptNumber: number,
+): string {
+  const step = FIELD_STEP[field] ?? "name";
+  return getQuestion(step, questionContext(ctx), attemptNumber > 1 ? 1 : 0);
+}
+
+/** Contexto en snake_case que esperan las plantillas de preguntas. */
+function questionContext(ctx: OnboardingContext): Record<string, string | number | undefined> {
+  return {
+    name: ctx.name,
+    role: ctx.role,
+    years_in_role: ctx.yearsInRole,
+    tech_stack: ctx.techStack,
+    skills: ctx.skills,
+  };
 }
 
 /** Llamada mínima de precarga; su resultado no importa, solo calienta el modelo. */

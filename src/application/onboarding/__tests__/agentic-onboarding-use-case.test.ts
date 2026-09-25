@@ -354,3 +354,54 @@ describe("runAgenticOnboarding — la red no inventa datos", () => {
     expect(saved.map((s) => s.step)).toContain("skills");
   });
 });
+
+describe("runAgenticOnboarding — el turno nunca deja la UI colgada", () => {
+  it("cae a la pregunta determinista si el LLM del turno no responde a tiempo", async () => {
+    // Linux sin WebGPU: el motor local se queda generando y el turno jamás
+    // resuelve. Sin presupuesto, el onboarding queda "pensando" para siempre.
+    const llm: LlmGenerate = async (args) => {
+      if (isTurnCall(args)) return new Promise<string>(() => {});
+      return "warmup";
+    };
+    const { repo } = makeRepo();
+    const { io, asked } = makeIo(["Ada"]);
+
+    const res = await runAgenticOnboarding({ llm, io, repo, maxTurns: 2, turnTimeoutMs: 10 });
+
+    expect(asked.length).toBeGreaterThan(1);
+    expect(asked[1]).toBeTruthy();
+    expect(res.completed).toBe(false);
+  });
+
+  it("cae a la pregunta determinista si el LLM del turno falla", async () => {
+    const llm: LlmGenerate = async (args) => {
+      if (isTurnCall(args)) throw new Error("No hay IA disponible (ni local ni remota).");
+      return "warmup";
+    };
+    const { repo } = makeRepo();
+    const { io, asked, notified } = makeIo(["Ada"]);
+
+    const res = await runAgenticOnboarding({ llm, io, repo, maxTurns: 2, turnTimeoutMs: 50 });
+
+    expect(asked.length).toBeGreaterThan(1);
+    expect(res.completed).toBe(false);
+    expect(notified.length).toBe(1); // cierra con la pausa, no revienta
+  });
+
+  it("la extracción estricta tampoco cuelga el turno", async () => {
+    const llm: LlmGenerate = async (args) => {
+      if (isTurnCall(args)) return "Nice to meet you!"; // sin línea DATA
+      if (args.prompt.includes("Does the following text contain")) {
+        return new Promise<string>(() => {});
+      }
+      return "warmup";
+    };
+    const { repo } = makeRepo();
+    const { io, asked } = makeIo(["Ada"]);
+
+    const res = await runAgenticOnboarding({ llm, io, repo, maxTurns: 2, turnTimeoutMs: 10 });
+
+    expect(asked.length).toBeGreaterThan(1);
+    expect(res.completed).toBe(false);
+  });
+});

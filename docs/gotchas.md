@@ -21,6 +21,24 @@ Mecanismo: <el comando que ahora falla si alguien lo repite — o "ninguno ejecu
 
 ---
 
+### GOTCHA: el corrector ortográfico sugería en español aunque el diccionario fuera en-US
+
+Síntoma: en macOS (2026-09-25) el aprendiz escribía «I am a soluction» y el menú contextual
+  ofrecía «solución, solicito, solicitan, soluciona, solucione». El fix #174 (diccionario
+  `en-US` + `lang="en"`) estaba en HEAD y el gate verde.
+Causa:   en macOS Electron usa el corrector del sistema operativo: `setSpellCheckerLanguages`
+  es un no-op y el atributo `lang` del input no cambia el idioma de las sugerencias (probado
+  con un sondeo de Electron: `context-menu` devolvía las mismas sugerencias con y sin `lang`).
+  Con el sistema en español, las sugerencias son en español para cualquier palabra.
+Regla:   las sugerencias de ortografía no dependen del SO: las pone un diccionario Hunspell
+  en-US empaquetado (`dictionary-en` + `nspell`) en el proceso main, en todas las plataformas.
+  El SO sólo aporta el subrayado y la palabra marcada.
+Mecanismo: `pnpm test` — `main/__tests__/spell-english.test.ts` carga el diccionario real y
+  exige que «soluction» sugiera «solution» sin acentos ni «-ción»; `context-menu.test.ts` fija
+  el ítem «Correcta en inglés» cuando el SO subraya una palabra inglesa válida.
+
+---
+
 ### GOTCHA: los diagramas de arquitectura afirmaban secuencias que el código no ejecuta
 
 Síntoma: cuatro vistas BPMN recién subidas a Processflow Architect leían bien y estaban
