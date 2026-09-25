@@ -76,4 +76,21 @@ describe("buildSceneNarration", () => {
     expect(beats.every((b) => b.text.trim().length > 0)).toBe(true);
     expect(beats.some((b) => b.kind === "mission")).toBe(false);
   });
+
+  it("con narrativa del contrato de escena, la cuenta en vez de la ambientación genérica (#187)", () => {
+    const narrative = "You stand up to start the daily standup with Sofía Torres and your squad of five.";
+    const beats = buildSceneNarration({ ...args, situation: situacion, narrative });
+    expect(beats[1]).toEqual({ kind: "setting", text: narrative });
+    expect(beats.some((b) => b.text.startsWith("Picture an ordinary workday"))).toBe(false);
+    // La misión y el personaje siguen ahí: la narrativa sólo reemplaza la ambientación.
+    expect(beats.some((b) => b.kind === "character")).toBe(true);
+    expect(beats.some((b) => b.kind === "mission")).toBe(true);
+  });
+
+  it("narrativa vacía o nula cae al respaldo estático", () => {
+    for (const narrative of [null, undefined, "   "]) {
+      const beats = buildSceneNarration({ ...args, situation: situacion, narrative });
+      expect(beats[1].text.startsWith("Picture an ordinary workday")).toBe(true);
+    }
+  });
 });

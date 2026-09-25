@@ -25,12 +25,14 @@ interface Props {
   situation?: SituationVariant | null;
   /** Escena recién empezada: la narración se teclea. Falso al reabrir del histórico. */
   narrate?: boolean;
+  /** Narrativa del contrato de escena, para narrar la misma escena que la antesala. */
+  narrative?: string | null;
   onTeach: (text: string) => void;
   onTranslate: (text: string) => void;
 }
 
 export function MessageList({
-  messages, typing, gender, persona, scenario, situation, narrate = true, onTeach, onTranslate,
+  messages, typing, gender, persona, scenario, situation, narrate = true, narrative, onTeach, onTranslate,
 }: Props) {
   const end = useRef<HTMLDivElement>(null);
   // La escena se cuenta ANTES de que la persona hable: mientras la narración se
@@ -52,6 +54,7 @@ export function MessageList({
             scenario={scenario}
             situation={situation}
             animate={narrate}
+            narrative={narrative}
             onDone={onNarrationDone}
           />
         )}

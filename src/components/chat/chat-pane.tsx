@@ -112,6 +112,7 @@ export function ChatPane({
             scenario={scenario}
             situation={s.situation}
             narrate={!restore?.messages?.length}
+            narrative={s.narrative}
             onTeach={setTeachText}
             onTranslate={setTranslateText}
           />
@@ -167,6 +168,7 @@ export function ChatPane({
         scenario={scenario}
         situation={s.situation}
         sceneReady={s.sceneReady}
+        narrative={s.narrative}
       />
       <TeachDialog text={teachText} onClose={() => setTeachText(null)} />
       <TranslateDialog text={translateText} onClose={() => setTranslateText(null)} />
