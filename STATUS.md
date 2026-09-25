@@ -19,7 +19,12 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   tres formas y verbos resaltados, lista de lecciones («Mis lecciones» en Práctica), turnos
   con voz obligatoria y corrector ortográfico en inglés en todas las plataformas (issues
   #167–#174, #182; PRs #175–#179, #181, #185). Más **v0.6.0**: prácticas dinámicas (#183,
-  PR #184). Sin release publicada todavía con esto: publicar sigue siendo gesto del humano.
+  PR #184).
+- **Release v0.6.0 en curso (2026-09-25):** `package.json` en 0.6.0 y notas en
+  `docs/releases/0.6.0.md` (todo lo fusionado desde v0.2.1: milestones v0.5.0 y v0.6.0 más
+  el fix #188). El tag `v0.6.0` se crea sobre `main` tras fusionar el bump; el workflow deja
+  el borrador con los 3 instaladores y publicarlo sigue siendo gesto del humano. La vitrina
+  se actualiza sola al publicar (lee la última release por la API de GitHub).
 - **Vitrina pública:** https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
   botones de descarga apuntan a la última release publicada (la API de GitHub los
