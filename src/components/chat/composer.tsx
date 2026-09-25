@@ -93,6 +93,11 @@ export function Composer({ onSend, busy, context, sceneContext, level, scenarioT
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={onKeyDown}
+              // El texto del aprendiz es inglés: sin `lang` el corrector toma el
+              // idioma del sistema (español) y subraya la frase entera. Con él,
+              // el click derecho ofrece la palabra bien escrita (ver main/context-menu.ts).
+              lang="en"
+              spellCheck
               placeholder={busy ? "Emma está escribiendo…" : "Escribe tu respuesta en inglés…"}
               disabled={busy}
               rows={2}
