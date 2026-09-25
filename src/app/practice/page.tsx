@@ -3,8 +3,9 @@
 /**
  * Ruta "Práctica": panel «Hoy» (plan del día en el orden del método) sobre
  * las pestañas de ejercicios, repaso SRS, laboratorio de pronunciación, plan
- * de estudio, autoevaluación y retos. Las pestañas son controladas para que
- * el panel pueda abrir la que toca.
+ * de estudio, autoevaluación, retos y la lista de lecciones que EMMA anotó al
+ * cerrar cada sesión. Las pestañas son controladas para que el panel pueda
+ * abrir la que toca.
  */
 
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -25,6 +26,7 @@ import type { PracticeStep, PracticeToday as PracticePlan } from "@/domain/pract
 import { getPracticeToday } from "@/application/practice/build-practice-today-use-case";
 import { createChallengeRepository } from "@/infrastructure/persistence/challenge-repository";
 import { todayAsDays } from "@/interface/today";
+import { LessonTodoList } from "@/components/lessons/lesson-todo-list";
 
 // Mapa de la deep-link ?tab= (recomendaciones de Emma) al value real del Tab;
 // "assessment" es el alias usado en las recomendaciones para self-assessment.
@@ -93,6 +95,7 @@ function PracticeTabs({ runtime }: { runtime: EmmaRuntime }) {
           <TabsTrigger value="plan">Plan de estudio</TabsTrigger>
           <TabsTrigger value="self-assessment">Autoevaluación</TabsTrigger>
           <TabsTrigger value="challenges">Retos</TabsTrigger>
+          <TabsTrigger value="lessons">Mis lecciones</TabsTrigger>
         </TabsList>
         <TabsContent value="exercises">
           <ExerciseDrill
@@ -117,6 +120,9 @@ function PracticeTabs({ runtime }: { runtime: EmmaRuntime }) {
         </TabsContent>
         <TabsContent value="challenges">
           <ChallengeView key={`ch-${unit ?? "none"}`} runtime={runtime} initialUnit={unit} onChange={refreshPlan} />
+        </TabsContent>
+        <TabsContent value="lessons">
+          <LessonTodoList />
         </TabsContent>
       </Tabs>
     </div>

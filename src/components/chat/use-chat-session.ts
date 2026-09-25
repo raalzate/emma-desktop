@@ -30,11 +30,12 @@ import {
 } from "@/domain/chat/scene-state";
 import { resolveSceneClose, shouldWrapUp } from "@/domain/chat/scene-closing";
 import { buildRecastCue } from "@/domain/chat/recast";
+import { requiresVoice } from "@/domain/chat/voice-requirement";
 import { buildTurnDirective } from "@/domain/chat/turn-directive";
 import { buildSuggestionContext } from "@/domain/coaching/suggestion-context";
 import { personaFor } from "@/domain/personas/protopersona";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
-import { isActionableCorrection } from "@/domain/chat/silent-error";
+import { reportableCorrections } from "@/domain/chat/silent-error";
 import type { ChatConversation } from "@/domain/chat/chat-conversation";
 import { readStoredLesson } from "@/domain/chat/chat-conversation";
 import type { SessionLesson } from "@/domain/feedback/session-lesson";
@@ -49,6 +50,8 @@ export interface SessionSnapshot {
   completed: boolean;
   /** Lección de cierre ya entregada: viaja al histórico para no regenerarla. */
   lesson?: SessionLesson;
+  /** El aprendiz usó la salida de emergencia de los turnos hablados (#169). */
+  voiceOptOut?: boolean;
 }
 
 interface Deps {
@@ -128,6 +131,11 @@ export function useChatSession(d: Deps) {
   const [streaming, setStreaming] = useState("");
   const [busy, setBusy] = useState(false);
   const [turnCount, setTurnCount] = useState(restore?.turnCount ?? 0);
+  // Turnos hablados (#169): último turno con nota de voz, si la directiva del
+  // turno siguiente pide desarrollar, y la salida de emergencia ya usada.
+  const [lastVoiceTurn, setLastVoiceTurn] = useState<number | null>(null);
+  const [expectsElaboration, setExpectsElaboration] = useState(false);
+  const [voiceOptOut, setVoiceOptOut] = useState(restore?.voiceOptOut ?? false);
   const [errors, setErrors] = useState<SilentError[]>([]);
   // "intro" = presentar la escena antes del kickoff; "live" = conversación activa.
   // Un chat nuevo NUNCA arranca solo: el usuario lee la escena y pulsa comenzar.
@@ -266,16 +274,18 @@ export function useChatSession(d: Deps) {
   }, [phase, busy, runtime, scenario, contract, situation]);
 
   // Chequeo gramatical en silencio: buffer only, jamás interrumpe el chat.
-  // Solo entran correcciones REALES (el checker a veces responde meta-notas).
+  // Este es EL borde donde se decide qué cuenta como error de la sesión: reales
+  // (el checker a veces responde meta-notas) y enseñables (una mayúscula o un
+  // punto final no son lección, #170).
   // Devuelve las correcciones para que el turno pueda hacer recast en caliente.
   const bufferGrammar = useCallback(
     (text: string, turn: number): Promise<SilentError[]> =>
       runtime
         .checkGrammar(text, turn)
         .then((errs) => {
-          const actionable = errs.filter(isActionableCorrection);
-          setErrors((prev) => [...prev, ...actionable]);
-          return actionable;
+          const reportable = reportableCorrections(errs);
+          setErrors((prev) => [...prev, ...reportable]);
+          return reportable;
         })
         .catch(() => []),
     [runtime],
@@ -291,6 +301,7 @@ export function useChatSession(d: Deps) {
       const turn = turnCount + 1;
       setMessages([...prior, { role: "user", content: clean, at: Date.now(), audioUrl }]);
       setTurnCount(turn);
+      if (audioUrl) setLastVoiceTurn(turn);
       setBusy(true);
       const lastAgentLine =
         [...prior].reverse().find((m) => m.role === "assistant")?.content ?? "";
@@ -355,6 +366,8 @@ export function useChatSession(d: Deps) {
       ]);
       // UNA sola orden de contenido por turno (ver domain/chat/turn-directive):
       // apilarlas producía instrucciones contradictorias y respuestas vacías.
+      // Si EMMA va a pedir que desarrolle, el próximo turno del aprendiz se habla.
+      setExpectsElaboration(askElaboration || deepen);
       const directive = buildTurnDirective({
         state: sceneState.current,
         intent,
@@ -416,9 +429,10 @@ export function useChatSession(d: Deps) {
       turnCount,
       completed: sceneComplete,
       lesson: lesson ?? undefined,
+      voiceOptOut,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, turnCount, sceneComplete, lesson]);
+  }, [messages, turnCount, sceneComplete, lesson, voiceOptOut]);
 
   // Guardar la lección cierra la sesión: se entregó el feedback, no se sigue
   // conversando. Así el banner y el bloqueo del composer valen también cuando
@@ -463,5 +477,18 @@ export function useChatSession(d: Deps) {
     // Objetivos de la escena cubiertos/total (null si el escenario es libre).
     sceneGoals,
     messages, streaming, busy, turnCount, maxTurns, errors, send, lastEmma, suggestionContext,
+    // ¿Este turno se habla? La regla es del dominio; el composer sólo obedece.
+    voiceRequirement: requiresVoice({
+      turn: turnCount + 1,
+      maxTurns,
+      lastVoiceTurn,
+      expectsElaboration,
+      idleThreshold: d.settings.voiceIdleTurns,
+      voiceUnavailable: voiceOptOut,
+    }),
+    // Salida de emergencia: sin micrófono o sin permiso, un turno obligatorio
+    // dejaría la sesión bloqueada. Queda registrada en el snapshot.
+    declareVoiceUnavailable: () => setVoiceOptOut(true),
+    voiceOptOut,
   };
 }

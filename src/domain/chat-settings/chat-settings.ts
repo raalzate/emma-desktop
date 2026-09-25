@@ -1,5 +1,7 @@
 /** Enums + snapshot inmutable de ajustes de personalidad por turno. */
 
+import { DEFAULT_VOICE_IDLE_TURNS } from "@/domain/chat/voice-requirement";
+
 export const TONES = ["casual", "professional", "technical", "formal"] as const;
 export const ATTITUDES = [
   "neutral", "skeptical", "worried", "frustrated", "enthusiastic", "sarcastic",
@@ -28,6 +30,8 @@ export interface ChatSettings {
   voiceStyle: VoiceStyle;
   language: Language;
   verbosity: Verbosity;
+  /** Turnos sin nota de voz tras los que el turno pasa a ser hablado (#169). */
+  voiceIdleTurns: number;
 }
 
 /** Voz fija de Emma en todas sus superficies (onboarding, teach, feedback). */
@@ -39,7 +43,13 @@ export const DEFAULT_CHAT_SETTINGS: ChatSettings = {
   voiceStyle: "empathetic",
   language: "en",
   verbosity: "balanced",
+  voiceIdleTurns: DEFAULT_VOICE_IDLE_TURNS,
 };
+
+// Un umbral fuera de rango (persistencia vieja, edición a mano) dejaría la
+// escena pidiendo voz en cada turno o nunca: se acota en vez de confiar.
+const MIN_VOICE_IDLE_TURNS = 1;
+const MAX_VOICE_IDLE_TURNS = 10;
 
 const OPTIONS = {
   tone: TONES,
@@ -52,12 +62,18 @@ const OPTIONS = {
 /** Normaliza un objeto arbitrario a ChatSettings válido (sanea persistencia). */
 export function normalizeChatSettings(raw: unknown): ChatSettings {
   const r = (raw ?? {}) as Record<string, unknown>;
-  const pick = <K extends keyof ChatSettings>(key: K): ChatSettings[K] => {
+  // Sólo los campos de enumeración; `voiceIdleTurns` es numérico y se acota aparte.
+  const pick = <K extends keyof typeof OPTIONS>(key: K): ChatSettings[K] => {
     const opts = OPTIONS[key] as readonly string[];
     const v = r[key];
     return (opts.includes(v as string) ? (v as ChatSettings[K]) : DEFAULT_CHAT_SETTINGS[key]);
   };
+  const idle = Number(r.voiceIdleTurns);
+  const voiceIdleTurns = Number.isFinite(idle)
+    ? Math.min(MAX_VOICE_IDLE_TURNS, Math.max(MIN_VOICE_IDLE_TURNS, Math.round(idle)))
+    : DEFAULT_CHAT_SETTINGS.voiceIdleTurns;
   return {
+    voiceIdleTurns,
     tone: pick("tone"),
     attitude: pick("attitude"),
     voiceStyle: pick("voiceStyle"),
