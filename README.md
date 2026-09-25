@@ -3,6 +3,27 @@
 **EMMA** es una tutora de inglés conversacional para profesionales de TI: una app
 de escritorio **Electron + Next.js + TypeScript** con IA **local e híbrida**.
 
+## Proyecto de maestría
+
+Trabajo Integrador de la **Maestría en Computación para el Desarrollo de Aplicaciones
+Inteligentes (CODING)**, Escuela de Ingeniería de Sistemas y Computación (EISC),
+Universidad del Valle — [página del programa](https://eisc.univalle.edu.co/index.php/programas-academicos/maestria-en-computacion-para-el-desarrollo-de-aplicaciones-inteligentes).
+
+**Equipo**
+
+- Oscar Andrés Osorio — oscar.andres.osorio@correounivalle.edu.co
+- Raúl Alzate — raul.alzate@correounivalle.edu.co
+
+**Asesor**
+
+- Raúl E. Gutiérrez de Piñerez Reyes, Ph.D. — raul.gutierrez@correounivalle.edu.co
+  Docente Asociado · Profesor GUIA (Grupo de Investigación de Inteligencia Artificial) ·
+  Área de Procesamiento de Lenguaje Natural · EISC
+
+La documentación completa (contexto académico, alcance, arquitectura, flujos agénticos,
+diagramas BPMN y proceso de desarrollo) vive en la
+[wiki del proyecto](https://github.com/raalzate/emma-desktop/wiki).
+
 ## Vitrina
 
 La página pública del proyecto (qué hace EMMA, capturas de la app corriendo y la
