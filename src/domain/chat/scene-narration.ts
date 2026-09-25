@@ -29,6 +29,12 @@ export interface SceneNarrationArgs {
   situation: SituationVariant | null | undefined;
   personaName: string;
   personaRole: string;
+  /**
+   * Narrativa del contrato de escena (la que pinta la antesala). Cuando existe,
+   * reemplaza la ambientación genérica del carácter: la escena que se narra es
+   * la misma que el aprendiz acaba de leer (#187).
+   */
+  narrative?: string | null;
 }
 
 /** Encabezado de la escena: escenario y, si la hay, la situación concreta. */
@@ -38,11 +44,12 @@ function headline(scenarioTitle: string, situation: SituationVariant | null | un
 }
 
 export function buildSceneNarration(args: SceneNarrationArgs): NarrationBeat[] {
-  const { scenarioTitle, scenarioDescription, situation, personaName, personaRole } = args;
+  const { scenarioTitle, scenarioDescription, situation, personaName, personaRole, narrative } = args;
   const briefing = situation ? buildSceneBriefing(situation) : null;
+  const setting = narrative?.trim() || briefing?.hypothetical || scenarioDescription;
   const beats: NarrationBeat[] = [
     { kind: "setting", text: headline(scenarioTitle, situation) },
-    { kind: "setting", text: briefing?.hypothetical ?? scenarioDescription },
+    { kind: "setting", text: setting },
     { kind: "character", text: `You're talking with ${personaName}, your ${personaRole}.` },
     ...(briefing?.missionLines ?? []).map(
       (line): NarrationBeat => ({ kind: "mission", text: line }),

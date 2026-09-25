@@ -32,6 +32,8 @@ interface Props {
    * la escena se teclea, la persona no habla ni aparece "escribiendo…" debajo.
    */
   onDone?: () => void;
+  /** Narrativa del contrato de escena; null ⇒ respaldo estático. */
+  narrative?: string | null;
 }
 
 const ICON_BY_KIND: Record<NarrationKind, typeof Clapperboard> = {
@@ -45,7 +47,7 @@ function Caret() {
   return <span className="ml-0.5 inline-block w-[2px] animate-pulse bg-foreground/60">&nbsp;</span>;
 }
 
-export function SceneNarration({ scenario, situation, animate = true, onDone }: Props) {
+export function SceneNarration({ scenario, situation, animate = true, onDone, narrative }: Props) {
   const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
   const beats = useMemo(
     () =>
@@ -55,8 +57,9 @@ export function SceneNarration({ scenario, situation, animate = true, onDone }: 
         situation,
         personaName: persona.name,
         personaRole: persona.role,
+        narrative,
       }),
-    [scenario.title, scenario.description, situation, persona.name, persona.role],
+    [scenario.title, scenario.description, situation, persona.name, persona.role, narrative],
   );
   const texts = useMemo(() => beats.map((b) => b.text), [beats]);
   const { visible, done, skip } = useTypewriter(texts, { animate });
@@ -72,7 +75,7 @@ export function SceneNarration({ scenario, situation, animate = true, onDone }: 
   return (
     <div className="mx-auto w-full max-w-xl py-2">
       <div className="space-y-2 rounded-[12px] bg-accent-soft px-4 py-3">
-        <span className="block font-code text-[10px] font-medium tracking-[0.15em] text-accent-foreground">
+        <span className="block font-code text-[10px] font-medium tracking-[0.15em] text-accent">
           ESCENA
         </span>
         {visible.map((text, i) => {

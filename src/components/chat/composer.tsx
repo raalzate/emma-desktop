@@ -158,7 +158,7 @@ export function Composer({
             que no hace nada es lo que dejaba al aprendiz sin saber qué era TAB. */}
         {mustSpeak && (
           <div className="mt-2 flex flex-wrap items-center gap-2 rounded-[10px] bg-accent-soft px-3 py-2">
-            <p className="mr-auto text-xs text-accent-foreground">{voiceRequirement.promptEs}</p>
+            <p className="mr-auto text-xs font-medium text-accent">{voiceRequirement.promptEs}</p>
             {onVoiceUnavailable && (
               <Button
                 size="sm"

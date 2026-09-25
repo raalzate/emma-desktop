@@ -62,7 +62,7 @@ function MarkedSentence({ example }: { example: GrammarExample }) {
             title={role === "auxiliary" ? "Verbo auxiliar" : "Verbo principal"}
             className={
               role === "auxiliary"
-                ? "rounded bg-accent-soft px-1 font-medium text-accent-foreground"
+                ? "rounded bg-accent-soft px-1 font-medium text-accent"
                 : "rounded bg-primary-soft px-1 font-semibold text-primary-deep"
             }
           >

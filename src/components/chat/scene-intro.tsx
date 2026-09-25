@@ -61,7 +61,7 @@ function SituationBriefing({
         ) : (
           // Franja de escena (FR-014): banda ámbar suave con tag mono.
           <div className="mt-2 flex items-start gap-2.5 rounded-[10px] bg-accent-soft px-3 py-2.5">
-            <span className="mt-0.5 shrink-0 font-code text-[10px] font-medium tracking-[0.15em] text-accent-foreground">
+            <span className="mt-0.5 shrink-0 font-code text-[10px] font-medium tracking-[0.15em] text-accent">
               ESCENA
             </span>
             <p className="text-sm italic leading-relaxed text-foreground/80">
