@@ -18,7 +18,13 @@ queueMicrotask(registerPrivilegedSchemes);
 // WebGPU es OBLIGATORIO: la IA local (Gemma vía LiteRT-LM) corre en WebGPU dentro
 // del renderer. No desactivar la aceleración por hardware.
 app.commandLine.appendSwitch('enable-unsafe-webgpu');
-app.commandLine.appendSwitch('enable-features', 'WebGPU,WebGPUDeveloperFeatures');
+// En Linux, Chromium sirve WebGPU sobre Vulkan y lo trae apagado por defecto: sin
+// esta feature `requestAdapter()` devuelve null y la IA local nunca genera.
+const WEBGPU_FEATURES =
+  process.platform === 'linux'
+    ? 'WebGPU,WebGPUDeveloperFeatures,Vulkan'
+    : 'WebGPU,WebGPUDeveloperFeatures';
+app.commandLine.appendSwitch('enable-features', WEBGPU_FEATURES);
 setupProdLogger();
 
 app.whenReady().then(() => {

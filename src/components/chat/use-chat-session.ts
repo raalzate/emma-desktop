@@ -35,7 +35,7 @@ import { buildTurnDirective } from "@/domain/chat/turn-directive";
 import { buildSuggestionContext } from "@/domain/coaching/suggestion-context";
 import { personaFor } from "@/domain/personas/protopersona";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
-import { isActionableCorrection } from "@/domain/chat/silent-error";
+import { reportableCorrections } from "@/domain/chat/silent-error";
 import type { ChatConversation } from "@/domain/chat/chat-conversation";
 import { readStoredLesson } from "@/domain/chat/chat-conversation";
 import type { SessionLesson } from "@/domain/feedback/session-lesson";
@@ -274,16 +274,18 @@ export function useChatSession(d: Deps) {
   }, [phase, busy, runtime, scenario, contract, situation]);
 
   // Chequeo gramatical en silencio: buffer only, jamás interrumpe el chat.
-  // Solo entran correcciones REALES (el checker a veces responde meta-notas).
+  // Este es EL borde donde se decide qué cuenta como error de la sesión: reales
+  // (el checker a veces responde meta-notas) y enseñables (una mayúscula o un
+  // punto final no son lección, #170).
   // Devuelve las correcciones para que el turno pueda hacer recast en caliente.
   const bufferGrammar = useCallback(
     (text: string, turn: number): Promise<SilentError[]> =>
       runtime
         .checkGrammar(text, turn)
         .then((errs) => {
-          const actionable = errs.filter(isActionableCorrection);
-          setErrors((prev) => [...prev, ...actionable]);
-          return actionable;
+          const reportable = reportableCorrections(errs);
+          setErrors((prev) => [...prev, ...reportable]);
+          return reportable;
         })
         .catch(() => []),
     [runtime],

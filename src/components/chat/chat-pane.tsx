@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useChatSession, type SessionSnapshot } from "./use-chat-session";
 import { useEndSession } from "./use-end-session";
 import { ChatHeader } from "./chat-header";
+import { SceneDialog } from "./scene-dialog";
 import { MessageList } from "./message-list";
 import { Composer } from "./composer";
 import { LessonDialog } from "./lesson-dialog";
@@ -49,6 +50,8 @@ export function ChatPane({
   const { toast } = useToast();
   const [teachText, setTeachText] = useState<string | null>(null);
   const [translateText, setTranslateText] = useState<string | null>(null);
+  // Volver a ver la escena no toca la conversación: sólo abre el diálogo (#167).
+  const [sceneOpen, setSceneOpen] = useState(false);
 
   const end = useEndSession({
     runtime,
@@ -82,6 +85,7 @@ export function ChatPane({
             turnCount={s.turnCount}
             maxTurns={s.maxTurns}
             sceneGoals={s.sceneGoals}
+            onShowScene={s.phase === "live" ? () => setSceneOpen(true) : undefined}
             onFinishEarly={s.phase === "live" && !s.sceneComplete ? end.review : undefined}
             finishEarlyDisabled={s.busy || s.turnCount === 0 || end.running}
           />
@@ -156,6 +160,13 @@ export function ChatPane({
         scenarios={scenarios}
         onSelectScenario={onSelectScenario}
         onTranslate={setTranslateText}
+      />
+      <SceneDialog
+        open={sceneOpen}
+        onClose={() => setSceneOpen(false)}
+        scenario={scenario}
+        situation={s.situation}
+        sceneReady={s.sceneReady}
       />
       <TeachDialog text={teachText} onClose={() => setTeachText(null)} />
       <TranslateDialog text={translateText} onClose={() => setTranslateText(null)} />

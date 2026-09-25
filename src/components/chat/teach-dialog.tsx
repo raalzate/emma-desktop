@@ -14,7 +14,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useEmma } from "@/interface/emma-context";
 import { SpeakButton } from "./speak-button";
-import type { TeachingResult } from "@/domain/english-teacher/teaching-models";
+import type {
+  GrammarExample,
+  GrammarForm,
+  TeachingResult,
+} from "@/domain/english-teacher/teaching-models";
 
 interface Props {
   text: string | null;
@@ -30,6 +34,59 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
       </h3>
       {children}
     </section>
+  );
+}
+
+/** Etiqueta en español de cada forma: lo que se mueve al negar o preguntar (#168). */
+const FORM_LABEL: Record<GrammarForm, string> = {
+  affirmative: "Afirmación",
+  negative: "Negación",
+  question: "Pregunta",
+};
+
+/**
+ * Resalta auxiliar y verbo principal con dos colores distintos. El match es por
+ * palabra: el parser ya separó qué palabra es verbo y con qué papel, así que
+ * aquí sólo se pinta. Ambos tokens tienen par en tema claro y oscuro.
+ */
+function MarkedSentence({ example }: { example: GrammarExample }) {
+  const roleOf = new Map(example.verbs.map((v) => [v.text.toLowerCase(), v.role]));
+  return (
+    <p className="text-sm">
+      {example.english.split(/(\s+)/).map((token, i) => {
+        const role = roleOf.get(token.replace(/[.,;:!?¿¡]/g, "").toLowerCase());
+        if (!role) return <span key={i}>{token}</span>;
+        return (
+          <span
+            key={i}
+            title={role === "auxiliary" ? "Verbo auxiliar" : "Verbo principal"}
+            className={
+              role === "auxiliary"
+                ? "rounded bg-accent-soft px-1 font-medium text-accent-foreground"
+                : "rounded bg-primary-soft px-1 font-semibold text-primary-deep"
+            }
+          >
+            {token}
+          </span>
+        );
+      })}
+    </p>
+  );
+}
+
+/** La misma idea en afirmación, negación y pregunta, una debajo de otra. */
+export function GrammarForms({ examples }: { examples: GrammarExample[] }) {
+  return (
+    <div className="mt-2 space-y-1.5">
+      {examples.map((e, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <span className="mt-0.5 w-[4.5rem] shrink-0 text-[11px] uppercase tracking-wide text-muted-foreground">
+            {FORM_LABEL[e.form]}
+          </span>
+          <MarkedSentence example={e} />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -104,9 +161,18 @@ export function TeachDialog({ text, onClose }: Props) {
                       <div key={i} className="rounded-lg border p-3">
                         <div className="flex flex-wrap items-baseline gap-2">
                           <span className="font-semibold">{g.label}</span>
+                          {g.tense && (
+                            <Badge variant="secondary" className="shrink-0">
+                              {g.tense}
+                            </Badge>
+                          )}
                           <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{g.pattern}</code>
                         </div>
-                        {g.example && <p className="mt-1 text-sm italic">{g.example}</p>}
+                        {g.examples ? (
+                          <GrammarForms examples={g.examples} />
+                        ) : (
+                          g.example && <p className="mt-1 text-sm italic">{g.example}</p>
+                        )}
                         <p className="mt-1 text-sm text-muted-foreground">{g.explanation}</p>
                       </div>
                     ))}

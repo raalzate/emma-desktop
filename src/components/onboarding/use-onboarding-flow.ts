@@ -24,6 +24,10 @@ export interface Bubble {
   text: string;
 }
 
+/** Aviso en español cuando el motor de IA no pudo atender el onboarding. */
+export const ONBOARDING_ERROR =
+  "No pude conectar con el motor de IA. Revisá el modelo local o la clave de la nube en Ajustes y volvé a intentar.";
+
 // La escala real del flujo agéntico: campos requeridos, no pasos de formulario.
 const TOTAL_STEPS = REQUIRED_FIELDS.length;
 
@@ -93,6 +97,14 @@ export function useOnboardingFlow(
       setCaptured(c);
       setTotal(t);
     };
+    const fail = () => {
+      // El motor no pudo responder (sin IA disponible, error del runtime local).
+      // Se cierra el flujo con el aviso: nunca se deja el "pensando" eterno.
+      setThinking(false);
+      setDone(true);
+      setCompleted(false);
+      push("emma", ONBOARDING_ERROR);
+    };
     void runtime.runAgenticOnboarding(createIo(), onProgress).then(async (result) => {
       setThinking(false);
       // El flujo termina siempre (no dejamos un composer muerto sin pregunta
@@ -101,8 +113,8 @@ export function useOnboardingFlow(
       setDone(true);
       setCompleted(result.completed);
       await onComplete();
-    });
-  }, [ready, runtime, createIo, onComplete]);
+    }, fail).catch(fail);
+  }, [ready, runtime, createIo, onComplete, push]);
 
   return {
     messages,

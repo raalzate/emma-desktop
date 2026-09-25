@@ -8,9 +8,13 @@
  */
 
 import type {
+  GrammarExample,
+  GrammarForm,
   GrammarStructure,
+  GrammarVerb,
   PronunciationRow,
   ReplySuggestion,
+  VerbRole,
 } from "@/domain/english-teacher/teaching-models";
 
 // Marcadores de lista que el modelo puede emitir en vez de `REPLY:`; separadores de nota.
@@ -19,7 +23,9 @@ const NOTE_SEPARATORS = ["::", " — ", " - "];
 
 const MAX_GRAMMAR_POINTS = 4;
 const MAX_PHONETIC_ROWS = 10; // una fila por frase — cubre el mensaje entero
-const GRAMMAR_FIELDS: Array<[string, keyof GrammarStructure]> = [
+/** Sólo los campos de texto: `examples` se arma aparte, validado en el borde. */
+type GrammarTextField = "pattern" | "example" | "explanation";
+const GRAMMAR_FIELDS: Array<[string, GrammarTextField]> = [
   ["PATTERN", "pattern"],
   ["EXAMPLE", "example"],
   ["WHY", "explanation"],
@@ -29,7 +35,10 @@ const GRAMMAR_FIELDS: Array<[string, keyof GrammarStructure]> = [
 // prefijo `STRUCTURE:` pedido, así que aceptamos todas esas formas.
 const BOLD_HEADER = /^(?:\*{1,2}\s*(.+?)\s*\*{1,2}|#{1,4}\s+(.+))$/;
 const STRUCTURE_HEADER = /^structure\s*\d*\s*:\s*(.+)$/i;
-const NON_LABELS = ["PATTERN", "EXAMPLE", "WHY", "STRUCTURE", "TIP", "PHRASE"];
+const NON_LABELS = [
+  "PATTERN", "EXAMPLE", "WHY", "STRUCTURE", "TIP", "PHRASE",
+  "TENSE", "AFFIRMATIVE", "NEGATIVE", "QUESTION",
+];
 
 // Rompe en \r\n, \r y \n: el modelo mezcla finales de línea.
 const splitLines = (raw: string): string[] => raw.split(/\r\n|\r|\n/);
@@ -71,18 +80,71 @@ function applyGrammarField(point: GrammarStructure, line: string): void {
   }
 }
 
+// Las tres formas de la misma idea y el verbo marcado como `[aux:are]` /
+// `[main:working]` — el modelo pequeño sigue bien un marcador explícito, y así
+// el texto queda parseable sin adivinar qué palabra es el verbo (#168).
+const FORM_KEYS: Array<[string, GrammarForm]> = [
+  ["AFFIRMATIVE", "affirmative"],
+  ["NEGATIVE", "negative"],
+  ["QUESTION", "question"],
+];
+const VERB_MARK = /\[(aux|main):([^\]]+)\]/gi;
+const ROLE_BY_MARK: Record<string, VerbRole> = { aux: "auxiliary", main: "main" };
+
+/** Un ejemplo marcado → inglés limpio + verbos; null si no trae ninguna marca. */
+function parseMarkedExample(form: GrammarForm, raw: string): GrammarExample | null {
+  const verbs: GrammarVerb[] = [];
+  const english = raw
+    .replace(VERB_MARK, (_all, mark: string, text: string) => {
+      verbs.push({ text: text.trim(), role: ROLE_BY_MARK[mark.toLowerCase()] });
+      return text.trim();
+    })
+    .trim();
+  if (!english || verbs.length === 0) return null;
+  return { form, english, verbs };
+}
+
+/**
+ * Valida el trío en el borde: sólo se muestran las tres formas si llegaron las
+ * TRES, cada una con sus verbos marcados. Cualquier hueco degrada la estructura
+ * al formato de siempre en vez de pintar media tarjeta.
+ */
+function completeExamples(rawForms: Map<GrammarForm, string>): GrammarExample[] | undefined {
+  const examples: GrammarExample[] = [];
+  for (const [, form] of FORM_KEYS) {
+    const raw = rawForms.get(form);
+    const example = raw ? parseMarkedExample(form, raw) : null;
+    if (!example) return undefined;
+    examples.push(example);
+  }
+  return examples;
+}
+
 /** Divide la salida de gramática en bloques (STRUCTURE: o headers Markdown). */
 export function parseGrammarPoints(raw: string): GrammarStructure[] {
   const points: GrammarStructure[] = [];
+  const forms = new Map<GrammarStructure, Map<GrammarForm, string>>();
   let current: GrammarStructure | null = null;
   for (const line of splitLines(raw)) {
     const label = structureLabel(line);
     if (label) {
       current = { label, pattern: "", example: "", explanation: "" };
       points.push(current);
-    } else if (current !== null) {
-      applyGrammarField(current, line);
+      forms.set(current, new Map());
+      continue;
     }
+    if (current === null) continue;
+    applyGrammarField(current, line);
+    const tense = after(line, "TENSE");
+    if (tense) current.tense = tense;
+    for (const [key, form] of FORM_KEYS) {
+      const value = after(line, key);
+      if (value) forms.get(current)!.set(form, value);
+    }
+  }
+  for (const point of points) {
+    const examples = completeExamples(forms.get(point)!);
+    if (examples) point.examples = examples;
   }
   return points.filter((p) => p.label).slice(0, MAX_GRAMMAR_POINTS);
 }

@@ -116,6 +116,11 @@ export function Composer({
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={onKeyDown}
+              // El texto del aprendiz es inglés: sin `lang` el corrector toma el
+              // idioma del sistema (español) y subraya la frase entera. Con él,
+              // el click derecho ofrece la palabra bien escrita (ver main/context-menu.ts).
+              lang="en"
+              spellCheck
               placeholder={
                 mustSpeak
                   ? voiceRequirement.promptEs

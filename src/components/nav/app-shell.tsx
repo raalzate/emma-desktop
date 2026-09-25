@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { MapPin, Target, BarChart3, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandWordmark } from "./brand-wordmark";
+import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
 
 /**
  * Shell persistente del rediseño «Café sereno»: sidebar fija con wordmark,
@@ -24,6 +25,23 @@ function esActivo(pathname: string, href: string): boolean {
     return pathname === "/" || pathname.startsWith("/chat");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/**
+ * Contador de lecciones pendientes (#172): si no se ve desde la navegación, la
+ * lista deja de existir para el aprendiz. Cero pendientes no pinta nada.
+ */
+function PendingLessonsBadge() {
+  const { pending } = useLessonTodos();
+  if (pending.length === 0) return null;
+  return (
+    <span
+      className="ml-auto rounded-full bg-accent px-2 py-0.5 font-code text-[10px] font-semibold text-accent-foreground"
+      title="Lecciones que EMMA te anotó y siguen pendientes"
+    >
+      {pending.length}
+    </span>
+  );
 }
 
 export function AppShell({ extra, children }: { extra?: ReactNode; children: ReactNode }) {
@@ -47,6 +65,7 @@ export function AppShell({ extra, children }: { extra?: ReactNode; children: Rea
             >
               <Icon className="h-[18px] w-[18px]" aria-hidden />
               {label}
+              {href === "/practice" && <PendingLessonsBadge />}
             </Link>
           ))}
         </nav>
