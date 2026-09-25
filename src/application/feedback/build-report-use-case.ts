@@ -1,7 +1,7 @@
 /** buildFeedbackReport — convierte los errores silenciosos en feedback post-simulación. */
 
 import type { ErrorLabel } from "@/domain/chat/error-taxonomy";
-import type { SilentError } from "@/domain/chat/silent-error";
+import { reportableCorrections, type SilentError } from "@/domain/chat/silent-error";
 import { scenarioForError } from "@/domain/pathway/error-scenario-mapping";
 import { LESSON_TIPS } from "@/domain/feedback/lesson-tips";
 import {
@@ -73,11 +73,6 @@ function formatSituation(binding: FeedbackSituation, title: string): string {
   return `\n### Situación activa\n**${title}** (variante \`${binding.variantId}\`)\n\n${commentary}\n`;
 }
 
-/** Mantiene errores cuya sugerencia difiere realmente del original. */
-function isMeaningfulError(err: SilentError): boolean {
-  return err.corrected.trim() !== err.original.trim();
-}
-
 /** Parte tras el primer punto del variantId (equivalente a split(".", 1)[-1]). */
 function variantTitle(variantId: string): string {
   const idx = variantId.indexOf(".");
@@ -91,9 +86,9 @@ export function buildFeedbackReport(input: FeedbackReportInput): string {
     input.situationTitle || (input.situation ? variantTitle(input.situation.variantId) : "");
   const situationBlock = input.situation ? formatSituation(input.situation, title) : "";
 
-  // Filtra filas donde Suggested duplica Your wording — no son accionables y
-  // sólo agregan ruido a la tabla de feedback.
-  const errors = input.errors.filter(isMeaningfulError);
+  // Mismo criterio de error que el resto del cierre: fuera las meta-respuestas
+  // del checker y las correcciones de superficie (#170).
+  const errors = reportableCorrections(input.errors);
   if (errors.length === 0) {
     const head = NO_ERRORS_TEMPLATE.replace("{scenario}", scenario).replace(
       "{turns}",
