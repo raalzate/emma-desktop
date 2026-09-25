@@ -12,7 +12,7 @@ import type { UserProfile } from "@/domain/profile/user-profile";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { SessionMetric } from "@/domain/progression/session-metric";
-import { isActionableCorrection, type SilentError } from "@/domain/chat/silent-error";
+import { reportableCorrections, type SilentError } from "@/domain/chat/silent-error";
 import type { ChatTurn } from "@/domain/chat/simulation-session";
 import { buildSimulationPrompt } from "@/domain/chat/simulation-prompt";
 import { buildLanguageFocus, buildTutorAwareness } from "@/domain/chat/language-focus";
@@ -191,9 +191,10 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
     },
     checkGrammar: (text, turn) => checkGrammar({ llm, text, turn }),
     async finishSession(a) {
-      await record.execute(USER_ID, a.errors);
-      // Solo errores accionables (defensa: el búfer ya filtra en la fuente).
-      const errors = a.errors.filter(isActionableCorrection);
+      // Un solo conjunto de errores para todo el cierre — resumen, lección,
+      // histograma, SRS y métricas (defensa: el búfer ya filtra en la fuente).
+      const errors = reportableCorrections(a.errors);
+      await record.execute(USER_ID, errors);
       // La lección REAL de Emma (LLM, en inglés hablado con audio en la UI);
       // null ⇒ el resumen usa el respaldo determinista.
       const lesson = await buildLesson({
