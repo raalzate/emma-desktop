@@ -4,7 +4,7 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-09-13
+- **Fecha del último gate completo:** 2026-09-25
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
@@ -14,6 +14,12 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   y chat», issues #154/#159/#160/#161). v0.1.0 quedó retirada de hecho (dmg roto, gotcha
   2026-08-31) y v0.1.1 sigue en BORRADOR con sus 3 instaladores. Publicar un borrador sigue
   siendo gesto del humano.
+- **Milestone v0.5.0 fusionado (2026-09-25):** lección en karaoke con audio al lado, escena
+  visible en modal durante el chat, correcciones triviales fuera del feedback, gramática con
+  tres formas y verbos resaltados, lista de lecciones («Mis lecciones» en Práctica), turnos
+  con voz obligatoria y corrector ortográfico en inglés en todas las plataformas (issues
+  #167–#174, #182; PRs #175–#179, #181, #185). Más **v0.6.0**: prácticas dinámicas (#183,
+  PR #184). Sin release publicada todavía con esto: publicar sigue siendo gesto del humano.
 - **Vitrina pública:** https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
   botones de descarga apuntan a la última release publicada (la API de GitHub los
@@ -29,7 +35,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en issues de GitHub; sin `specs/` en el repo |
 | Diagramas sincronizados | `node scripts/diagrams-check.mjs` | verde — 4 vistas BPMN, 77 elementos; cajas en lenguaje de producto y anclas que apuntan a código que existe |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
-| Tests | `pnpm test` | verde — 1238 pruebas en 161 archivos |
+| Tests | `pnpm test` | verde — 1378 pruebas en 183 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
 | Smoke de producción | `pnpm smoke` | verde — Electron carga `app://-` con contenido (camino empaquetado); OMITIDA donde no hay binario de Electron (gate de CI) |
 
@@ -58,6 +64,14 @@ con sus casos de self-test (primer gotcha real en `docs/gotchas.md`). L4 pide qu
 sea rutina, no estreno.
 
 ## Deuda conocida
+
+- **Vistas PFA desincronizadas con lo fusionado el 2026-09-25:** «BPMN · Voz y pronunciación»
+  (turnos con voz obligatoria, #169), «BPMN · Simulación y feedback» (lista de lecciones,
+  #172) y «BPMN · Repaso SRS» (recuerdo escrito, #183) describen el flujo anterior en el
+  lienzo. Las instantáneas en `docs/diagramas/` pasan la señal del gate (anclas válidas),
+  pero el dibujo en Processflow Architect no se pudo actualizar: la app no respondió en
+  `127.0.0.1:7331` durante la sesión. Se sincroniza con el skill `disenar-diagrama` en
+  cuanto esté abierta.
 
 - **Cobertura sin umbral:** `vitest.config.ts` no exige mínimo de cobertura; el Artículo 1
   (TDD) es REVIEW hasta que se declare `coverage.thresholds` (mecanismo candidato:
