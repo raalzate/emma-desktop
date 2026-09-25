@@ -13,7 +13,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Languages, Loader2, Play, RotateCcw, Square } from "lucide-react";
+import { ArrowRight, Check, Languages, ListPlus, Loader2, Play, RotateCcw, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PracticeRecommendation } from "@/domain/tutor/practice-recommender";
 import type { SessionChallenge } from "@/domain/curriculum/challenge-selection";
@@ -32,7 +32,16 @@ import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { LessonView } from "./use-end-session";
-import { useKaraoke } from "./use-karaoke";
+import { useKaraoke, type Karaoke } from "./use-karaoke";
+import { KaraokeTranscript } from "./karaoke-transcript";
+import { hasSpeakableContent } from "@/domain/tts/speakable-text";
+import { splitReportAtLesson } from "@/domain/feedback/report-sections";
+import {
+  draftFromChallenge,
+  draftFromRecommendation,
+} from "@/domain/lessons/lesson-todo-drafts";
+import type { LessonTodoDraft, LessonTodoOrigin } from "@/domain/lessons/lesson-todo";
+import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
 
 /** Voz reservada de Emma (tutora): siempre femenina, en-US-EmmaNeural. */
 const EMMA_VOICE = "en-US-EmmaNeural";
@@ -49,22 +58,6 @@ interface Props {
   onSelectScenario: (s: Scenario) => void;
   /** Abre la ayuda en español sobre un texto (reutiliza el TranslateDialog). */
   onTranslate: (text: string) => void;
-}
-
-/** Ruta de /practice preseleccionada para cada tipo de recomendación (kind "scenario" no navega aquí). */
-function practiceHrefFor(rec: PracticeRecommendation): string | null {
-  switch (rec.kind) {
-    case "exercise":
-      return `/practice?tab=exercises&unit=${rec.unit}&exercise=${rec.exerciseId}`;
-    case "srs-review":
-      return "/practice?tab=srs";
-    case "minimal-pair":
-      return `/practice?tab=pronunciation&contrast=${rec.contrastId}`;
-    case "checklist":
-      return `/practice?tab=assessment&level=${rec.level}`;
-    case "scenario":
-      return null;
-  }
 }
 
 /** Decisión metodológica de Emma en una línea legible (andamiaje: español). */
@@ -97,6 +90,90 @@ function useSessionChallenge(active: boolean, scenarioType: string, level: CefrL
   return challenge;
 }
 
+/**
+ * La lección de Emma en karaoke, con el audio en la cabecera de su propia
+ * sección (#171): el control vivía arriba del reporte, lejos del texto que se
+ * escucha, y la lección se leía como markdown plano —ninguna pista de qué línea
+ * estaba sonando—. Sin autoplay: la lección nunca suena sola al abrir.
+ */
+export function LessonKaraoke({
+  karaoke,
+  lesson,
+  onTranslate,
+}: {
+  karaoke: Karaoke;
+  lesson: string;
+  onTranslate: () => void;
+}) {
+  const speakable = hasSpeakableContent(lesson);
+  return (
+    <div className="mt-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="mr-auto text-sm font-semibold">📚 Lección de Emma</p>
+        {speakable && (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="gap-1"
+            disabled={!karaoke.available || karaoke.loading}
+            onClick={() => (karaoke.playing ? karaoke.stop() : karaoke.play())}
+          >
+            {karaoke.loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : karaoke.playing ? (
+              <Square className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+            {karaoke.playing ? "Detener" : "Escuchar a Emma"}
+          </Button>
+        )}
+        <Button variant="outline" size="sm" className="gap-1" onClick={onTranslate}>
+          <Languages className="h-4 w-4" /> Ayuda en español
+        </Button>
+      </div>
+      <KaraokeTranscript
+        sentences={karaoke.sentences}
+        active={karaoke.activeSentence}
+        activeWord={karaoke.activeWord}
+        onPick={(i) => karaoke.playSentence(i)}
+        seekable={karaoke.canSeek}
+      />
+    </div>
+  );
+}
+
+/**
+ * «Anotar» en vez de «ir»: el diálogo NO se cierra al pulsar, así que el
+ * aprendiz sigue leyendo su feedback y la recomendación deja de perderse si no
+ * la atiende en ese momento (#172).
+ */
+function AnotarButton({
+  label,
+  draft,
+  added,
+  onAdd,
+}: {
+  label: string;
+  draft: LessonTodoDraft;
+  added: boolean;
+  onAdd: (draft: LessonTodoDraft) => void;
+}) {
+  return (
+    <Button
+      variant={added ? "secondary" : "outline"}
+      size="sm"
+      className="gap-1"
+      title={added ? "Ya está en tu lista de lecciones" : "Agregar a mis lecciones"}
+      disabled={added}
+      onClick={() => onAdd(draft)}
+    >
+      {added ? <Check className="h-3.5 w-3.5" /> : <ListPlus className="h-3.5 w-3.5" />}
+      {added ? "Anotada" : label}
+    </Button>
+  );
+}
+
 export function LessonDialog({
   view, open, onClose, scenario, situation, level, scenarios, onSelectScenario, onTranslate,
 }: Props) {
@@ -104,6 +181,31 @@ export function LessonDialog({
   // Audio de la lección con la voz de Emma (mismo motor que las burbujas).
   const karaoke = useKaraoke(view?.lesson ?? "", "feminine", EMMA_VOICE);
   const sessionChallenge = useSessionChallenge(open && !!view, scenario.scenarioType, level);
+  // La lección sale del markdown del reporte: se renderiza en karaoke, no plana.
+  const reportParts = splitReportAtLesson(view?.report ?? "");
+  const { add } = useLessonTodos();
+  // Marcar lo anotado sin recargar la lista entera: el diálogo sólo necesita
+  // saber qué botones ya se pulsaron en esta lectura del feedback.
+  const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
+  const lessonOrigin: LessonTodoOrigin = {
+    sessionAt: Date.now(),
+    scenarioType: scenario.scenarioType,
+    scenarioTitle: scenario.title,
+    situationTitle: situation?.title,
+  };
+  const challengeDraft = sessionChallenge
+    ? draftFromChallenge(
+        {
+          unit: sessionChallenge.unit.number,
+          instructionsEs: sessionChallenge.challenge.instructionsEs,
+        },
+        lessonOrigin,
+      )
+    : null;
+  const addTodo = (draft: LessonTodoDraft): void => {
+    void add(draft);
+    setAddedKeys((prev) => new Set(prev).add(`${draft.kind}:${draft.target}`));
+  };
 
   // Siguiente paso de la ruta: nunca el escenario que se acaba de jugar —
   // si la recomendación coincide, rota al siguiente del catálogo del nivel.
@@ -138,35 +240,15 @@ export function LessonDialog({
         <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-2">
           {/* Componente 1 — Enseñanza: correcciones + lección de Emma (audio). */}
           <section className="rounded-lg border bg-card p-4">
+            <Markdown>{reportParts.before}</Markdown>
             {view.lesson && (
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="gap-1"
-                  disabled={!karaoke.available || karaoke.loading}
-                  onClick={() => (karaoke.playing ? karaoke.stop() : karaoke.play())}
-                >
-                  {karaoke.loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : karaoke.playing ? (
-                    <Square className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                  {karaoke.playing ? "Detener" : "Escuchar a Emma"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1"
-                  onClick={() => onTranslate(view.lesson!)}
-                >
-                  <Languages className="h-4 w-4" /> Ayuda en español
-                </Button>
-              </div>
+              <LessonKaraoke
+                karaoke={karaoke}
+                onTranslate={() => onTranslate(view.lesson!)}
+                lesson={view.lesson}
+              />
             )}
-            <Markdown>{view.report}</Markdown>
+            {reportParts.after && <Markdown>{reportParts.after}</Markdown>}
           </section>
           {/* Componente 2 — Decisión de Emma: avanzar de nivel o repetir. */}
           <section className="rounded-lg border bg-muted/40 p-4">
@@ -186,28 +268,19 @@ export function LessonDialog({
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Próximos pasos
               </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Anótalas y hazlas cuando quieras: quedan en «Mis lecciones».
+              </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {view.recommendations.map((rec, i) => {
-                  const href = practiceHrefFor(rec);
-                  const target =
-                    rec.kind === "scenario"
-                      ? scenarios.find((s) => s.scenarioType === rec.scenarioType) ?? null
-                      : null;
-                  return (
-                    <Button
-                      key={`${rec.kind}-${i}`}
-                      variant="outline"
-                      size="sm"
-                      title={rec.reasonEs}
-                      onClick={() => {
-                        if (href) closeAnd(() => router.push(href));
-                        else if (target) closeAnd(() => onSelectScenario(target));
-                      }}
-                    >
-                      {rec.reasonEs}
-                    </Button>
-                  );
-                })}
+                {view.recommendations.map((rec, i) => (
+                  <AnotarButton
+                    key={`${rec.kind}-${i}`}
+                    label={rec.reasonEs}
+                    draft={draftFromRecommendation(rec, lessonOrigin)}
+                    onAdd={addTodo}
+                    added={addedKeys.has(`${rec.kind}:${draftFromRecommendation(rec, lessonOrigin).target}`)}
+                  />
+                ))}
               </div>
             </section>
           )}
@@ -226,18 +299,14 @@ export function LessonDialog({
                   <li key={i}>{c}</li>
                 ))}
               </ul>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() =>
-                  closeAnd(() =>
-                    router.push(`/practice?tab=challenges&unit=${sessionChallenge.unit.number}`),
-                  )
-                }
-              >
-                Ir al reto
-              </Button>
+              <div className="mt-2">
+                <AnotarButton
+                  label="Anotar el reto"
+                  draft={challengeDraft!}
+                  onAdd={addTodo}
+                  added={addedKeys.has(`challenge:${challengeDraft?.target}`)}
+                />
+              </div>
             </section>
           )}
         </div>

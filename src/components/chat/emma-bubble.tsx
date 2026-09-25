@@ -20,10 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useKaraoke } from "./use-karaoke";
-import {
-  sentenceWordTokens,
-  type SentenceSpan,
-} from "@/domain/chat/transcript-sentences";
+import { KaraokeTranscript } from "./karaoke-transcript";
 import { formatTime } from "./chat-time";
 import type { VoiceGender } from "@/domain/chat-settings/chat-settings";
 import type { Protopersona } from "@/domain/personas/protopersona";
@@ -48,60 +45,6 @@ function Avatar({ name }: { name?: string }) {
     >
       {initial}
     </div>
-  );
-}
-
-// Transcripción por ORACIONES con karaoke por PALABRA: la oración activa se
-// resalta como bloque (contexto) y la palabra que suena con contraste real —
-// el fondo suave por sí solo no se percibía en mensajes de una o dos oraciones.
-// Cada oración con audio es clicable para repetirla (FR-010/011); las sin audio
-// (solo símbolos) se muestran pero no reaccionan al clic.
-function Transcript({
-  sentences,
-  active,
-  activeWord,
-  onPick,
-}: {
-  sentences: SentenceSpan[];
-  active: number;
-  activeWord: number;
-  onPick: (i: number) => void;
-}) {
-  return (
-    <p className="mt-2 text-[15px] leading-relaxed">
-      {sentences.map((s, i) => {
-        const clickable = s.wordCount > 0;
-        return (
-          <span
-            key={i}
-            role={clickable ? "button" : undefined}
-            tabIndex={clickable ? 0 : undefined}
-            title={clickable ? "Clic para escuchar esta oración" : undefined}
-            onClick={clickable ? () => onPick(i) : undefined}
-            onKeyDown={clickable ? (e) => e.key === "Enter" && onPick(i) : undefined}
-            className={cn(
-              "rounded px-0.5 transition-colors",
-              clickable && "cursor-pointer hover:bg-primary-soft/60",
-              i === active && "bg-primary-soft text-primary-deep",
-            )}
-          >
-            {sentenceWordTokens(s).map((w, j) => (
-              <span
-                key={j}
-                className={cn(
-                  "rounded px-0.5 transition-colors",
-                  w.wordIndex !== null &&
-                    w.wordIndex === activeWord &&
-                    "bg-primary font-semibold text-primary-foreground",
-                )}
-              >
-                {w.text}{" "}
-              </span>
-            ))}
-          </span>
-        );
-      })}
-    </p>
   );
 }
 
@@ -136,7 +79,7 @@ export function EmmaBubble({ text, at, gender, persona, onTeach, onTranslate }: 
           </Button>
         </div>
         {open && (
-          <Transcript
+          <KaraokeTranscript
             sentences={k.sentences}
             active={k.activeSentence}
             activeWord={k.activeWord}
