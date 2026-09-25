@@ -86,3 +86,14 @@ describe('buildContextMenuTemplate', () => {
     expect(porEtiqueta['Pegar']).toBe(true);
   });
 });
+
+describe('buildContextMenuTemplate · veredicto del diccionario inglés', () => {
+  it('cuando la palabra es correcta en inglés lo dice en vez de "Sin sugerencias"', () => {
+    const template = buildContextMenuTemplate(
+      { ...baseParams, misspelledWord: 'deploy', dictionarySuggestions: [], correctInEnglish: true },
+      actions()
+    );
+    expect(labels(template)).toContain('Correcta en inglés');
+    expect(labels(template)).not.toContain('Sin sugerencias');
+  });
+});

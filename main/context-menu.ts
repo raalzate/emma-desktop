@@ -17,6 +17,8 @@ export interface SpellCheckParams {
   isEditable: boolean;
   misspelledWord: string;
   dictionarySuggestions: string[];
+  /** El diccionario inglés propio dice que la palabra subrayada por el SO está bien. */
+  correctInEnglish?: boolean;
   editFlags: { canCut: boolean; canCopy: boolean; canPaste: boolean };
 }
 
@@ -42,6 +44,9 @@ export function buildContextMenuTemplate(
       for (const suggestion of suggestions) {
         template.push({ label: suggestion, click: () => actions.replaceMisspelling(suggestion) });
       }
+    } else if (params.correctInEnglish) {
+      // El SO (en español) subrayó una palabra inglesa válida: decirlo evita que el aprendiz la "arregle".
+      template.push({ label: 'Correcta en inglés', enabled: false });
     } else {
       // Silenciar el caso vacío dejaba el mismo menú que sin error: hay que decirlo.
       template.push({ label: 'Sin sugerencias', enabled: false });

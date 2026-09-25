@@ -4,6 +4,7 @@ import { isDev, appServe } from './config';
 import { assetsDir } from './paths';
 import { loadProductionRenderer } from './load-renderer';
 import { buildContextMenuTemplate } from './context-menu';
+import { loadEnglishSpeller, toEnglishSpellParams, type EnglishSpeller } from './spell-english';
 
 /** Crea la ventana principal de EMMA y su menú nativo (ES). */
 export function createMainWindow(): BrowserWindow {
@@ -119,8 +120,16 @@ function setupMenu(win: BrowserWindow): void {
 /** Cablea el menú contextual a la ventana: sin esto el template no se dibuja nunca. */
 function wireSpellCheckContextMenu(win: BrowserWindow): void {
   const webContents = win.webContents;
+  // Las sugerencias las pone el diccionario inglés propio, no el SO (ver spell-english.ts).
+  let speller: EnglishSpeller | null = null;
+  try {
+    speller = loadEnglishSpeller();
+  } catch (error) {
+    console.error('[spell] no se pudo cargar el diccionario inglés; se usan las sugerencias del SO', error);
+  }
   webContents.on('context-menu', (_event, params) => {
-    const template = buildContextMenuTemplate(params, {
+    const spellParams = speller ? toEnglishSpellParams(params, speller) : params;
+    const template = buildContextMenuTemplate(spellParams, {
       replaceMisspelling: (word) => webContents.replaceMisspelling(word),
       addToDictionary: (word) => webContents.session.addWordToSpellCheckerDictionary(word),
     });
