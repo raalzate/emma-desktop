@@ -248,18 +248,59 @@ describe("plan de estudio", () => {
   });
 });
 
-describe("mis lecciones", () => {
-  it("vive fuera de las pestañas de Práctica, como sección propia", () => {
-    const page = fs.readFileSync(path.join(process.cwd(), "src/app/practice/page.tsx"), "utf8");
-    expect(page).not.toContain('value="lessons"');
-    expect(page.indexOf("<LessonTodoList />")).toBeLessThan(page.indexOf("<Tabs "));
+// H6 (#199): las seis secciones dejaron de ser pestañas y son rutas propias;
+// /practice sólo muestra «Mis lecciones» (por defecto) y «Hoy».
+describe("/practice: dos pestañas, Mis lecciones primero", () => {
+  const page = fs.readFileSync(path.join(process.cwd(), "src/app/practice/page.tsx"), "utf8");
+
+  it("«My lessons» es la pestaña por defecto, antes que «Today»", () => {
+    expect(page).toContain('defaultValue="lessons"');
+    expect(page.indexOf('value="lessons"')).toBeLessThan(page.indexOf('value="today"'));
     expect(page).toContain("What Emma left you to practice");
   });
 
-  it("«Start» navega por deep-link y la pestaña destino se desplaza a la vista", () => {
-    const page = fs.readFileSync(path.join(process.cwd(), "src/app/practice/page.tsx"), "utf8");
-    expect(page).toContain("practiceTargetFromSearch");
-    expect(page).toContain("scrollIntoView");
+  it("«Today» sigue mostrando el panel del plan con el mismo componente", () => {
+    expect(page).toContain("<PracticeToday");
+    expect(page).toContain('value="today"');
+  });
+
+  it("ya no arma las seis pestañas de ejercicios/repaso/etc.: eso vive en las subrutas", () => {
+    expect(page).not.toContain('value="exercises"');
+    expect(page).not.toContain('value="srs"');
+    expect(page).not.toContain("<ExerciseDrill");
+    expect(page).not.toContain("<ChallengeView");
+  });
+
+  it("un enlace viejo ?tab= redirige a la subruta nueva conservando los parámetros", () => {
+    expect(page).toContain("legacyPracticeRedirect");
+    expect(page).toMatch(/router\.replace\(target\)/);
+  });
+
+  it("elegir un paso del plan «Hoy» navega a la subruta de esa pestaña", () => {
+    expect(page).toContain("practiceHrefFor(step.tab");
+    expect(page).toMatch(/router\.push\(/);
+  });
+});
+
+describe("subrutas de Práctica (H6, #199)", () => {
+  const CASES: Array<{ file: string; component: string; params: string[] }> = [
+    { file: "src/app/practice/exercises/page.tsx", component: "ExerciseDrill", params: ["unit", "exercise"] },
+    { file: "src/app/practice/review/page.tsx", component: "SrsReview", params: [] },
+    { file: "src/app/practice/pronunciation/page.tsx", component: "MinimalPairLab", params: ["contrast"] },
+    { file: "src/app/practice/plan/page.tsx", component: "StudyPlanView", params: [] },
+    { file: "src/app/practice/self-check/page.tsx", component: "SelfAssessmentView", params: ["level"] },
+    { file: "src/app/practice/challenges/page.tsx", component: "ChallengeView", params: ["unit"] },
+  ];
+
+  it.each(CASES)("$file existe, pinta $component y lee sus parámetros de la URL en Suspense", ({ file, component, params }) => {
+    const src = fs.readFileSync(path.join(process.cwd(), file), "utf8");
+    expect(src).toContain("use client");
+    expect(src).toContain(`<${component}`);
+    expect(src).toContain("Suspense");
+    expect(src).toContain("useSearchParams");
+    for (const param of params) {
+      expect(src).toContain(`"${param}"`);
+    }
   });
 });
 
