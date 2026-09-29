@@ -30,9 +30,15 @@ vi.mock("@/components/chat/use-karaoke", () => ({
 
 import { EmmaBubble } from "@/components/chat/emma-bubble";
 
+// #196: la transcripción ahora arranca cerrada; este test fija el resalte
+// DENTRO de la transcripción, así que la abre explícitamente.
 const html = () =>
   renderToStaticMarkup(
-    createElement(EmmaBubble, { text: "Good morning! What can I get you?", at: Date.now() }),
+    createElement(EmmaBubble, {
+      text: "Good morning! What can I get you?",
+      at: Date.now(),
+      initiallyOpen: true,
+    }),
   );
 
 describe("EmmaBubble — karaoke visible", () => {
