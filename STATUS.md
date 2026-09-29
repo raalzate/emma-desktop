@@ -4,7 +4,7 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-09-25
+- **Fecha del último gate completo:** 2026-09-29
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
@@ -18,13 +18,15 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   con voz obligatoria y corrector ortográfico en inglés en todas las plataformas (issues
   #167–#174, #182; PRs #175–#179, #181, #185). Más **v0.6.0**: prácticas dinámicas (#183,
   PR #184).
-- **Release v0.7.0 en curso (2026-09-29):** `package.json` en 0.7.0 y notas en
-  `docs/releases/0.7.0.md`: UI 100 % en inglés con tooltips en español (Artículo 9 v1.6.0),
-  ejercicios con opciones y «Explain with Emma», repaso con diferencia palabra a palabra,
-  plan de estudio personal, shadowing por oraciones, chat estilo mensajería, voz de Emma en
-  el onboarding y deep-links a Práctica. El tag `v0.7.0` se crea sobre `main` tras fusionar
-  el PR; el workflow deja el borrador con los 3 instaladores y publicarlo sigue siendo gesto
-  del humano. La vitrina se actualiza sola al publicar.
+- **v0.7.0 quedó en BORRADOR sin publicar** (tag sobre #192): la reemplaza v0.8.0, que trae
+  todo lo suyo más el arreglo de gramática de «Teach me» (#194).
+- **Release v0.8.0 en curso (2026-09-29):** `package.json` en 0.8.0 y notas en
+  `docs/releases/0.8.0.md`: todo desde v0.6.0 — UI en inglés (v0.7.0), gramática correcta
+  en Teach me (#193/#194) y la feature #195 «práctica guiada y conversación coherente»
+  (coherencia del turno, prácticas que desbloquean la ruta, Práctica en subpáginas,
+  karaoke reutilizable, ondas en vivo, pares mínimos en oraciones; PR #201). El tag
+  `v0.8.0` se crea sobre `main` tras fusionar; publicar el borrador es gesto del humano.
+  Pendiente de #195: T7 (#203) vistas de PFA.
 - **Vitrina pública:** https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
   botones de descarga apuntan a la última release publicada (la API de GitHub los
