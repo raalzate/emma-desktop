@@ -250,7 +250,7 @@
       "pattern": "(trait|hypothetical):\\s*\"[^\"]*[áéíóúñ¿¡]",
       "appliesTo": "^src/domain/(personas|situations)/",
       "allow": [],
-      "message": "Artículo 9: el contenido de escena (rasgo de la protopersona, ambientación, etiqueta de carácter) es ficción y va en INGLÉS. El andamiaje de producto —botones, títulos, mensajes de sistema— sí va en español."
+      "message": "Artículo 9: el contenido de escena (rasgo de la protopersona, ambientación, etiqueta de carácter) va en INGLÉS, como toda la UI. Sólo los tooltips (title / TooltipContent) van en español."
     }
   ],
   "tests": {

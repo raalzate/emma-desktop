@@ -43,15 +43,16 @@ export function OnboardingComposer({ disabled, onSend }: Props) {
         disabled={disabled}
         lang="en"
         spellCheck
-        placeholder={disabled ? "Emma está escribiendo…" : 'Escribe tu respuesta (o "skip")…'}
-        aria-label="Tu respuesta"
+        placeholder={disabled ? "Emma is typing…" : 'Type your answer (or "skip")…'}
+        aria-label="Your answer"
       />
       <Button
         type="button"
         size="icon"
+        title="Envía tu respuesta a Emma (Enter)"
         onClick={send}
         disabled={disabled || !value.trim()}
-        aria-label="Enviar"
+        aria-label="Send"
       >
         <Send />
       </Button>

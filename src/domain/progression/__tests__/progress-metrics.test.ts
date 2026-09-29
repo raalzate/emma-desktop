@@ -65,6 +65,6 @@ describe("levelForMetric — comprensión de audio nativo (mayor es mejor)", () 
 
 describe("levelForMetric — errores de entrada", () => {
   it("lanza si el id de la métrica no existe", () => {
-    expect(() => levelForMetric("unknown-metric", 1)).toThrow(/no existe/);
+    expect(() => levelForMetric("unknown-metric", 1)).toThrow(/does not exist/);
   });
 });

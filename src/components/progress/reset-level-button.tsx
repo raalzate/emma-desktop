@@ -37,21 +37,21 @@ export function ResetLevelButton({ repo, level, onReset }: Props) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <RotateCcw /> Reiniciar nivel
+        <Button variant="outline" size="sm" title="Borra tu avance en las escenas de este nivel y lo empieza de cero; te pide confirmar">
+          <RotateCcw /> Reset level
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Reiniciar el nivel {level}?</AlertDialogTitle>
+          <AlertDialogTitle>Reset level {level}?</AlertDialogTitle>
           <AlertDialogDescription>
-            Se borrará tu progreso de escenarios en {level}. Esta acción no se puede deshacer.
+            Your scenario progress in {level} will be erased. This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={handleReset} disabled={busy}>
-            Reiniciar
+            Reset
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

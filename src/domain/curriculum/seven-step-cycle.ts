@@ -31,37 +31,37 @@ export const SEVEN_STEP_CYCLE: readonly UnitStepDefinition[] = [
   {
     step: "input",
     name: "Input",
-    purpose: "Expone a lengua natural en contexto (Krashen)",
+    purpose: "Exposure to natural language in context (Krashen)",
     minutes: 6,
   },
   {
     step: "notice",
     name: "Notice",
-    purpose: "Hace consciente la forma (noticing hypothesis, Schmidt)",
+    purpose: "Makes the form conscious (noticing hypothesis, Schmidt)",
     minutes: 8,
   },
   {
     step: "sound",
     name: "Sound",
-    purpose: "Entrena percepción y producción fonológica",
+    purpose: "Trains sound perception and production",
     minutes: 5,
   },
   {
     step: "chunks",
     name: "Chunks",
-    purpose: "Instala bloques recuperables enteros (Lewis)",
+    purpose: "Installs whole retrievable chunks (Lewis)",
     minutes: 5,
   },
   {
     step: "practice",
     name: "Practice",
-    purpose: "Práctica deliberada con feedback (Ericsson)",
+    purpose: "Deliberate practice with feedback (Ericsson)",
     minutes: 8,
   },
   {
     step: "challenge",
     name: "Challenge",
-    purpose: "Output forzado con resultado real (Swain)",
+    purpose: "Pushed output with a real outcome (Swain)",
     minutes: 6,
   },
 ] as const;

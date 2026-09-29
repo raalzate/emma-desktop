@@ -43,21 +43,22 @@ function render(): string {
 describe("PathwayHome (rediseño Café sereno, FR-023/FR-024)", () => {
   it("saluda con font-headline y subtítulo en tinta muted", () => {
     const html = render();
-    expect(html).toContain("¡Hola de nuevo!");
+    expect(html).toContain("Welcome back!");
     expect(html).toContain("font-headline");
     expect(html).toContain("text-muted-foreground");
   });
 
   it("el subtítulo apunta al siguiente nivel de la escalera", () => {
-    expect(render()).toContain("Vas camino a B2");
+    // El apóstrofo sale escapado (&#x27;) en el markup estático.
+    expect(render()).toContain("on your way to B2");
   });
 
   it("agrupa el trazado en una tarjeta bg-card con esquinas bubble", () => {
     const html = render();
     expect(html).toContain("rounded-bubble");
     expect(html).toContain("bg-card");
-    expect(html).toContain("Tu ruta · Nivel B1");
-    expect(html).toContain("1 de 3 escenas completadas");
+    expect(html).toContain("Your path · Level B1");
+    expect(html).toContain("1 of 3 scenes completed");
   });
 
   it("muestra la escalera CEFR con el porcentaje del nivel en curso", () => {
@@ -66,11 +67,11 @@ describe("PathwayHome (rediseño Café sereno, FR-023/FR-024)", () => {
 
   it("cierra con la tarjeta de recomendación y su CTA de práctica", () => {
     const html = render();
-    expect(html).toContain("Recomendado para hoy");
-    expect(html).toContain("Practicar ahora");
+    expect(html).toContain("Recommended for today");
+    expect(html).toContain("Practice now");
   });
 
   it("omite la pill de racha: el dominio aún no expone ese dato (FR-024)", () => {
-    expect(render()).not.toContain("racha");
+    expect(render()).not.toMatch(/racha|streak/i);
   });
 });

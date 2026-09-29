@@ -33,10 +33,10 @@ function nodoDe(html: string, titulo: string): string {
 describe("PathwayTrail (rediseño Café sereno, FR-026)", () => {
   it("distingue los 4 estados con sus captions font-code", () => {
     const html = render("s2");
-    expect(html).toContain("Completada");
-    expect(html).toContain("En curso");
-    expect(html).toContain("Siguiente");
-    expect(html).toContain("Bloqueada");
+    expect(html).toContain("Completed");
+    expect(html).toContain("In progress");
+    expect(html).toContain("Next");
+    expect(html).toContain("Locked");
     expect(html).toContain("font-code");
   });
 
@@ -74,8 +74,8 @@ describe("PathwayTrail (rediseño Café sereno, FR-026)", () => {
 
   it("sin recomendación no hay «En curso»: la primera pendiente queda como siguiente", () => {
     const html = render();
-    expect(html).not.toContain("En curso");
-    expect(html).toContain("Siguiente");
-    expect(html).toContain("Bloqueada");
+    expect(html).not.toContain("In progress");
+    expect(html).toContain("Next");
+    expect(html).toContain("Locked");
   });
 });

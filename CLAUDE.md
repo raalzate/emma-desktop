@@ -129,9 +129,14 @@ mantiene el dominio testeable sin IO. Ver `teach-use-case.ts` como ejemplo canó
 6. **Tipado estricto** — sin `any`. `typecheck` debe pasar (`pnpm typecheck`).
 7. **Comportamiento estable** — lo que ya vive en pruebas es el contrato. Al
    cambiar lógica de negocio, actualiza la prueba que lo fija y dilo en el commit.
-8. **Inmersión 100% + andamiaje en español** — la conversación de práctica es
-   solo en inglés (EMMA nunca cambia de idioma); tooltips, botones, ayudas y
-   mensajes de sistema de la UI van en español. Ver Artículo 9 de la constitución.
+8. **Inmersión 100%: UI en inglés, tooltips en español** — la conversación de
+   práctica es solo en inglés (EMMA nunca cambia de idioma) y TODA la interfaz
+   (botones, títulos, placeholders, mensajes de sistema, textos de producto del
+   dominio) va en inglés. El único andamiaje en español son los tooltips
+   (`title` y `<TooltipContent>`), y TODO botón lleva uno. Comentarios y
+   descripciones de tests siguen en español. Frenos:
+   `src/components/__tests__/ui-en-ingles.test.ts` y
+   `src/components/__tests__/tooltips-en-espanol.test.ts`. Artículo 9.
 
 ---
 

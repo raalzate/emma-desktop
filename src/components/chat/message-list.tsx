@@ -47,8 +47,10 @@ export function MessageList({
   }, [messages, typing, narrationDone]);
 
   return (
-    <ScrollArea className="flex-1">
-      <div className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-6">
+    // Papel tapiz de mensajería: puntos tenues del token border sobre lino;
+    // el hilo usa todo el ancho y las burbujas se pegan a cada lado.
+    <ScrollArea className="flex-1 bg-secondary/40 bg-[radial-gradient(hsl(var(--border))_1px,transparent_1px)] [background-size:22px_22px]">
+      <div className="flex w-full flex-col gap-1.5 px-6 py-5 lg:px-12">
         {scenario && (
           <SceneNarration
             scenario={scenario}

@@ -30,7 +30,7 @@ export function PracticeToday({ plan, onPick }: Props) {
   return (
     <section className="space-y-3 rounded-bubble border border-border bg-card p-4">
       <div>
-        <p className="font-code text-[11px] uppercase tracking-wide text-muted-foreground">Hoy</p>
+        <p className="font-code text-[11px] uppercase tracking-wide text-muted-foreground">Today</p>
         <h2 className="font-headline text-base font-semibold">{plan.headlineEs}</h2>
       </div>
       <ol className="grid gap-2 sm:grid-cols-2">
@@ -40,6 +40,7 @@ export function PracticeToday({ plan, onPick }: Props) {
             <li key={`${step.tab}-${i}`}>
               <button
                 type="button"
+                title="Abre este paso del plan en su pestaña"
                 onClick={() => onPick(step)}
                 className="flex w-full items-start gap-3 rounded-md border border-border bg-background p-3 text-left transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
@@ -48,7 +49,7 @@ export function PracticeToday({ plan, onPick }: Props) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2 text-sm font-medium">
-                    <span className="font-code text-[11px] text-muted-foreground">{i + 1}</span>
+                    <span className="font-code text-[11px] uppercase text-muted-foreground">Step {i + 1}</span>
                     {step.titleEs}
                     {step.count !== undefined && (
                       <span className="rounded-full bg-accent-soft px-2 font-code text-[11px] text-accent">

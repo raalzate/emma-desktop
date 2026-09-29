@@ -24,10 +24,10 @@ const html = renderToStaticMarkup(
 );
 
 describe("GrammarForms", () => {
-  it("etiqueta las tres formas en español", () => {
-    expect(html).toContain("Afirmación");
-    expect(html).toContain("Negación");
-    expect(html).toContain("Pregunta");
+  it("etiqueta las tres formas en inglés", () => {
+    expect(html).toContain("Affirmative");
+    expect(html).toContain("Negative");
+    expect(html).toContain("Question");
   });
 
   it("los ejemplos quedan en inglés, sin las marcas del modelo", () => {

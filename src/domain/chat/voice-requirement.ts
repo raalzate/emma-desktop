@@ -7,15 +7,15 @@
  * cerrar la escena, o volver tras varios turnos sin usar la voz—. La regla vive
  * acá, pura y configurable; la UI sólo obedece.
  *
- * Los avisos van en español (andamiaje, Artículo 9); la conversación sigue solo
- * en inglés.
+ * Los avisos van en inglés, como toda la UI (Artículo 9 v1.6.0). El campo se
+ * sigue llamando `promptEs` para no romper la API.
  */
 
 export type VoiceReason = "greeting" | "detailed_explanation" | "voice_idle" | "closing";
 
 export interface VoiceRequirement {
   reason: VoiceReason;
-  /** Por qué este turno es hablado, dicho al aprendiz en español. */
+  /** Por qué este turno es hablado, dicho al aprendiz (copy de UI, en inglés). */
   promptEs: string;
 }
 
@@ -41,10 +41,10 @@ export interface VoiceRequirementInput {
 export const DEFAULT_VOICE_IDLE_TURNS = 3;
 
 const PROMPT_ES: Record<VoiceReason, string> = {
-  greeting: "Este turno es hablado: saluda con tu voz.",
-  detailed_explanation: "Este turno es hablado: explícalo con tus palabras, en voz alta.",
-  voice_idle: "Este turno es hablado: llevas varios turnos sin usar la voz.",
-  closing: "Este turno es hablado: cierra la conversación hablando.",
+  greeting: "This turn is spoken: say hello with your voice.",
+  detailed_explanation: "This turn is spoken: explain it in your own words, out loud.",
+  voice_idle: "This turn is spoken: it’s been a few turns since you used your voice.",
+  closing: "This turn is spoken: wrap up the conversation by speaking.",
 };
 
 const of = (reason: VoiceReason): VoiceRequirement => ({ reason, promptEs: PROMPT_ES[reason] });

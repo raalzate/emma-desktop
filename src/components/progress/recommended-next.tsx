@@ -15,9 +15,9 @@ import {
 } from "@/domain/pathway/next-scenario-policy";
 
 const REASON_LABEL: Record<string, string> = {
-  [RecommendationReason.ERROR_FOCUS]: "Refuerza un error recurrente",
-  [RecommendationReason.GOAL_MATCH]: "Alineado con tus metas",
-  [RecommendationReason.CATALOG_ORDER]: "Siguiente en tu ruta de aprendizaje",
+  [RecommendationReason.ERROR_FOCUS]: "Reinforces a recurring error",
+  [RecommendationReason.GOAL_MATCH]: "Aligned with your goals",
+  [RecommendationReason.CATALOG_ORDER]: "Next on your learning path",
 };
 
 export function RecommendedNext({
@@ -34,18 +34,18 @@ export function RecommendedNext({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <p className="font-code text-[11px] uppercase tracking-widest text-primary">
-            Recomendado para hoy
+            Recommended for today
           </p>
           <p className="font-headline text-xl font-bold">{recommendation.title}</p>
           <p className="text-sm text-muted-foreground">{REASON_LABEL[recommendation.reason]}</p>
         </div>
         {onPractice && (
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-            <Button asChild variant="outline">
-              <Link href="/progress/">Ver mi progreso</Link>
+            <Button asChild variant="outline" title="Muestra tu ruta de escenas, nivel y métricas">
+              <Link href="/progress/">See my progress</Link>
             </Button>
-            <Button className="gap-2" onClick={() => onPractice(recommendation.scenarioType)}>
-              Practicar ahora
+            <Button title="Abre la escena recomendada para hoy" className="gap-2" onClick={() => onPractice(recommendation.scenarioType)}>
+              Practice now
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>

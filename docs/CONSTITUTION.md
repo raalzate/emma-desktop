@@ -1,6 +1,6 @@
 # Constitución del proyecto — EMMA Desktop
 
-**Versión 1.5.0** · Reglas **no negociables**. Cualquier PR o cambio (humano o agente) debe
+**Versión 1.6.0** · Reglas **no negociables**. Cualquier PR o cambio (humano o agente) debe
 cumplirlas. Versionado por enmiendas. Las convenciones del día a día viven en `CLAUDE.md`;
 el arnés que hace cumplir esto, en `.claude/harness.config.json` y `scripts/`.
 
@@ -89,20 +89,25 @@ no es verde, y `gate:fast` es señal de desarrollo, no entregable. Tras cambiar 
 
 *Mecanismo:* `pnpm gate` (`scripts/gate.sh`), el hook Stop (`.claude/hooks/gate-stop.mjs`) y CI.
 
-## Artículo 9 — Inmersión 100% con andamiaje en español · REVIEW
+## Artículo 9 — Inmersión 100%: la UI habla inglés, los tooltips español · REVIEW
 
 La práctica conversacional (mensajes de EMMA, sugerencias de respuesta, autocompletado, voz) es
 **únicamente en inglés**: EMMA nunca cambia de idioma ni rompe el personaje. El puente entre
 ambos mundos son las acciones explícitas del aprendiz (Teach me / Translate), nunca la
 conversación misma.
 
-La línea no está entre "conversación" y "resto de la UI", sino entre **ficción** y **producto**:
+Desde v1.6.0 la línea ya no separa ficción de producto: **toda la interfaz va en inglés**
+—botones, títulos, placeholders, mensajes de sistema, estados de carga, textos de producto que
+vienen del dominio (plan del día, lecciones anotadas, informe de sesión)— y el **único andamiaje
+en español son los tooltips**: `title="…"` y `<TooltipContent>`. Ahí es donde el aprendiz que
+duda encuentra la ayuda en su idioma sin que la pantalla se la sirva antes de tiempo. Para que
+esa ayuda exista, **todo botón lleva tooltip en español** (`title` propio o `TooltipTrigger`):
+un botón en inglés sin tooltip deja al aprendiz sin puente.
 
-- **Ficción → inglés.** Todo lo que el aprendiz lee *dentro* de la escena: narrativa del
-  briefing, misión, rasgo de la protopersona, etiqueta de carácter de la situación, títulos y
-  framing del catálogo. Es material de práctica; traducirlo rompe la inmersión antes de empezar.
-- **Andamiaje de producto → español.** Lo que le habla al usuario *sobre* la app: tooltips,
-  botones, títulos de sección, mensajes de sistema, estados de carga, feedback de producto.
+Queda en español, y no es UI: los comentarios del código y las descripciones de las pruebas
+(convención del repo), el contenido pedagógico de los datos de currículo, ejercicios, fonética y referencia en `src/lib/` (glosas y explicaciones para
+hispanohablantes, es material de estudio) y lo que la IA produce cuando el aprendiz pide
+explícitamente una explicación o traducción al español.
 
 **Emma vs protopersonas.** Emma es LA TUTORA: hace el onboarding, explica (Teach me) y da el
 feedback final; es siempre femenina y su voz no se configura. Los escenarios los encarnan
@@ -110,11 +115,13 @@ feedback final; es siempre femenina y su voz no se configura. Los escenarios los
 `../src/domain/personas/`) cuya entrega (tono/actitud/estilo) sí es configurable. Ninguna
 superficie mezcla ambos papeles.
 
-*Mecanismo:* parcial. La regla `ESCENA` del lint (`node scripts/repo-lint.mjs`) muerde si un
-rasgo de protopersona o una ambientación de escena queda en español, y
-`src/components/chat/__tests__/andamiaje-espanol.test.ts` muerde si el andamiaje se traduce al
-inglés. El resto —que EMMA no cambie de idioma en la conversación— lo revisa una persona en
-cada superficie nueva.
+*Mecanismo:* parcial. `src/components/__tests__/ui-en-ingles.test.ts` escanea componentes,
+páginas y los módulos de producto del dominio y muerde si queda un carácter propio del español
+(áéíóúñ¿¡) fuera de un comentario o de un tooltip; `src/components/__tests__/tooltips-en-espanol.test.ts`
+muerde si un `<Button>`, `<button>` o `<TabsTrigger>` queda sin `title` ni `TooltipTrigger`. La regla `ESCENA` del lint
+(`node scripts/repo-lint.mjs`) muerde si un rasgo de protopersona o una ambientación queda en
+español. El resto —español sin tildes, que EMMA no cambie de idioma en la conversación— lo revisa
+una persona en cada superficie nueva.
 
 ## Artículo 10 — Integridad de aserciones · REVIEW
 
@@ -176,3 +183,8 @@ escala con el diagnóstico. Fallar rápido y con causa vale más que degradar en
   una instrucción que nadie puede ejecutar: ese prototipo no está disponible en este repo ni en
   la forja. Se reformula como **comportamiento estable**, fijado por las pruebas del gate, y se
   quitan del código y de los docs las referencias al prototipo previo (issue #163).
+- **v1.6.0** (2026-09-25) — El Artículo 9 partía la UI en «ficción en inglés, producto en
+  español». Se invierte el andamiaje: **toda la interfaz en inglés y sólo los tooltips en
+  español**. `andamiaje-espanol.test.ts` (que fijaba el copy en español) se retira y entra
+  `ui-en-ingles.test.ts`, que escanea el copy y muerde si queda español fuera de tooltips, y
+  `tooltips-en-espanol.test.ts`, que exige tooltip en todo botón.

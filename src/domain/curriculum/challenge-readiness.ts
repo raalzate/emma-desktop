@@ -32,14 +32,14 @@ export function challengeReadiness(
   const missingEs: string[] = [];
 
   if (needsLongText(challenge.mode) && words < MIN_WORDS_WRITTEN) {
-    missingEs.push(`La entrega necesita al menos ${MIN_WORDS_WRITTEN} palabras (llevas ${words}).`);
+    missingEs.push(`Your submission needs at least ${MIN_WORDS_WRITTEN} words (you have ${words}).`);
   } else if (words === 0) {
-    missingEs.push("Deja una nota de cómo fue la práctica (aunque sea una línea).");
+    missingEs.push("Leave a note on how the practice went (even one line).");
   }
 
   const unchecked = challenge.criteria.filter((_, i) => !checkedCriteria.includes(i)).length;
   if (unchecked > 0) {
-    missingEs.push(`Marca los ${unchecked} criterio(s) que aún no revisaste en tu entrega.`);
+    missingEs.push(`Tick the ${unchecked} criterion(s) you have not checked in your submission yet.`);
   }
 
   return { ready: missingEs.length === 0, words, missingEs };

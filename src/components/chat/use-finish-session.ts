@@ -41,10 +41,10 @@ export interface FinishOutcome {
 
 // Traduce el resultado de progresión a un mensaje breve para el toast.
 function verdictOf(promoted: boolean, newLevel: string, passed: boolean, next?: string): string {
-  const tail = next ? ` Sugerencia: ${next}.` : "";
-  if (promoted) return `¡Subiste a ${newLevel}!${tail}`;
-  if (passed) return `¡Escenario superado!${tail}`;
-  return `Sigue practicando.${tail}`;
+  const tail = next ? ` Suggestion: ${next}.` : "";
+  if (promoted) return `You moved up to ${newLevel}!${tail}`;
+  if (passed) return `Scenario passed!${tail}`;
+  return `Keep practicing.${tail}`;
 }
 
 export function useFinishSession(a: Args) {

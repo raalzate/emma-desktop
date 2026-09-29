@@ -46,8 +46,8 @@ export function Composer({
 }: Props) {
   const { runtime } = useEmma();
   const [text, setText] = useState("");
-  // Aviso del turno hablado (transcripción vacía, micrófono denegado): en
-  // español y sin sacar al aprendiz del turno.
+  // Aviso del turno hablado (transcripción vacía, micrófono denegado): en la
+  // UI (inglés) y sin sacar al aprendiz del turno.
   const [aviso, setAviso] = useState<string | null>(null);
   const mustSpeak = !!voiceRequirement;
   const suggestions = useSuggestions({
@@ -93,8 +93,8 @@ export function Composer({
   };
 
   return (
-    <div className="bg-background px-4 py-3">
-      <div className="mx-auto max-w-2xl">
+    <div className="border-t border-border bg-background px-4 py-3 lg:px-6">
+      <div className="w-full">
         <SuggestionChips suggestions={suggestions} />
         <div className="flex items-end gap-2">
           {/* Superficie blanca con borde y radio 14px (FR-022). */}
@@ -125,11 +125,11 @@ export function Composer({
                 mustSpeak
                   ? voiceRequirement.promptEs
                   : busy
-                    ? "Emma está escribiendo…"
-                    : "Escribe tu respuesta en inglés…"
+                    ? "Emma is typing…"
+                    : "Type your reply in English…"
               }
               disabled={busy || mustSpeak}
-              rows={2}
+              rows={1}
               className="relative resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
             />
           </div>
@@ -137,18 +137,20 @@ export function Composer({
             size="icon"
             variant={voice.recording ? "destructive" : mustSpeak ? "default" : "outline"}
             className="h-9 w-9 rounded-full border-border"
+            title={voice.recording ? "Detén la grabación y envía tu nota de voz" : "Graba tu respuesta con la voz para practicar pronunciación"}
             onClick={voice.toggle}
             disabled={busy || voice.busy}
-            aria-label={voice.recording ? "Enviar nota de voz" : "Grabar nota de voz"}
+            aria-label={voice.recording ? "Send voice note" : "Record voice note"}
           >
             {voice.busy ? <Loader2 className="animate-spin" /> : voice.recording ? <Square /> : <Mic />}
           </Button>
           <Button
             size="icon"
             className="h-9 w-9 rounded-full"
+            title="Envía tu respuesta (Enter)"
             onClick={() => submit(text)}
             disabled={busy || mustSpeak || !text.trim()}
-            aria-label="Enviar"
+            aria-label="Send"
           >
             <Send />
           </Button>
@@ -167,7 +169,7 @@ export function Composer({
                 onClick={onVoiceUnavailable}
                 title="Rehabilita el teclado para el resto de la escena"
               >
-                <MicOff className="h-3.5 w-3.5" /> No puedo hablar ahora
+                <MicOff className="h-3.5 w-3.5" /> I can’t speak right now
               </Button>
             )}
           </div>
@@ -179,11 +181,11 @@ export function Composer({
         )}
         <p className="mt-2 font-code text-[11px] tracking-wide text-muted-foreground">
           {mustSpeak ? (
-            "Este turno se habla · La conversación es solo en inglés"
+            "This turn is spoken · This conversation is English only"
           ) : (
             <>
-              {ghost && "TAB acepta la sugerencia · "}
-              ENTER envía · La conversación es solo en inglés
+              {ghost && "TAB accepts the suggestion · "}
+              ENTER sends · This conversation is English only
             </>
           )}
         </p>

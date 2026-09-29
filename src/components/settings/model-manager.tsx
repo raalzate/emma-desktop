@@ -28,10 +28,10 @@ export function ModelManager() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Modelo local (Gemma)</CardTitle>
+        <CardTitle>Local model (Gemma)</CardTitle>
         <CardDescription>
-          RAM detectada: {s.totalRamGB} GB. Se recomienda el modelo que mejor encaja
-          con tu equipo. La inferencia corre 100% local (WebGPU).
+          Detected RAM: {s.totalRamGB} GB. We recommend the model that best fits
+          your device. Inference runs 100% locally (WebGPU).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -60,9 +60,9 @@ function UnavailableCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Modelo local (Gemma)</CardTitle>
+        <CardTitle>Local model (Gemma)</CardTitle>
         <CardDescription>
-          La gestión de modelos sólo está disponible en la app de escritorio.
+          Model management is only available in the desktop app.
         </CardDescription>
       </CardHeader>
     </Card>

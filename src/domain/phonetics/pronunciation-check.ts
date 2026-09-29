@@ -108,3 +108,28 @@ export function checkPronunciation(target: string, transcript: string): Pronunci
 export function isIntelligible(score: number): boolean {
   return score >= 0.8;
 }
+
+/** Abreviaturas y decimales que llevan punto sin cerrar oración. */
+const NOT_A_BOUNDARY = /(?:\b(?:e\.g|i\.e|etc|vs|dr|mr|mrs|ms)\.|\d\.\d)$/i;
+
+/**
+ * Parte un texto en oraciones para grabarlas de a una: un párrafo entero de un
+ * tirón no se puede dictar. Conserva el signo de cierre de cada oración.
+ */
+export function splitSentences(text: string): string[] {
+  const out: string[] = [];
+  let current = "";
+  for (const piece of text.split(/(?<=[.!?])\s+/)) {
+    current = current ? `${current} ${piece}` : piece;
+    if (NOT_A_BOUNDARY.test(current)) continue;
+    out.push(current.trim());
+    current = "";
+  }
+  if (current.trim()) out.push(current.trim());
+  return out.filter(Boolean);
+}
+
+/** El dictado no devolvió ninguna palabra: micrófono, silencio o ASR caído. */
+export function heardNothing(result: PronunciationCheckResult): boolean {
+  return result.verdicts.every((v) => v.heard === null);
+}

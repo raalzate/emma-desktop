@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 export function LevelLadder({ current, percent }: { current: string; percent?: number }) {
   return (
-    <ol className="flex items-center" aria-label="Escalera CEFR">
+    <ol className="flex items-center" aria-label="CEFR ladder">
       {CEFR_LADDER.map((level, i) => (
         <LadderStep
           key={level}

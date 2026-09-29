@@ -67,7 +67,7 @@ function srsRule(args: RecommendPracticeArgs): PracticeRecommendation | null {
   return {
     kind: "srs-review",
     due: args.pendingSrsCards,
-    reasonEs: `${args.pendingSrsCards} tarjetas pendientes de repaso`,
+    reasonEs: `${args.pendingSrsCards} cards due for review`,
   };
 }
 
@@ -80,7 +80,7 @@ function exerciseRule(args: RecommendPracticeArgs): PracticeRecommendation | nul
         kind: "exercise",
         exerciseId: exercise.id,
         unit: exercise.unit,
-        reasonEs: `débil en ${category} → ejercicio ${exercise.id} de la unidad ${exercise.unit}`,
+        reasonEs: `weak in ${category} → exercise ${exercise.id} from unit ${exercise.unit}`,
       };
     }
   }
@@ -100,7 +100,7 @@ function minimalPairRule(args: RecommendPracticeArgs): PracticeRecommendation | 
   return {
     kind: "minimal-pair",
     contrastId: DEFAULT_MINIMAL_PAIR_CONTRAST_ID,
-    reasonEs: "la unidad activa entrena /ɪ/ vs /iː/: practica el par mínimo",
+    reasonEs: "your active unit trains /ɪ/ vs /iː/: practice the minimal pair",
   };
 }
 
@@ -111,7 +111,7 @@ function scenarioRule(args: RecommendPracticeArgs): PracticeRecommendation | nul
       return {
         kind: "scenario",
         scenarioType,
-        reasonEs: `débil en ${category} → practica el escenario "${scenarioType}"`,
+        reasonEs: `weak in ${category} → practice the "${scenarioType}" scenario`,
       };
     }
   }
@@ -125,7 +125,7 @@ function checklistRule(args: RecommendPracticeArgs): PracticeRecommendation | nu
   return {
     kind: "checklist",
     level: gap.level,
-    reasonEs: `checklist de ${gap.level} incompleta (${gap.done}/${gap.total})`,
+    reasonEs: `${gap.level} checklist incomplete (${gap.done}/${gap.total})`,
   };
 }
 

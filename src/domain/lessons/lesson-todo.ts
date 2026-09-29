@@ -113,6 +113,23 @@ export function completeLessonTodo(
   return close(list, id, "done", now);
 }
 
+/**
+ * La actividad se hizo: cierra toda lección pendiente de esa clase (y, si se
+ * indica, sólo la de ese objetivo). Lo llama la propia actividad al terminar.
+ */
+export function completeLessonTodosByKind(
+  list: readonly LessonTodo[],
+  kind: LessonTodoKind,
+  now: number,
+  target?: string,
+): LessonTodo[] {
+  return list.map((t) =>
+    t.status === "pending" && t.kind === kind && (target === undefined || t.target === target)
+      ? { ...t, status: "done" as const, closedAt: now }
+      : t,
+  );
+}
+
 export function dismissLessonTodo(
   list: readonly LessonTodo[],
   id: string,

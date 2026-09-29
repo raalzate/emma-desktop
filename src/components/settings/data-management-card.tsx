@@ -42,7 +42,7 @@ export function DataManagementCard() {
 
   const clear = async (keys: string[]) => {
     const api = getEmmaApi();
-    if (!api) throw new Error("Almacén no disponible fuera de Electron.");
+    if (!api) throw new Error("Storage is not available outside Electron.");
     for (const k of keys) await api.storeSet(k, {});
   };
 
@@ -50,22 +50,22 @@ export function DataManagementCard() {
     {
       key: "chats",
       icon: <Trash2 className="h-4 w-4" />,
-      title: "Borrar historial de chats",
-      description: "Elimina todas las conversaciones guardadas. No afecta tu perfil ni tu progreso.",
-      confirmTitle: "¿Borrar todo el historial de chats?",
-      confirmBody: "Se eliminarán todas las conversaciones. Esta acción no se puede deshacer.",
+      title: "Clear chat history",
+      description: "Deletes every saved conversation. Your profile and progress are not affected.",
+      confirmTitle: "Clear the whole chat history?",
+      confirmBody: "Every conversation will be deleted. This action cannot be undone.",
       run: async () => {
         await clear(["chatConversations"]);
-        toast({ title: "Historial borrado", description: "Se eliminaron todas las conversaciones." });
+        toast({ title: "History cleared", description: "Every conversation was deleted." });
       },
     },
     {
       key: "onboarding",
       icon: <RotateCcw className="h-4 w-4" />,
-      title: "Reiniciar onboarding",
-      description: "Borra tu perfil y vuelve a empezar la configuración inicial con Emma.",
-      confirmTitle: "¿Reiniciar el onboarding?",
-      confirmBody: "Se borrará tu perfil y volverás a la configuración inicial. Tus chats se conservan.",
+      title: "Restart onboarding",
+      description: "Deletes your profile and starts the initial setup with Emma again.",
+      confirmTitle: "Restart onboarding?",
+      confirmBody: "Your profile will be deleted and you'll go back to the initial setup. Your chats are kept.",
       run: async () => {
         await clear(["profiles"]);
         window.location.href = "/onboarding";
@@ -74,10 +74,10 @@ export function DataManagementCard() {
     {
       key: "all",
       icon: <AlertTriangle className="h-4 w-4" />,
-      title: "Borrar todos los datos",
-      description: "Elimina perfil, progreso, ajustes e historial. EMMA quedará como recién instalada.",
-      confirmTitle: "¿Borrar TODOS los datos?",
-      confirmBody: "Se eliminará todo: perfil, progreso, ajustes e historial de chats. Esta acción es irreversible.",
+      title: "Delete all data",
+      description: "Deletes profile, progress, settings and history. EMMA will be as if freshly installed.",
+      confirmTitle: "Delete ALL data?",
+      confirmBody: "Everything will be deleted: profile, progress, settings and chat history. This action is irreversible.",
       run: async () => {
         await clear(ALL_COLLECTIONS);
         window.location.href = "/onboarding";
@@ -92,8 +92,8 @@ export function DataManagementCard() {
     } catch (e) {
       toast({
         variant: "destructive",
-        title: "No se pudo completar",
-        description: e instanceof Error ? e.message : "Error desconocido.",
+        title: "Could not complete",
+        description: e instanceof Error ? e.message : "Unknown error.",
       });
     } finally {
       setBusy(null);
@@ -104,10 +104,10 @@ export function DataManagementCard() {
     <Card className="border-destructive/40">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-destructive">
-          <AlertTriangle className="h-5 w-5" /> Zona de datos
+          <AlertTriangle className="h-5 w-5" /> Data zone
         </CardTitle>
         <CardDescription>
-          Acciones destructivas sobre tus datos locales. Todo vive en tu equipo; nada se envía a la nube.
+          Destructive actions on your local data. Everything lives on your device; nothing is sent to the cloud.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -119,9 +119,9 @@ export function DataManagementCard() {
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" className="shrink-0 gap-1" disabled={busy !== null}>
+                <Button variant="destructive" size="sm" className="shrink-0 gap-1" title="Acción irreversible: te pide confirmar antes de borrar" disabled={busy !== null}>
                   {a.icon}
-                  Borrar
+                  Delete
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -130,12 +130,12 @@ export function DataManagementCard() {
                   <AlertDialogDescription>{a.confirmBody}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={() => onConfirm(a)}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    Sí, borrar
+                    Yes, delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

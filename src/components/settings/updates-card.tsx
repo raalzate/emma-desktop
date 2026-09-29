@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Ajustes → «Actualizaciones» (spec #137 FR-006). Andamiaje en español. El
+ * Ajustes → «Updates» (spec #137 FR-006). El
  * estado llega del main por `update-status`, validado con la guarda de dominio;
  * la acción depende de la plataforma: auto (Windows/Linux) descarga e instala
  * al confirmar; manual (macOS con firma ad-hoc) abre la página de descargas.
@@ -38,10 +38,10 @@ export function UpdatesCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Actualizaciones</CardTitle>
+        <CardTitle>Updates</CardTitle>
         <CardDescription>
-          {version ? `Versión instalada: ${version}.` : "Versión instalada: n/d."}{" "}
-          La app avisa cuando hay una nueva; en macOS la instalación es manual.
+          {version ? `Installed version: ${version}.` : "Installed version: n/a."}{" "}
+          The app lets you know when a new one is out; on macOS installation is manual.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -50,6 +50,7 @@ export function UpdatesCard() {
             variant="outline"
             size="sm"
             className="gap-1"
+            title="Consulta si hay una versión nueva de EMMA"
             disabled={!api || busy}
             onClick={() => void api?.updatesCheck()}
           >
@@ -58,40 +59,40 @@ export function UpdatesCard() {
             ) : (
               <RefreshCw className="h-4 w-4" />
             )}
-            Buscar actualizaciones
+            Check for updates
           </Button>
 
           {status?.state === "available" && status.action === "auto" && (
-            <Button size="sm" className="gap-1" onClick={() => void api?.updatesDownload()}>
-              <Download className="h-4 w-4" /> Descargar v{status.version}
+            <Button size="sm" className="gap-1" title="Descarga la nueva versión en segundo plano; te avisa cuando esté lista" onClick={() => void api?.updatesDownload()}>
+              <Download className="h-4 w-4" /> Download v{status.version}
             </Button>
           )}
           {status?.state === "available" && status.action === "manual" && (
-            <Button size="sm" className="gap-1" onClick={() => void api?.updatesOpenDownload()}>
-              <ExternalLink className="h-4 w-4" /> Abrir descargas (v{status.version})
+            <Button size="sm" className="gap-1" title="Abre la página de descargas en el navegador; en macOS instalás a mano" onClick={() => void api?.updatesOpenDownload()}>
+              <ExternalLink className="h-4 w-4" /> Open downloads (v{status.version})
             </Button>
           )}
           {status?.state === "ready" && (
-            <Button size="sm" className="gap-1" onClick={() => void api?.updatesInstall()}>
-              <RotateCcw className="h-4 w-4" /> Reiniciar y actualizar
+            <Button size="sm" className="gap-1" title="Cierra EMMA e instala la versión descargada" onClick={() => void api?.updatesInstall()}>
+              <RotateCcw className="h-4 w-4" /> Restart and update
             </Button>
           )}
         </div>
 
         <p className="text-sm text-muted-foreground">
-          {!api && "Disponible sólo en la app de escritorio."}
-          {api && !status && "Sin novedades por ahora."}
-          {status?.state === "checking" && "Buscando actualizaciones…"}
-          {status?.state === "none" && "Estás al día."}
+          {!api && "Only available in the desktop app."}
+          {api && !status && "Nothing new for now."}
+          {status?.state === "checking" && "Checking for updates…"}
+          {status?.state === "none" && "You're up to date."}
           {status?.state === "available" &&
             (status.action === "auto"
-              ? `Hay una versión nueva (v${status.version}) lista para descargar.`
-              : `Hay una versión nueva (v${status.version}). En macOS se descarga desde la página del release (clic derecho → Abrir la primera vez).`)}
-          {status?.state === "downloading" && `Descargando… ${status.percent}%`}
+              ? `A new version (v${status.version}) is ready to download.`
+              : `A new version (v${status.version}) is out. On macOS, download it from the release page (right-click → Open the first time).`)}
+          {status?.state === "downloading" && `Downloading… ${status.percent}%`}
           {status?.state === "ready" &&
-            `v${status.version} descargada: se instala al reiniciar la app.`}
+            `v${status.version} downloaded: it installs when the app restarts.`}
           {status?.state === "error" &&
-            "No se pudo comprobar (¿sin conexión?). La app sigue funcionando normal."}
+            "Could not check (offline?). The app keeps working as usual."}
         </p>
       </CardContent>
     </Card>

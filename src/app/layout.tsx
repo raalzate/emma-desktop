@@ -33,12 +33,12 @@ const fontMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "EMMA — English for Modern Minds in Action",
-  description: "Tutora de inglés conversacional local-first para profesionales de TI.",
+  description: "Local-first conversational English tutor for IT professionals.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable}`}>
+    <html lang="en" className={`${fontDisplay.variable} ${fontBody.variable} ${fontMono.variable}`}>
       <head>
         {/* Aplica `.dark` antes del primer pintado (evita el flash de tema claro).
             Espeja src/lib/theme.ts (THEME_STORAGE = "emma_theme"). */}

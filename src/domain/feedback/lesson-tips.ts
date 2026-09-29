@@ -1,32 +1,32 @@
 /**
- * Un tip enseñable por etiqueta de la taxonomía (domain/chat/error-taxonomy),
- * escrito en español — la primera lengua del aprendiz es donde aterrizan las
- * explicaciones gramaticales.
+ * Un tip enseñable por etiqueta de la taxonomía (domain/chat/error-taxonomy).
+ * Va en inglés (Artículo 9): la UI es inmersiva; los ejemplos contrastan con
+ * la interferencia típica del hispanohablante.
  */
 
 import type { ErrorLabel } from "@/domain/chat/error-taxonomy";
 
 export const LESSON_TIPS: Record<ErrorLabel, string> = {
   article:
-    "En inglés casi todo sustantivo lleva artículo: *I am **a** developer*, " +
-    "*join **the** meeting*. Y *the* nunca cambia por género ni número.",
+    "In English almost every noun takes an article: *I am **a** developer*, " +
+    "*join **the** meeting*. And *the* never changes for gender or number.",
   preposition:
-    "Las preposiciones no se traducen 1 a 1: *depende de* → *depends **on***, " +
-    "*en lunes* → ***on** Monday*. Aprende verbo + preposición como una unidad.",
+    "Prepositions don't translate 1 to 1: *depende de* → *depends **on***, " +
+    "*en lunes* → ***on** Monday*. Learn verb + preposition as one unit.",
   word_form:
-    "Cuida la forma de la palabra: tercera persona (*she work**s***), " +
-    "plural (*two task**s***) y pasado (*yesterday I work**ed***).",
+    "Mind the word form: third person (*she work**s***), " +
+    "plural (*two task**s***) and past (*yesterday I work**ed***).",
   word_order:
-    "El orden en inglés es fijo: sujeto + verbo + objeto, y el adjetivo va " +
-    "antes del sustantivo (*a **big** problem*).",
+    "English word order is fixed: subject + verb + object, and the adjective goes " +
+    "before the noun (*a **big** problem*).",
   punctuation:
-    "Cierra cada oración con `.` `!` o `?` — y recuerda: en inglés no " +
-    "existen los signos de apertura ¿ ¡.",
+    "End every sentence with `.` `!` or `?` — and remember: English has no " +
+    "opening question or exclamation marks.",
   capitalization:
-    "Escribe **I** siempre en mayúscula, igual que idiomas, días y nombres " +
-    "propios (*English*, *Monday*).",
-  spacing: "Un solo espacio entre palabras y ninguno antes de coma o punto.",
+    "Always capitalize **I**, as well as languages, days and proper " +
+    "nouns (*English*, *Monday*).",
+  spacing: "One single space between words and none before a comma or period.",
   grammar:
-    "Compara palabra por palabra tu versión con la sugerida e identifica " +
-    "qué cambió y por qué.",
+    "Compare your version with the suggested one word by word and spot " +
+    "what changed and why.",
 };

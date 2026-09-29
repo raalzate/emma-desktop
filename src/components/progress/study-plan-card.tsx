@@ -39,16 +39,16 @@ export function StudyPlanCard({ runtime }: { runtime: EmmaRuntime }) {
         <div className="flex items-start gap-3">
           <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
           <div>
-            <p className="text-sm font-semibold">Plan de estudio</p>
+            <p className="text-sm font-semibold">Study plan</p>
             <p className="text-xs text-muted-foreground">
-              Semana {context.currentWeek} del plan
-              {context.activeUnit !== null ? ` · Unidad ${context.activeUnit}` : ""}
-              {` · ${context.pendingSrsCards} tarjetas pendientes`}
+              Week {context.currentWeek} of the plan
+              {context.activeUnit !== null ? ` · Unit ${context.activeUnit}` : ""}
+              {` · ${context.pendingSrsCards} cards due`}
             </p>
           </div>
         </div>
-        <Button asChild size="sm" variant="outline">
-          <Link href="/practice">Ir a Práctica</Link>
+        <Button asChild size="sm" variant="outline" title="Va a la práctica del día: repaso y ejercicios según tu plan">
+          <Link href="/practice">Go to Practice</Link>
         </Button>
       </CardContent>
     </Card>

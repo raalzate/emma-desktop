@@ -41,7 +41,7 @@ export function SelfAssessmentView({ runtime, initialLevel }: Props) {
   }, [runtime]);
 
   if (checked === null) {
-    return <p className="text-sm text-muted-foreground">Cargando autoevaluación…</p>;
+    return <p className="text-sm text-muted-foreground">Loading self-check…</p>;
   }
 
   async function toggle(id: string, value: boolean) {
@@ -58,7 +58,7 @@ export function SelfAssessmentView({ runtime, initialLevel }: Props) {
     <div className="space-y-6">
       {certified && (
         <div className="rounded-md border border-green-600 bg-green-50 p-3 text-sm text-green-800">
-          Certificas B2: ≥13/15 de B2 y 100% de A1–B1.
+          You certify B2: at least 13/15 of B2 and 100% of A1–B1.
         </div>
       )}
 

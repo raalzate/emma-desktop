@@ -13,86 +13,86 @@ export interface MethodRule {
 export const METHOD_RULES: readonly MethodRule[] = [
   {
     id: 1,
-    rule: "40 minutos al día vencen a 4 horas el sábado.",
-    detail: "El espaciado es más importante que el volumen total.",
+    rule: "40 minutes a day beat 4 hours on Saturday.",
+    detail: "Spacing matters more than total volume.",
   },
   {
     id: 2,
-    rule: "Nunca estudies una palabra suelta.",
-    detail: "Siempre en un chunk, siempre con su colocación.",
+    rule: "Never study a word on its own.",
+    detail: "Always in a chunk, always with its collocation.",
   },
   {
     id: 3,
-    rule: "Si no lo has dicho en voz alta, no lo sabes.",
-    detail: "La pronunciación se aprende con los músculos, no con los ojos.",
+    rule: "If you haven't said it out loud, you don't know it.",
+    detail: "Pronunciation is learned with the muscles, not the eyes.",
   },
   {
     id: 4,
-    rule: "Traduce del español al inglés, no al revés.",
+    rule: "Translate from Spanish into English, not the other way around.",
     detail:
-      "La traducción inversa (ES→EN) fuerza producción; la directa (EN→ES) solo comprueba comprensión.",
+      "Reverse translation (ES→EN) forces production; direct translation (EN→ES) only checks comprehension.",
   },
   {
     id: 5,
-    rule: "Comete el error en voz alta.",
-    detail: "El error silenciado no se corrige. Ericsson necesita algo que corregir.",
+    rule: "Make the mistake out loud.",
+    detail: "A silent mistake never gets corrected. Ericsson needs something to correct.",
   },
   {
     id: 6,
-    rule: "Escribe primero, habla después.",
+    rule: "Write first, speak later.",
     detail:
-      "Escribir te da tiempo de procesar la estructura; hablar la automatiza. En ese orden, la misma frase.",
+      "Writing gives you time to process the structure; speaking automates it. In that order, the same sentence.",
   },
   {
     id: 7,
-    rule: "Prohibido el subtítulo en español.",
-    detail: "Sin subtítulos o subtítulos en inglés. Tu cerebro leerá y apagará el oído.",
+    rule: "No Spanish subtitles.",
+    detail: "No subtitles, or English subtitles. Your brain will read and switch off your ears.",
   },
   {
     id: 8,
-    rule: "Un solo objetivo por sesión.",
-    detail: "Carga cognitiva: no puedes atender a pronunciación, gramática y vocabulario a la vez.",
+    rule: "One goal per session.",
+    detail: "Cognitive load: you can't attend to pronunciation, grammar and vocabulary at once.",
   },
   {
     id: 9,
-    rule: "La incomodidad es la señal de que funciona.",
-    detail: "Si el repaso te resulta fácil, el intervalo es demasiado corto.",
+    rule: "Discomfort is the sign that it's working.",
+    detail: "If the review feels easy, the interval is too short.",
   },
   {
     id: 10,
-    rule: "Usa el inglés en tu trabajo hoy mismo.",
+    rule: "Use English at work today.",
     detail:
-      "Cambia el idioma del IDE, escribe tus commits en inglés, comenta tu código en inglés, lee las release notes en inglés.",
+      "Switch your IDE language, write your commits in English, comment your code in English, read release notes in English.",
   },
 ] as const;
 
 export const METHOD_MISTAKES: readonly MethodRule[] = [
   {
     id: 1,
-    rule: "Ver series sin estructura y llamarlo estudio.",
+    rule: "Watching shows without structure and calling it study.",
     detail:
-      "Input sin noticing ni output no produce adquisición productiva. Hazlo con input + tarea + producción.",
+      "Input without noticing or output does not produce productive acquisition. Do it as input + task + production.",
   },
   {
     id: 2,
-    rule: "Estudiar listas de vocabulario.",
+    rule: "Studying vocabulary lists.",
     detail:
-      "Palabras sin colocación y sin contexto no se recuperan al hablar. Usa chunks en tarjetas cloze.",
+      "Words without collocation or context can't be retrieved when speaking. Use chunks in cloze cards.",
   },
   {
     id: 3,
-    rule: "Aprender gramática por gramática.",
+    rule: "Learning grammar for grammar's sake.",
     detail:
-      "Genera conocimiento declarativo inerte. Pon la gramática al servicio de una tarea.",
+      "It produces inert declarative knowledge. Put grammar at the service of a task.",
   },
   {
     id: 4,
-    rule: 'Esperar a "estar listo" para hablar.',
-    detail: "La fluidez no precede al uso; es consecuencia del uso. Habla mal y en voz alta desde el día 1.",
+    rule: 'Waiting until you "feel ready" to speak.',
+    detail: "Fluency doesn't precede use; it follows from it. Speak badly and out loud from day 1.",
   },
   {
     id: 5,
-    rule: "Perseguir el acento nativo.",
-    detail: "Objetivo inalcanzable y desmotivador. Persigue inteligibilidad.",
+    rule: "Chasing a native accent.",
+    detail: "An unreachable, demotivating goal. Chase intelligibility instead.",
   },
 ] as const;

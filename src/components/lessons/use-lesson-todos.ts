@@ -13,8 +13,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addLessonTodoUseCase,
   completeLessonTodoUseCase,
+  completeLessonTodosByKindUseCase,
   dismissLessonTodoUseCase,
 } from "@/application/lessons/lesson-todo-use-cases";
+import type { LessonTodoKind } from "@/domain/lessons/lesson-todo";
 import { createLessonTodoRepository } from "@/infrastructure/persistence/lesson-todo-repository";
 import { pendingLessonTodos, type LessonTodo, type LessonTodoDraft } from "@/domain/lessons/lesson-todo";
 
@@ -59,6 +61,9 @@ export function useLessonTodos() {
     loading,
     add: (draft: LessonTodoDraft) => apply(() => addLessonTodoUseCase({ repo, draft })),
     complete: (id: string) => apply(() => completeLessonTodoUseCase({ repo, id })),
+    /** La actividad se hizo: la lección se cierra sola (repaso terminado, reto entregado). */
+    completeByKind: (kind: LessonTodoKind, target?: string) =>
+      apply(() => completeLessonTodosByKindUseCase({ repo, kind, target })),
     dismiss: (id: string) => apply(() => dismissLessonTodoUseCase({ repo, id })),
   };
 }

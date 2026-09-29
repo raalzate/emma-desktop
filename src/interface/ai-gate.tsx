@@ -44,15 +44,15 @@ export function AiGate({ children }: { children: ReactNode }) {
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Sparkles className="h-6 w-6" />
         </div>
-        <h1 className="text-2xl font-bold">Prepara a Emma</h1>
+        <h1 className="text-2xl font-bold">Get Emma ready</h1>
         <p className="text-sm text-muted-foreground">
-          EMMA corre 100% en tu equipo. Descarga un modelo Gemma para empezar a
-          conversar; luego el onboarding y las simulaciones funcionan sin conexión.
+          EMMA runs 100% on your device. Download a Gemma model to start
+          talking; after that, onboarding and simulations work offline.
         </p>
       </header>
       <ModelManager />
-      <Button variant="secondary" onClick={() => void recheck()} className="mx-auto gap-2">
-        <RefreshCw className="h-4 w-4" /> Ya lo descargué, continuar
+      <Button variant="secondary" title="Comprueba si el modelo ya está listo en tu equipo y sigue adelante" onClick={() => void recheck()} className="mx-auto gap-2">
+        <RefreshCw className="h-4 w-4" /> I've downloaded it, continue
       </Button>
     </main>
   );

@@ -29,26 +29,26 @@ describe("SceneDialogBody — la escena consultable durante el chat", () => {
     expect(html).toContain(scenario.title);
     // El apóstrofo sale escapado en el markup estático: se busca el resto.
     expect(html).toMatch(/talking with/);
-    if (situation) expect(html).toContain("Tu objetivo en la escena");
+    if (situation) expect(html).toContain("Your goal in this scene");
   });
 
   it("no teclea: el texto sale completo, sin cursor de escritura", () => {
     const html = body();
     expect(html).not.toContain("animate-pulse");
-    expect(html).not.toContain("Saltar la introducción");
+    expect(html).not.toContain("Skip intro");
   });
 
-  it("con la escena en preparación avisa «Creando tu escena…» y muestra el respaldo estático", () => {
+  it("con la escena en preparación avisa «Setting up your scene…» y muestra el respaldo estático", () => {
     const html = body({ sceneReady: false });
-    expect(html).toContain("Creando tu escena…");
+    expect(html).toContain("Setting up your scene…");
     expect(html).toContain(scenario.title);
     expect(html.replace(/<[^>]+>/g, "").trim().length).toBeGreaterThan(40);
   });
 
-  it("el contenido de la escena queda en inglés y el andamiaje en español", () => {
+  it("el contenido de la escena y los rótulos del diálogo van en inglés (Art. 9)", () => {
     const html = body();
-    expect(html).toContain("Tu objetivo en la escena");
-    expect(html).not.toMatch(/Your mission in the scene/);
+    expect(html).toContain("Your goal in this scene");
+    expect(html).not.toContain("Tu objetivo en la escena");
   });
 });
 
@@ -67,11 +67,11 @@ describe("ChatHeader — acceso permanente a la escena", () => {
       }),
     );
 
-  it("ofrece «Ver la escena» durante la conversación", () => {
-    expect(render({ onShowScene: () => {} })).toContain("Ver la escena");
+  it("ofrece «View the scene» durante la conversación", () => {
+    expect(render({ onShowScene: () => {} })).toContain("View the scene");
   });
 
   it("sin handler no pinta el botón (antesala: la escena ya está en pantalla)", () => {
-    expect(render()).not.toContain("Ver la escena");
+    expect(render()).not.toContain("View the scene");
   });
 });

@@ -8,8 +8,20 @@
  * puro: sólo texto.
  */
 
-/** Encabezado exacto de la sección de lección en el reporte. */
-const LESSON_HEADING = "### 📚 Lección de Emma";
+/**
+ * Encabezado exacto de la sección de lección en el reporte. El segundo es el
+ * encabezado anterior (Artículo 9 v1.6.0 pasó la UI a inglés): las lecciones
+ * ya guardadas en el histórico lo conservan y deben seguir cortándose bien.
+ */
+const LESSON_HEADINGS = ["### 📚 Emma's lesson", "### 📚 Lección de Emma"] as const;
+
+function findLessonHeading(report: string): { start: number; heading: string } | null {
+  for (const heading of LESSON_HEADINGS) {
+    const start = report.indexOf(heading);
+    if (start >= 0) return { start, heading };
+  }
+  return null;
+}
 
 export interface ReportParts {
   /** Markdown previo a la lección (encabezado y correcciones). */
@@ -23,9 +35,10 @@ export interface ReportParts {
  * devuelve intacto: el diálogo entonces no muestra bloque de lección.
  */
 export function splitReportAtLesson(report: string): ReportParts {
-  const start = report.indexOf(LESSON_HEADING);
-  if (start < 0) return { before: report, after: "" };
-  const rest = report.slice(start + LESSON_HEADING.length);
+  const found = findLessonHeading(report);
+  if (!found) return { before: report, after: "" };
+  const { start, heading } = found;
+  const rest = report.slice(start + heading.length);
   // La lección termina donde empieza la siguiente sección de nivel 3.
   const nextHeading = rest.indexOf("\n### ");
   return {

@@ -20,7 +20,7 @@ function Loading() {
       <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
         <Skeleton className="h-10 w-48" />
         <Skeleton className="h-24 w-full max-w-md" />
-        <span className="text-xs text-muted-foreground">Preparando la escena…</span>
+        <span className="text-xs text-muted-foreground">Preparing the scene…</span>
       </div>
     </AppShell>
   );

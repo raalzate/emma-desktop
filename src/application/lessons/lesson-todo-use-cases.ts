@@ -11,6 +11,8 @@ import {
   dismissLessonTodo,
   type LessonTodo,
   type LessonTodoDraft,
+  completeLessonTodosByKind,
+  type LessonTodoKind,
 } from "@/domain/lessons/lesson-todo";
 
 interface RepoArgs {
@@ -34,6 +36,16 @@ export async function completeLessonTodoUseCase(
 ): Promise<LessonTodo[]> {
   const next = completeLessonTodo(await args.repo.loadAll(), args.id, args.now ?? Date.now());
   await args.repo.saveAll(next);
+  return next;
+}
+
+/** La actividad terminó: cierra las lecciones pendientes de esa clase (y objetivo). */
+export async function completeLessonTodosByKindUseCase(
+  args: RepoArgs & { kind: LessonTodoKind; target?: string },
+): Promise<LessonTodo[]> {
+  const list = await args.repo.loadAll();
+  const next = completeLessonTodosByKind(list, args.kind, args.now ?? Date.now(), args.target);
+  if (next.some((t, i) => t !== list[i])) await args.repo.saveAll(next);
   return next;
 }
 

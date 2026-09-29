@@ -12,7 +12,7 @@ describe("buildCardsFromErrors", () => {
     expect(cards[0].lastReviewedDay).toBe(5);
     expect(cards[0].back).toBe("I went to school yesterday");
     expect(cards[0].front).toContain("I go to school yesterday");
-    expect(cards[0].front).toContain("Di esto correctamente:");
+    expect(cards[0].front).toContain("Write this sentence correctly:");
   });
 
   it("acepta un id fijo (string) como prefijo con índice", () => {

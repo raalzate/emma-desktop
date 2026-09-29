@@ -46,7 +46,7 @@ function SituationBriefing({
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Imagina la escena
+            Picture the scene
           </p>
           <Badge variant="outline" className="text-[10px]">
             {characterLabel(situation.character)}
@@ -56,13 +56,13 @@ function SituationBriefing({
         {!sceneReady ? (
           <p className="mt-1 flex items-center gap-2 text-sm leading-relaxed text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Creando tu escena…
+            Setting up your scene…
           </p>
         ) : (
           // Franja de escena (FR-014): banda ámbar suave con tag mono.
           <div className="mt-2 flex items-start gap-2.5 rounded-[10px] bg-accent-soft px-3 py-2.5">
             <span className="mt-0.5 shrink-0 font-code text-[10px] font-medium tracking-[0.15em] text-accent">
-              ESCENA
+              SCENE
             </span>
             <p className="text-sm italic leading-relaxed text-foreground/80">
               {narrative ?? briefing.hypothetical}
@@ -72,7 +72,7 @@ function SituationBriefing({
         {briefing.missionLines.length > 0 && (
           <div className="mt-3">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Tu objetivo en la escena (en inglés)
+              Your goal in this scene
             </p>
             <ul className="mt-1.5 space-y-1.5">
               {briefing.missionLines.map((line, i) => (
@@ -99,7 +99,7 @@ export function SceneIntro({ scenario, situation, level, maxTurns, starting, nar
             <Clapperboard className="h-6 w-6 text-primary" />
           </div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Tu próxima escena
+            Your next scene
           </p>
           <h2 className="text-2xl font-semibold">{scenario.title}</h2>
           <p className="text-sm text-muted-foreground">{scenario.description}</p>
@@ -110,7 +110,7 @@ export function SceneIntro({ scenario, situation, level, maxTurns, starting, nar
             <User className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Hablarás con
+                You’ll be talking with
               </p>
               <p className="text-sm font-medium">
                 {persona.name} · {persona.role}
@@ -123,21 +123,21 @@ export function SceneIntro({ scenario, situation, level, maxTurns, starting, nar
           )}
           <div className="flex items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
             <Badge variant="secondary">{level}</Badge>
-            <span>Conversación en inglés · hasta {maxTurns} turnos · sin correcciones en vivo</span>
+            <span>English-only conversation · up to {maxTurns} turns · no live corrections</span>
           </div>
         </div>
 
         <div className="space-y-2 text-center">
-          <Button size="lg" className="gap-2 px-8" onClick={onStart} disabled={starting || !sceneReady}>
+          <Button size="lg" className="gap-2 px-8" title="Empieza la escena; la conversación será solo en inglés" onClick={onStart} disabled={starting || !sceneReady}>
             {!sceneReady ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             {!sceneReady
-              ? "Creando tu escena…"
+              ? "Setting up your scene…"
               : starting
-                ? "Preparando la escena…"
-                : "Estoy listo, comenzar"}
+                ? "Preparing the scene…"
+                : "I’m ready, let’s start"}
           </Button>
           <p className="text-xs text-muted-foreground">
-            Habla con naturalidad: los errores se revisan al final, no durante la charla.
+            Speak naturally: mistakes are reviewed at the end, not during the chat.
           </p>
         </div>
       </div>

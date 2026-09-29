@@ -18,9 +18,9 @@ import { useRemoteAi } from "./use-remote-ai";
 
 const MODE_OPTIONS = ["local", "hybrid", "remote"] as const;
 const MODE_LABELS: Record<AiMode, string> = {
-  local: "Local (100% en tu equipo)",
-  hybrid: "Híbrido (local + nube)",
-  remote: "Remoto (todo en la nube)",
+  local: "Local (100% on your device)",
+  hybrid: "Hybrid (local + cloud)",
+  remote: "Remote (everything in the cloud)",
 };
 const PROVIDER_LABELS = Object.fromEntries(REMOTE_PROVIDERS.map((p) => [p.id, p.label]));
 
@@ -32,15 +32,15 @@ export function RemoteAiConfig() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>IA en la nube</CardTitle>
+        <CardTitle>Cloud AI</CardTitle>
         <CardDescription>
-          Opcional. En modo local no se envía nada a internet. El modo híbrido usa la
-          nube sólo para lo más complejo; el remoto, para todo.
+          Optional. In local mode nothing is sent to the internet. Hybrid mode uses the
+          cloud only for the hardest tasks; remote mode, for everything.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <LabeledSelect
-          id="ai-mode" label="Modo" value={r.settings.mode}
+          id="ai-mode" label="Mode" value={r.settings.mode}
           options={MODE_OPTIONS} labels={MODE_LABELS}
           onChange={(v) => r.setMode(v as AiMode)}
         />
@@ -49,12 +49,12 @@ export function RemoteAiConfig() {
           <>
             <Separator />
             <LabeledSelect
-              id="ai-provider" label="Proveedor" value={r.settings.provider}
+              id="ai-provider" label="Provider" value={r.settings.provider}
               options={REMOTE_PROVIDERS.map((p) => p.id)} labels={PROVIDER_LABELS}
               onChange={(v) => r.setProvider(v as RemoteProvider)}
             />
             <LabeledSelect
-              id="ai-model" label="Modelo"
+              id="ai-model" label="Model"
               value={modelFor(r.settings, r.settings.provider)}
               options={provider.models}
               labels={Object.fromEntries(provider.models.map((m) => [m, m]))}
@@ -69,7 +69,7 @@ export function RemoteAiConfig() {
               />
             ) : (
               <p className="text-sm text-muted-foreground">
-                La gestión de llaves sólo está disponible en la app de escritorio.
+                Key management is only available in the desktop app.
               </p>
             )}
           </>

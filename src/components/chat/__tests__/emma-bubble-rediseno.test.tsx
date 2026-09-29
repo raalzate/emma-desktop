@@ -69,12 +69,12 @@ describe("EmmaBubble (rediseño Café sereno)", () => {
     expect(html).toContain("font-code");
   });
 
-  it("las acciones van en español, ghost azul y con Tooltip Radix en vez de title (FR-017)", () => {
+  it("las acciones van en inglés, ghost azul y con Tooltip Radix en español en vez de title (FR-017)", () => {
     const html = render();
-    expect(html).toContain("Enséñame");
-    expect(html).toContain("Traducir");
-    expect(html).not.toContain("Teach me");
-    expect(html).not.toContain("Translate");
+    expect(html).toContain("Teach me");
+    expect(html).toContain("Translate");
+    expect(html).not.toContain("Enséñame");
+    expect(html).not.toContain("Traducir");
     expect(html).toContain("text-primary");
     // El title nativo desaparece de las dos acciones; el globo vive en Tooltip.
     expect(html).not.toContain("Explicación en español");

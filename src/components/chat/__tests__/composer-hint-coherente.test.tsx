@@ -40,16 +40,16 @@ function render(ghost: string): string {
 describe("Composer — hint coherente con el fantasma", () => {
   it("sin fantasma NO anuncia el atajo TAB", () => {
     const html = render("");
-    expect(html).not.toContain("TAB acepta");
+    expect(html).not.toContain("TAB accepts");
     // La línea persiste: ENTER e inmersión no dependen del fantasma.
-    expect(html).toContain("ENTER envía");
-    expect(html).toContain("La conversación es solo en inglés");
+    expect(html).toContain("ENTER sends");
+    expect(html).toContain("This conversation is English only");
   });
 
   it("con fantasma anuncia TAB delante del resto de la línea", () => {
     const html = render(" a small slice to try?");
-    expect(html).toContain("TAB acepta la sugerencia");
-    expect(html).toContain("ENTER envía");
-    expect(html.indexOf("TAB acepta")).toBeLessThan(html.indexOf("ENTER envía"));
+    expect(html).toContain("TAB accepts the suggestion");
+    expect(html).toContain("ENTER sends");
+    expect(html.indexOf("TAB accepts")).toBeLessThan(html.indexOf("ENTER sends"));
   });
 });

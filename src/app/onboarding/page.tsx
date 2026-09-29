@@ -50,22 +50,22 @@ export default function OnboardingPage() {
         <div className="space-y-2 pb-2 text-center duration-500 animate-in fade-in slide-in-from-bottom-2">
           {flow.completed ? (
             <>
-              <Button size="lg" className="gap-2 px-8" onClick={() => router.push("/")}>
-                Ver mi primera escena
+              <Button size="lg" className="gap-2 px-8" title="Abre la escena que Emma preparó para ti" onClick={() => router.push("/")}>
+                See my first scene
                 <ArrowRight className="h-4 w-4" />
               </Button>
               <p className="text-xs text-muted-foreground">
-                Te mostraré el escenario antes de empezar a conversar.
+                I'll show you the scene before we start talking.
               </p>
             </>
           ) : (
             <>
-              <Button size="lg" className="gap-2 px-8" onClick={() => window.location.reload()}>
-                Seguir configurando
+              <Button size="lg" className="gap-2 px-8" title="Retoma la conversación con Emma donde la dejaste" onClick={() => window.location.reload()}>
+                Keep setting up
                 <ArrowRight className="h-4 w-4" />
               </Button>
               <p className="text-xs text-muted-foreground">
-                Nos falta un dato para armar tu primera escena. Retomamos donde quedamos.
+                We're missing one detail to build your first scene. We'll pick up where we left off.
               </p>
             </>
           )}

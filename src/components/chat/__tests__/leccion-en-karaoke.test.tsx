@@ -40,12 +40,12 @@ const render = (k: Karaoke, lesson = LESSON) =>
   );
 
 describe("LessonKaraoke", () => {
-  it("pone el control de audio en la cabecera de «Lección de Emma», junto a la ayuda en español", () => {
+  it("pone el control de audio en la cabecera de «Lesson from Emma», junto a la ayuda en español", () => {
     const html = render(karaoke());
-    expect(html).toContain("Lección de Emma");
-    expect(html).toContain("Detener");
-    expect(html).toContain("Ayuda en español");
-    expect(html.indexOf("Lección de Emma")).toBeLessThan(html.indexOf("Ayuda en español"));
+    expect(html).toContain("Lesson from Emma");
+    expect(html).toContain("Stop");
+    expect(html).toContain("Help in Spanish");
+    expect(html.indexOf("Lesson from Emma")).toBeLessThan(html.indexOf("Help in Spanish"));
   });
 
   it("resalta la oración activa y la palabra que suena, como el karaoke del chat", () => {
@@ -66,14 +66,14 @@ describe("LessonKaraoke", () => {
 
   it("sin contenido hablable no aparece control de audio", () => {
     const html = render(karaoke({ sentences: [], activeSentence: -1, activeWord: -1 }), "— …");
-    expect(html).not.toContain("Escuchar a Emma");
-    expect(html).not.toContain("Detener");
-    expect(html).toContain("Ayuda en español");
+    expect(html).not.toContain("Listen to Emma");
+    expect(html).not.toContain("Stop");
+    expect(html).toContain("Help in Spanish");
   });
 
-  it("no autoplay: el control aparece en «Escuchar a Emma» mientras no suena", () => {
+  it("no autoplay: el control aparece en «Listen to Emma» mientras no suena", () => {
     expect(render(karaoke({ playing: false, activeSentence: -1, activeWord: -1 }))).toContain(
-      "Escuchar a Emma",
+      "Listen to Emma",
     );
   });
 });

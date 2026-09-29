@@ -37,11 +37,11 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
   );
 }
 
-/** Etiqueta en español de cada forma: lo que se mueve al negar o preguntar (#168). */
+/** Etiqueta de cada forma: lo que se mueve al negar o preguntar (#168). */
 const FORM_LABEL: Record<GrammarForm, string> = {
-  affirmative: "Afirmación",
-  negative: "Negación",
-  question: "Pregunta",
+  affirmative: "Affirmative",
+  negative: "Negative",
+  question: "Question",
 };
 
 /**
@@ -54,7 +54,7 @@ function MarkedSentence({ example }: { example: GrammarExample }) {
   return (
     <p className="text-sm">
       {example.english.split(/(\s+)/).map((token, i) => {
-        const role = roleOf.get(token.replace(/[.,;:!?¿¡]/g, "").toLowerCase());
+        const role = roleOf.get(token.replace(/[.,;:!?\u00bf\u00a1]/g, "").toLowerCase());
         if (!role) return <span key={i}>{token}</span>;
         return (
           <span
@@ -116,7 +116,7 @@ export function TeachDialog({ text, onClose }: Props) {
       <DialogContent className="max-h-[85vh] max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" /> Enséñame
+            <BookOpen className="h-5 w-5 text-primary" /> Teach me
           </DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[70vh] pr-4">
@@ -131,13 +131,13 @@ export function TeachDialog({ text, onClose }: Props) {
           {s && (
             <div className="space-y-6">
               {s.phonetics.length > 0 && (
-                <Section icon={<Volume2 className="h-4 w-4 text-primary" />} title="Pronunciación">
+                <Section icon={<Volume2 className="h-4 w-4 text-primary" />} title="Pronunciation">
                   <div className="overflow-hidden rounded-lg border">
                     <div className="grid grid-cols-[auto_1fr_1fr_1fr] items-center gap-x-3 border-b bg-muted/50 px-3 py-2 text-xs font-medium text-muted-foreground">
                       <span className="w-7" />
-                      <span>Inglés</span>
-                      <span>Pronunciación</span>
-                      <span>Traducción</span>
+                      <span>English</span>
+                      <span>Pronunciation</span>
+                      <span>Translation</span>
                     </div>
                     {s.phonetics.map((row, i) => (
                       <div
@@ -155,7 +155,7 @@ export function TeachDialog({ text, onClose }: Props) {
               )}
 
               {s.grammar.length > 0 && (
-                <Section icon={<GraduationCap className="h-4 w-4 text-primary" />} title="Gramática">
+                <Section icon={<GraduationCap className="h-4 w-4 text-primary" />} title="Grammar">
                   <div className="space-y-2">
                     {s.grammar.map((g, i) => (
                       <div key={i} className="rounded-lg border p-3">
@@ -181,7 +181,7 @@ export function TeachDialog({ text, onClose }: Props) {
               )}
 
               {s.replies.length > 0 && (
-                <Section icon={<Lightbulb className="h-4 w-4 text-primary" />} title="Sugerencias de respuesta">
+                <Section icon={<Lightbulb className="h-4 w-4 text-primary" />} title="Reply suggestions">
                   <div className="space-y-2">
                     {s.replies.map((r, i) => (
                       <div key={i} className="flex items-center gap-2 rounded-lg border p-2.5">
@@ -196,7 +196,7 @@ export function TeachDialog({ text, onClose }: Props) {
 
               {result?.status === "error" && (
                 <p className="text-sm text-muted-foreground">
-                  No se pudo generar la explicación. Inténtalo de nuevo.
+                  The explanation couldn’t be generated. Please try again.
                 </p>
               )}
             </div>

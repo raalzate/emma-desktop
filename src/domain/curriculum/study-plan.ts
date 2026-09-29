@@ -17,146 +17,146 @@ export interface StudyWeek {
 export const STUDY_PLAN_24_WEEKS: readonly StudyWeek[] = [
   {
     week: 1,
-    content: "Parte 0 completa + Parte 1 §1.1-1.4",
-    milestone: "Producir /θ/, /ð/, /v/, /z/ y s- inicial de forma aislada",
+    content: "Part 0 complete + Part 1 §1.1-1.4",
+    milestone: "Produce /θ/, /ð/, /v/, /z/ and initial s- in isolation",
     units: [],
   },
   {
     week: 2,
-    content: "Parte 1 §1.5-1.8 + Retos A-B",
-    milestone: "Decir 30 verbos en pasado con la terminación correcta",
+    content: "Part 1 §1.5-1.8 + Challenges A-B",
+    milestone: "Say 30 past-tense verbs with the right ending",
     units: [],
   },
   {
     week: 3,
-    content: "Parte 1 §1.9-1.12 + Reto C",
-    milestone: "Shadowing de 2 min con inteligibilidad",
+    content: "Part 1 §1.9-1.12 + Challenge C",
+    milestone: "2 min of intelligible shadowing",
     units: [],
   },
   {
     week: 4,
-    content: "Unidades 1-2",
-    milestone: "Presentarte en 60 s sin preparar",
+    content: "Units 1-2",
+    milestone: "Introduce yourself in 60 s unprepared",
     units: [1, 2],
   },
   {
     week: 5,
-    content: "Unidad 3 + repaso 1-2",
-    milestone: "Describir tu arquitectura en 90 s",
+    content: "Unit 3 + review of 1-2",
+    milestone: "Describe your architecture in 90 s",
     units: [3],
   },
   {
     week: 6,
-    content: "Unidad 4",
-    milestone: "Decir en qué trabajas ahora mismo, sin errores de estado",
+    content: "Unit 4",
+    milestone: "Say what you are working on right now, with no stative-verb errors",
     units: [4],
   },
   {
     week: 7,
-    content: "Unidad 5",
-    milestone: "Pedir cinco cosas distintas con cinco niveles de cortesía",
+    content: "Unit 5",
+    milestone: "Ask for five different things with five levels of politeness",
     units: [5],
   },
   {
     week: 8,
-    content: "Unidad 6 + checklist A1",
-    milestone: "Narrar tu día de ayer en 90 s con 10 irregulares",
+    content: "Unit 6 + A1 checklist",
+    milestone: "Narrate your day yesterday in 90 s with 10 irregular verbs",
     units: [6],
   },
   {
     week: 9,
-    content: "Unidad 7",
-    milestone: "Stand-up de 30 s grabado, sin guion",
+    content: "Unit 7",
+    milestone: "A recorded 30 s stand-up, no script",
     units: [7],
   },
   {
     week: 10,
-    content: "Unidad 8",
-    milestone: "Comparar dos tecnologías en 2 min",
+    content: "Unit 8",
+    milestone: "Compare two technologies in 2 min",
     units: [8],
   },
   {
     week: 11,
-    content: "Unidad 9",
-    milestone: "Dar tres estimaciones con tres grados de certeza",
+    content: "Unit 9",
+    milestone: "Give three estimates with three degrees of certainty",
     units: [9],
   },
   {
     week: 12,
-    content: "Unidad 10 (dedícale la semana entera)",
-    milestone: "20/20 en el test de present perfect vs past simple",
+    content: "Unit 10 (give it the whole week)",
+    milestone: "20/20 on the present perfect vs past simple test",
     units: [10],
   },
   {
     week: 13,
-    content: "Unidad 11",
-    milestone: "Escribir un README que no necesite preguntas",
+    content: "Unit 11",
+    milestone: "Write a README that needs no follow-up questions",
     units: [11],
   },
   {
     week: 14,
-    content: "Unidad 12 + checklist A2",
-    milestone: "Narrar un bug real en 2 min",
+    content: "Unit 12 + A2 checklist",
+    milestone: "Narrate a real bug in 2 min",
     units: [12],
   },
   {
     week: 15,
-    content: "Unidad 13",
-    milestone: "Diez comentarios de review en cuatro niveles de fuerza",
+    content: "Unit 13",
+    milestone: "Ten review comments at four levels of strength",
     units: [13],
   },
   {
     week: 16,
-    content: "Unidad 14",
-    milestone: "Un postmortem escrito con orden de sucesos correcto",
+    content: "Unit 14",
+    milestone: "A written postmortem with the events in the right order",
     units: [14],
   },
   {
     week: 17,
-    content: "Unidad 15",
-    milestone: "Un ADR con condicionales de trade-off",
+    content: "Unit 15",
+    milestone: "An ADR with trade-off conditionals",
     units: [15],
   },
   {
     week: 18,
-    content: "Unidad 16",
-    milestone: "Reportar una conversación técnica de memoria",
+    content: "Unit 16",
+    milestone: "Report a technical conversation from memory",
     units: [16],
   },
   {
     week: 19,
-    content: "Unidad 17",
-    milestone: "Sobrevivir 30 min de reunión con cinco intervenciones",
+    content: "Unit 17",
+    milestone: "Survive a 30 min meeting with five contributions",
     units: [17],
   },
   {
     week: 20,
-    content: "Unidad 18 + checklist B1",
-    milestone: "Describir un sistema en 3 min con relativas",
+    content: "Unit 18 + B1 checklist",
+    milestone: "Describe a system in 3 min using relative clauses",
     units: [18],
   },
   {
     week: 21,
-    content: "Unidades 19-20",
-    milestone: "Postmortem sin culpables + RFC con certeza calibrada",
+    content: "Units 19-20",
+    milestone: "Blameless postmortem + RFC with calibrated certainty",
     units: [19, 20],
   },
   {
     week: 22,
-    content: "Unidades 21-22",
-    milestone: "Cinco historias STAR grabadas + un system design de 40 min",
+    content: "Units 21-22",
+    milestone: "Five recorded STAR stories + a 40 min system design",
     units: [21, 22],
   },
   {
     week: 23,
-    content: "Unidades 23-24",
-    milestone: "Negociación completa + feedback SBI grabado",
+    content: "Units 23-24",
+    milestone: "A full negotiation + recorded SBI feedback",
     units: [23, 24],
   },
   {
     week: 24,
-    content: "Unidades 25-26 + checklist B2",
-    milestone: "Reto 72: el paquete completo en cinco registros",
+    content: "Units 25-26 + B2 checklist",
+    milestone: "Challenge 72: the full package in five registers",
     units: [25, 26],
   },
 ] as const;
@@ -192,6 +192,18 @@ const CEFR_TARGET_WEEKS: Record<CefrLevel, WeekRange | null> = {
 
 export function weeksForCefrTarget(level: CefrLevel): WeekRange | null {
   return CEFR_TARGET_WEEKS[level];
+}
+
+/**
+ * Semana del plan en la que está el aprendiz según su unidad activa: sin
+ * unidad → semana 1 (sonidos); unidad fuera del plan → última semana.
+ */
+export function currentStudyWeek(activeUnit: number | null): StudyWeek {
+  const first = STUDY_PLAN_24_WEEKS[0];
+  if (activeUnit === null) return first;
+  const week = weekForUnit(activeUnit);
+  if (week === null) return STUDY_PLAN_24_WEEKS[STUDY_PLAN_24_WEEKS.length - 1];
+  return STUDY_PLAN_24_WEEKS.find((w) => w.week === week) ?? first;
 }
 
 /** Unidades cubiertas en *week*; array vacío si es de fonética o está fuera de 1-24. */

@@ -27,6 +27,8 @@ export const GRAMMAR_MAX_TOKENS = 360;
 export const REPLIES_MAX_TOKENS = 220;
 export const PHONETICS_MAX_TOKENS = 460;
 export const TRANSLATION_MAX_TOKENS = 512;
+/** Explicación de un ítem de ejercicio: seis líneas KEY: value. */
+export const ITEM_EXPLANATION_MAX_TOKENS = 260;
 
 /** Gemma 4 cierra cada turno con <end_of_turn>. */
 export const LLM_STOP_TOKENS = ["<end_of_turn>"];

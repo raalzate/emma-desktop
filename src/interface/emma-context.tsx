@@ -60,6 +60,6 @@ export function EmmaProvider({ children }: { children: ReactNode }) {
 /** Acceso al contexto de EMMA. Lanza si se usa fuera del provider. */
 export function useEmma(): EmmaContextValue {
   const v = useContext(Ctx);
-  if (!v) throw new Error("useEmma debe usarse dentro de <EmmaProvider>.");
+  if (!v) throw new Error("useEmma must be used inside <EmmaProvider>.");
   return v;
 }

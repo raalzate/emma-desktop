@@ -31,9 +31,9 @@ describe("chat dentro del AppShell (rediseño Café sereno)", () => {
     expect(src).not.toContain("h-screen");
   });
 
-  it("ChatSidebar rotula la sección con el label mono «SESIONES»", () => {
+  it("ChatSidebar rotula la sección con el label mono «SESSIONS»", () => {
     const src = leer("chat-sidebar.tsx");
-    expect(src).toContain("SESIONES");
+    expect(src).toContain("SESSIONS");
     expect(src).toContain("font-code");
   });
 

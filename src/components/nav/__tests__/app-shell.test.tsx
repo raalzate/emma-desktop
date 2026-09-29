@@ -37,10 +37,10 @@ describe("AppShell", () => {
     expect(anclaDe(html, "/practice")).not.toBe("");
     expect(anclaDe(html, "/progress")).not.toBe("");
     expect(anclaDe(html, "/settings")).not.toBe("");
-    expect(html).toContain("Tu ruta");
-    expect(html).toContain("Práctica");
-    expect(html).toContain("Progreso");
-    expect(html).toContain("Ajustes");
+    expect(html).toContain("Your path");
+    expect(html).toContain("Practice");
+    expect(html).toContain("Progress");
+    expect(html).toContain("Settings");
   });
 
   it("marca como activo el enlace de la ruta actual", () => {

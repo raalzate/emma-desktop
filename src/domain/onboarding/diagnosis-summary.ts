@@ -6,11 +6,11 @@
 export const DISPLAY_CAP = 3;
 
 const CATEGORY_LABELS: Record<string, string> = {
-  "two failed attempts": "expresar respuestas con claridad",
-  "non-numeric value after retry": "números y cantidades",
-  tense_error: "tiempos verbales",
-  article_misuse: "artículos (a/an/the)",
-  spanish_interference: "traducciones directas del español",
+  "two failed attempts": "expressing answers clearly",
+  "non-numeric value after retry": "numbers and quantities",
+  tense_error: "verb tenses",
+  article_misuse: "articles (a/an/the)",
+  spanish_interference: "direct translations from Spanish",
 };
 
 export interface CategoryCount {

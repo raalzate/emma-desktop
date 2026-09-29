@@ -1,49 +1,128 @@
 "use client";
 
 /**
- * Plan de estudio: las 24 semanas del Apéndice J, la distribución diaria de
- * 45 minutos, el ciclo de 7 pasos y las 10 reglas del método en acordeón.
+ * Plan de estudio personal: dónde está el aprendiz en las 24 semanas, qué
+ * toca esta semana en la app y cómo va cada semana (hecha, actual, por
+ * venir) con su avance real de retos. Lo decide el dominio
+ * (`buildPersonalStudyPlan`); acá sólo se pinta, en lenguaje de producto.
+ * Debajo, la rutina diaria de 45 minutos y las reglas del método.
  */
 
+import { Check, Circle, MapPin } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { STUDY_PLAN_24_WEEKS, DAILY_DISTRIBUTION } from "@/domain/curriculum/study-plan";
+import { DAILY_DISTRIBUTION } from "@/domain/curriculum/study-plan";
+import { buildPersonalStudyPlan, type PlanWeekView } from "@/domain/curriculum/personal-study-plan";
 import { SEVEN_STEP_CYCLE } from "@/domain/curriculum/seven-step-cycle";
 import { METHOD_RULES } from "@/domain/curriculum/method-rules";
 
 const DAILY_LABELS: Record<keyof typeof DAILY_DISTRIBUTION, string> = {
-  repaso: "Repaso",
+  repaso: "Review",
   input: "Input",
   notice: "Notice",
   practice: "Practice",
   output: "Output",
 };
 
-export function StudyPlanView() {
+const DAILY_HELP: Record<keyof typeof DAILY_DISTRIBUTION, string> = {
+  repaso: "Due cards (Review tab)",
+  input: "Read or listen to the unit lesson",
+  notice: "Notice the structure before using it",
+  practice: "Closed exercises (Exercises tab)",
+  output: "Produce: a challenge or a conversation with Emma",
+};
+
+const STATUS_LABEL_ES: Record<PlanWeekView["status"], string> = {
+  done: "done",
+  current: "this week",
+  upcoming: "upcoming",
+};
+
+interface Props {
+  /** Unidad activa del aprendiz; null si todavía está en los sonidos. */
+  activeUnit: number | null;
+  completedChallengeIds: readonly number[];
+}
+
+function WeekRow({ week }: { week: PlanWeekView }) {
+  const isCurrent = week.status === "current";
+  const rowTone =
+    week.status === "done" ? "text-muted-foreground" : isCurrent ? "bg-primary-soft font-medium" : "";
+  return (
+    <tr aria-current={isCurrent ? "step" : undefined} className={`border-t ${rowTone}`}>
+      <td className="p-2 font-medium">
+        <span className="flex items-center gap-1">
+          {week.status === "done" ? (
+            <Check className="h-3.5 w-3.5 text-scaffold-easy" />
+          ) : (
+            <Circle className={`h-3 w-3 ${isCurrent ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+          )}
+          {week.week}
+        </span>
+      </td>
+      <td className="p-2">{week.focusEs}</td>
+      <td className="p-2 font-code text-xs">
+        {week.challenges.total === 0 ? "—" : `${week.challenges.done}/${week.challenges.total}`}
+      </td>
+      <td className="p-2">{week.milestone}</td>
+      <td className="p-2 font-code text-[11px] uppercase">{STATUS_LABEL_ES[week.status]}</td>
+    </tr>
+  );
+}
+
+export function StudyPlanView({ activeUnit, completedChallengeIds }: Props) {
+  const plan = buildPersonalStudyPlan({ activeUnit, completedChallengeIds });
+  const done = plan.weeks.filter((w) => w.status === "done").length;
+
   return (
     <div className="space-y-8">
-      <section className="space-y-2">
-        <h3 className="text-sm font-semibold">Plan de 24 semanas</h3>
+      <section className="space-y-3">
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold">Your study plan</h3>
+          <p className="text-sm text-muted-foreground">
+            24 weeks, 45 minutes a day. Each week has a focus (sounds first, then one or two
+            units), its challenges and a milestone: what you should be able to do by the end of it.
+            The current week comes from your active unit in Your path; challenges are counted
+            automatically when you submit them.
+          </p>
+        </div>
+
+        <div className="space-y-3 rounded-bubble border border-primary/40 bg-primary-soft p-4 text-sm">
+          <p className="flex items-center gap-2 font-medium">
+            <MapPin className="h-4 w-4 shrink-0 text-primary" />
+            Week {plan.current.week} of 24 · {plan.current.focusEs}
+          </p>
+          <ul className="space-y-1">
+            {plan.thisWeekEs.map((task) => (
+              <li key={task} className="flex items-start gap-2">
+                <Circle className="mt-1 h-3 w-3 shrink-0 text-primary" />
+                <span>{task}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted-foreground">
+            {done === 0 ? "Just getting started: no week closed yet." : `${done} week(s) closed.`}
+          </p>
+        </div>
+
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full text-left text-sm">
             <thead className="bg-muted text-muted-foreground">
               <tr>
-                <th className="p-2">Semana</th>
-                <th className="p-2">Contenido</th>
-                <th className="p-2">Hito</th>
+                <th className="p-2">Week</th>
+                <th className="p-2">What to study</th>
+                <th className="p-2">Challenges</th>
+                <th className="p-2">By the end of the week you can…</th>
+                <th className="p-2">Status</th>
               </tr>
             </thead>
             <tbody>
-              {STUDY_PLAN_24_WEEKS.map((week) => (
-                <tr key={week.week} className="border-t">
-                  <td className="p-2 font-medium">{week.week}</td>
-                  <td className="p-2">{week.content}</td>
-                  <td className="p-2 text-muted-foreground">{week.milestone}</td>
-                </tr>
+              {plan.weeks.map((week) => (
+                <WeekRow key={week.week} week={week} />
               ))}
             </tbody>
           </table>
@@ -51,22 +130,26 @@ export function StudyPlanView() {
       </section>
 
       <section className="space-y-2">
-        <h3 className="text-sm font-semibold">Distribución diaria (45 minutos)</h3>
+        <h3 className="text-sm font-semibold">Your daily routine (45 minutes)</h3>
         <ul className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {Object.entries(DAILY_DISTRIBUTION).map(([key, minutes]) => (
-            <li key={key} className="rounded-md border p-3 text-center text-sm">
-              <p className="font-medium">{DAILY_LABELS[key as keyof typeof DAILY_DISTRIBUTION]}</p>
-              <p className="text-muted-foreground">{minutes} min</p>
-            </li>
-          ))}
+          {Object.entries(DAILY_DISTRIBUTION).map(([key, minutes]) => {
+            const k = key as keyof typeof DAILY_DISTRIBUTION;
+            return (
+              <li key={key} className="rounded-md border p-3 text-center text-sm">
+                <p className="font-medium">{DAILY_LABELS[k]}</p>
+                <p className="text-muted-foreground">{minutes} min</p>
+                <p className="mt-1 text-xs text-muted-foreground">{DAILY_HELP[k]}</p>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
       <section className="space-y-2">
-        <h3 className="text-sm font-semibold">El ciclo de 7 pasos y las 10 reglas del método</h3>
+        <h3 className="text-sm font-semibold">The 7-step cycle and the 10 rules of the method</h3>
         <Accordion type="multiple" className="w-full">
           <AccordionItem value="cycle">
-            <AccordionTrigger>Ciclo de 7 pasos</AccordionTrigger>
+            <AccordionTrigger>7-step cycle</AccordionTrigger>
             <AccordionContent>
               <ol className="space-y-2">
                 {SEVEN_STEP_CYCLE.map((step) => (
@@ -81,7 +164,7 @@ export function StudyPlanView() {
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="rules">
-            <AccordionTrigger>10 reglas del método</AccordionTrigger>
+            <AccordionTrigger>10 rules of the method</AccordionTrigger>
             <AccordionContent>
               <ol className="space-y-2">
                 {METHOD_RULES.map((rule) => (

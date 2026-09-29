@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
 import {
   Select,
   SelectContent,
@@ -43,21 +44,32 @@ import type { EmmaRuntime } from "@/interface/emma-runtime";
 const AVAILABLE_UNITS = ALL_UNITS.map((u) => u.number).sort((a, b) => a - b);
 
 const MODE_LABEL_ES: Record<ChallengeMode, string> = {
-  written: "Escrito",
-  oral: "En voz alta",
-  "real-work": "En tu trabajo real",
-  memorization: "Memorización",
+  written: "Written",
+  oral: "Out loud",
+  "real-work": "In your real work",
+  memorization: "Memorization",
+};
+
+/** Qué significa cada modo y qué se espera en el cuadro de texto. */
+const MODE_HELP_ES: Record<ChallengeMode, string> = {
+  written: "Written challenge: your submission is the English text you write below (at least 25 words).",
+  oral:
+    "Spoken challenge: do it out loud, recording yourself or with the chat's voice recognition. Below, paste what you said or note how it went (how many takes, what was hard).",
+  "real-work":
+    "Real-work challenge: complete it in a real situation (a message, a meeting). Below, tell in English what you did and how it went (at least 25 words).",
+  memorization:
+    "Memorization challenge: repeat it until you can say it without looking. Below, write it from memory or note how many times you practiced.",
 };
 
 function unitLabel(unitNumber: number): string {
   const unit = ALL_UNITS.find((u) => u.number === unitNumber);
-  return unit ? `Unidad ${unitNumber} · ${unit.title}` : `Unidad ${unitNumber}`;
+  return unit ? `Unit ${unitNumber} · ${unit.title}` : `Unit ${unitNumber}`;
 }
 
 function EmmaReview({ review, criteria }: { review: ChallengeReview; criteria: string[] }) {
   return (
     <div className="space-y-3 rounded-bubble border border-accent/40 bg-accent-soft p-3 text-sm">
-      <p className="font-code text-[11px] uppercase tracking-wide text-accent">Emma opina</p>
+      <p className="font-code text-[11px] uppercase tracking-wide text-accent">Emma's take</p>
       <ul className="space-y-1">
         {criteria.map((c, i) => (
           <li key={i} className="flex items-start gap-2">
@@ -76,7 +88,7 @@ function EmmaReview({ review, criteria }: { review: ChallengeReview; criteria: s
       {review.improved && (
         <div className="space-y-1">
           <p className="font-code text-[11px] uppercase tracking-wide text-muted-foreground">
-            Versión mejorada
+            Improved version
           </p>
           <p className="rounded-md bg-card p-2 font-body text-foreground">{review.improved}</p>
         </div>
@@ -114,6 +126,10 @@ function ChallengeDetail({ challenge, completed, previous, runtime, onSubmitted,
     try {
       const result = await reviewChallenge({ llm: runtime.llm, challenge, text });
       setReview(result ?? "failed");
+      // Emma evalúa la rúbrica: los criterios que detecta quedan marcados.
+      if (result) {
+        setChecked(result.criteriaMet.flatMap((met, i) => (met ? [i] : [])));
+      }
     } catch {
       setReview("failed");
     } finally {
@@ -135,25 +151,25 @@ function ChallengeDetail({ challenge, completed, previous, runtime, onSubmitted,
     <Card className="rounded-bubble">
       <CardHeader className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <CardTitle className="font-headline text-lg">Reto {challenge.id}</CardTitle>
+          <CardTitle className="font-headline text-lg">Challenge {challenge.id}</CardTitle>
           <Badge variant="outline">{MODE_LABEL_ES[challenge.mode]}</Badge>
           {completed && (
             <Badge className="gap-1 bg-scaffold-easy-bg text-scaffold-easy hover:bg-scaffold-easy-bg">
-              <Trophy className="h-3 w-3" /> completado
+              <Trophy className="h-3 w-3" /> completed
             </Badge>
           )}
         </div>
         <p className="text-sm">{challenge.instructionsEs}</p>
-        {challenge.mode === "oral" && (
-          <p className="text-xs text-muted-foreground">
-            Se practica en voz alta. Anota abajo cómo fue (cuántas tomas, qué costó).
-          </p>
-        )}
+        <p className="text-xs text-muted-foreground">{MODE_HELP_ES[challenge.mode]}</p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <p className="font-code text-[11px] uppercase tracking-wide text-muted-foreground">
-            Rúbrica · márcala cuando tu entrega la cumpla
+            Rubric · what your submission must meet
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Check each point once you have verified it in your text: all must be checked to submit.
+            If you ask Emma, she reviews them for you and checks the ones she detects.
           </p>
           <ul className="space-y-2">
             {challenge.criteria.map((c, i) => (
@@ -173,7 +189,7 @@ function ChallengeDetail({ challenge, completed, previous, runtime, onSubmitted,
 
         {previous && (
           <p className="text-xs text-muted-foreground">
-            Entrega anterior cargada ({new Date(previous.submittedAt).toLocaleDateString("es")}). Puedes mejorarla.
+            Previous submission loaded ({new Date(previous.submittedAt).toLocaleDateString("en")}). You can improve it.
           </p>
         )}
 
@@ -181,16 +197,16 @@ function ChallengeDetail({ challenge, completed, previous, runtime, onSubmitted,
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Escribe tu entrega en inglés, o tus notas de práctica…"
+            placeholder="Write your submission in English, or your practice notes…"
             rows={7}
-            aria-label="Tu entrega"
+            aria-label="Your submission"
           />
-          <p className="text-right font-code text-[11px] text-muted-foreground">{readiness.words} palabras</p>
+          <p className="text-right font-code text-[11px] text-muted-foreground">{readiness.words} words</p>
         </div>
 
         {review === "failed" && (
           <p className="text-xs text-muted-foreground">
-            Emma no pudo revisar esta vez. Puedes entregar igual con tu autoevaluación.
+            Emma couldn't review this time. You can still submit with your self-check.
           </p>
         )}
         {review && review !== "failed" && <EmmaReview review={review} criteria={challenge.criteria} />}
@@ -206,18 +222,19 @@ function ChallengeDetail({ challenge, completed, previous, runtime, onSubmitted,
         <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
+            title="Emma revisa tu borrador y te sugiere mejoras antes de entregar"
             onClick={askEmma}
             disabled={reviewing || readiness.words === 0}
             className="gap-1"
           >
             {reviewing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            Pedir opinión a Emma
+            Ask Emma
           </Button>
-          <Button onClick={handleSubmit} disabled={saving || !readiness.ready}>
-            {completed ? "Guardar nueva entrega" : "Entregar y completar"}
+          <Button title="Guarda tu texto y marca el reto como completado" onClick={handleSubmit} disabled={saving || !readiness.ready}>
+            {completed ? "Save new submission" : "Submit and complete"}
           </Button>
-          <Button variant="ghost" onClick={onExit}>
-            Volver a la lista
+          <Button variant="ghost" title="Vuelve a la lista de retos sin guardar" onClick={onExit}>
+            Back to the list
           </Button>
         </div>
       </CardContent>
@@ -263,6 +280,7 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
   }, [refresh]);
 
   const challenges = useMemo(() => challengesForUnit(unit), [unit]);
+  const lessons = useLessonTodos();
   const unitDone = challenges.filter((c) => completed.has(c.id)).length;
 
   if (selected) {
@@ -275,6 +293,8 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
         runtime={runtime}
         onSubmitted={() => {
           void refresh();
+          // Reto entregado ⇒ la lección «Unit N challenge» se cierra sola.
+          void lessons.completeByKind("challenge", `unit-${unit}`);
           onChange?.();
           setSelected(null);
         }}
@@ -287,7 +307,7 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
     <div className="space-y-4">
       <div className="space-y-1">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Retos del libro</span>
+          <span className="text-muted-foreground">Challenges completed</span>
           <span className="font-code text-xs">
             {progress.done}/{progress.total}
           </span>
@@ -297,7 +317,7 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
 
       <Select value={String(unit)} onValueChange={(v) => setUnit(Number(v))}>
         <SelectTrigger className="w-full sm:w-80">
-          <SelectValue placeholder="Elige una unidad" />
+          <SelectValue placeholder="Pick a unit" />
         </SelectTrigger>
         <SelectContent>
           {AVAILABLE_UNITS.map((u) => (
@@ -311,8 +331,8 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
       {challenges.length > 0 && (
         <p className="text-xs text-muted-foreground">
           {unitDone === challenges.length
-            ? "Unidad completa. Puedes rehacer cualquier reto para mejorarlo."
-            : `${unitDone} de ${challenges.length} retos de esta unidad completados.`}
+            ? "Unit complete. You can redo any challenge to improve it."
+            : `${unitDone} of ${challenges.length} challenges in this unit completed.`}
         </p>
       )}
 
@@ -323,13 +343,14 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
             <button
               key={challenge.id}
               type="button"
+              title={done ? "Reto completado: abrilo para enviar una nueva versión" : "Abre el reto para escribir tu respuesta"}
               onClick={() => setSelected(challenge)}
               className={`rounded-bubble border p-4 text-left transition hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 done ? "border-scaffold-easy/40 bg-scaffold-easy-bg/50" : "border-border bg-card"
               }`}
             >
               <div className="mb-1 flex items-center gap-2">
-                <span className="font-headline text-sm font-semibold">Reto {challenge.id}</span>
+                <span className="font-headline text-sm font-semibold">Challenge {challenge.id}</span>
                 <Badge variant="outline" className="text-[10px]">
                   {MODE_LABEL_ES[challenge.mode]}
                 </Badge>
@@ -340,7 +361,7 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
           );
         })}
         {challenges.length === 0 && (
-          <p className="text-sm text-muted-foreground">Esta unidad no tiene retos.</p>
+          <p className="text-sm text-muted-foreground">This unit has no challenges.</p>
         )}
       </div>
     </div>

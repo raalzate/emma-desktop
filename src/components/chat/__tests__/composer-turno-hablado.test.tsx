@@ -44,18 +44,18 @@ function render(over: Partial<Parameters<typeof Composer>[0]> = {}): string {
 describe("Composer en un turno hablado", () => {
   const html = render({ voiceRequirement: saludo, onVoiceUnavailable: () => {} });
 
-  it("deshabilita el textarea y explica en español por qué", () => {
+  it("deshabilita el textarea y explica por qué", () => {
     expect(html).toContain("disabled");
-    expect(html).toContain("saluda con tu voz");
-    expect(html).not.toContain("Escribe tu respuesta en inglés…");
+    expect(html).toContain("say hello with your voice");
+    expect(html).not.toContain("Type your reply in English…");
   });
 
   it("ofrece la salida de emergencia, que rehabilita el texto", () => {
-    expect(html).toContain("No puedo hablar ahora");
+    expect(html).toContain("I can’t speak right now");
   });
 
   it("la línea de atajos deja de prometer ENTER", () => {
-    expect(html).toContain("Este turno se habla");
+    expect(html).toContain("This turn is spoken");
   });
 });
 
@@ -63,8 +63,8 @@ describe("Composer en un turno normal", () => {
   const html = render({ voiceRequirement: null });
 
   it("no cambia el comportamiento de siempre: texto y voz disponibles", () => {
-    expect(html).toContain("Escribe tu respuesta en inglés…");
-    expect(html).not.toContain("No puedo hablar ahora");
-    expect(html).toContain("ENTER envía");
+    expect(html).toContain("Type your reply in English…");
+    expect(html).not.toContain("I can’t speak right now");
+    expect(html).toContain("ENTER sends");
   });
 });

@@ -8,23 +8,23 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.2.1 (2026-09-13, marcada Latest): el onboarding deja de
-  repreguntar en bucle, la escena reformula en vez de responder con amnesia, karaoke por
-  palabra y fantasma del typeahead visible (milestone «v0.2.1 — Correcciones de onboarding
-  y chat», issues #154/#159/#160/#161). v0.1.0 quedó retirada de hecho (dmg roto, gotcha
-  2026-08-31) y v0.1.1 sigue en BORRADOR con sus 3 instaladores. Publicar un borrador sigue
-  siendo gesto del humano.
+- **Último release publicado:** v0.6.0 (2026-09-29, marcada Latest): milestones v0.5.0 y
+  v0.6.0 más el fix #188. v0.1.0 quedó retirada de hecho (dmg roto, gotcha 2026-08-31) y
+  v0.1.1 sigue en BORRADOR con sus 3 instaladores. Publicar un borrador sigue siendo gesto
+  del humano.
 - **Milestone v0.5.0 fusionado (2026-09-25):** lección en karaoke con audio al lado, escena
   visible en modal durante el chat, correcciones triviales fuera del feedback, gramática con
   tres formas y verbos resaltados, lista de lecciones («Mis lecciones» en Práctica), turnos
   con voz obligatoria y corrector ortográfico en inglés en todas las plataformas (issues
   #167–#174, #182; PRs #175–#179, #181, #185). Más **v0.6.0**: prácticas dinámicas (#183,
   PR #184).
-- **Release v0.6.0 en curso (2026-09-25):** `package.json` en 0.6.0 y notas en
-  `docs/releases/0.6.0.md` (todo lo fusionado desde v0.2.1: milestones v0.5.0 y v0.6.0 más
-  el fix #188). El tag `v0.6.0` se crea sobre `main` tras fusionar el bump; el workflow deja
-  el borrador con los 3 instaladores y publicarlo sigue siendo gesto del humano. La vitrina
-  se actualiza sola al publicar (lee la última release por la API de GitHub).
+- **Release v0.7.0 en curso (2026-09-29):** `package.json` en 0.7.0 y notas en
+  `docs/releases/0.7.0.md`: UI 100 % en inglés con tooltips en español (Artículo 9 v1.6.0),
+  ejercicios con opciones y «Explain with Emma», repaso con diferencia palabra a palabra,
+  plan de estudio personal, shadowing por oraciones, chat estilo mensajería, voz de Emma en
+  el onboarding y deep-links a Práctica. El tag `v0.7.0` se crea sobre `main` tras fusionar
+  el PR; el workflow deja el borrador con los 3 instaladores y publicarlo sigue siendo gesto
+  del humano. La vitrina se actualiza sola al publicar.
 - **Vitrina pública:** https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
   botones de descarga apuntan a la última release publicada (la API de GitHub los

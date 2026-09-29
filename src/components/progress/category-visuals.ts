@@ -16,7 +16,7 @@ import { Bug, Code2, Repeat, Server, Users, type LucideIcon } from "lucide-react
 
 export interface CategoryVisual {
   icon: LucideIcon;
-  /** Nombre en español para la leyenda. */
+  /** Nombre para la leyenda. */
   label: string;
   /** Borde del nodo (estado pendiente/actual). */
   border: string;
@@ -33,7 +33,7 @@ export interface CategoryVisual {
 export const CATEGORY_VISUALS: Record<string, CategoryVisual> = {
   COLLABORATIVE_WORK: {
     icon: Users,
-    label: "Trabajo en equipo",
+    label: "Teamwork",
     border: "border-cat-1",
     fill: "bg-cat-1 text-white",
     text: "text-cat-1",
@@ -42,7 +42,7 @@ export const CATEGORY_VISUALS: Record<string, CategoryVisual> = {
   },
   SOFTWARE_DEVELOPMENT: {
     icon: Code2,
-    label: "Desarrollo",
+    label: "Development",
     border: "border-cat-2",
     fill: "bg-cat-2 text-white",
     text: "text-cat-2",
@@ -51,7 +51,7 @@ export const CATEGORY_VISUALS: Record<string, CategoryVisual> = {
   },
   AGILE_METHODOLOGIES: {
     icon: Repeat,
-    label: "Ceremonias ágiles",
+    label: "Agile ceremonies",
     border: "border-cat-3",
     fill: "bg-cat-3 text-white",
     text: "text-cat-3",
@@ -60,7 +60,7 @@ export const CATEGORY_VISUALS: Record<string, CategoryVisual> = {
   },
   DEVOPS: {
     icon: Server,
-    label: "Operación",
+    label: "Operations",
     border: "border-cat-4",
     fill: "bg-cat-4 text-white",
     text: "text-cat-4",
@@ -69,7 +69,7 @@ export const CATEGORY_VISUALS: Record<string, CategoryVisual> = {
   },
   TESTING: {
     icon: Bug,
-    label: "Calidad",
+    label: "Quality",
     border: "border-cat-5",
     fill: "bg-cat-5 text-white",
     text: "text-cat-5",

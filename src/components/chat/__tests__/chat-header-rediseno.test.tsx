@@ -53,7 +53,7 @@ describe("ChatHeader (rediseño Café sereno, FR-013)", () => {
 
   it("muestra el contador de turnos como texto y puntos llenos/vacíos", () => {
     const html = render({ turnCount: 4, maxTurns: 12 });
-    expect(html).toContain("Turno 4 de 12");
+    expect(html).toContain("Turn 4 of 12");
     // 4 puntos llenos (bg-primary) y 8 vacíos (bg-border).
     expect(veces(html, 'rounded-full bg-primary"')).toBe(4);
     expect(veces(html, 'rounded-full bg-border"')).toBe(8);
@@ -61,8 +61,8 @@ describe("ChatHeader (rediseño Café sereno, FR-013)", () => {
 
   it("muestra la pill de objetivos con borde", () => {
     const html = render();
-    expect(html).toContain("Objetivos 2/3");
-    expect(html).toMatch(/<[^>]*border-border[^>]*>[^<]*(<[^>]+>[^<]*)*Objetivos 2\/3/);
+    expect(html).toContain("Goals 2/3");
+    expect(html).toMatch(/<[^>]*border-border[^>]*>[^<]*(<[^>]+>[^<]*)*Goals 2\/3/);
   });
 
   it("no usa colores Tailwind crudos en el fuente", () => {
