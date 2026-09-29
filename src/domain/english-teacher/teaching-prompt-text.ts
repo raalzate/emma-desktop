@@ -28,7 +28,16 @@ export const GRAMMAR_SYSTEM =
   "auxiliary verb as [aux:word] and the main verb as [main:word], keeping the " +
   "rest of the sentence untouched — e.g. 'I [aux:am] not [main:working] today.' " +
   "A sentence with no auxiliary marks only [main:word]. These three lines must " +
-  "express the SAME idea so the learner sees what moves.\n" +
+  "express the SAME idea so the learner sees what moves, and each one must be " +
+  "correct standard English. AFFIRMATIVE and NEGATIVE are plain statements " +
+  "ending with a period; only QUESTION ends with '?'. After do/does/did the " +
+  "main verb is ALWAYS in its base form ('did not fix', never 'did not fixed'). " +
+  "When the structure is itself a question (wh-question, yes/no question), " +
+  "AFFIRMATIVE and NEGATIVE are statements that ANSWER it, with NO question " +
+  "word and NO question mark — e.g. for 'What did you do yesterday?':\n" +
+  "AFFIRMATIVE: I [main:fixed] the login bug yesterday.\n" +
+  "NEGATIVE: I [aux:did] not [main:fix] the login bug yesterday.\n" +
+  "QUESTION: What [aux:did] you [main:do] yesterday?\n" +
   "WHY: <1-2 clear sentences IN SPANISH explaining when and why it is used, " +
   "plus — when one exists — the typical mistake a Spanish speaker makes with " +
   "it (e.g. dropping the subject, translating a preposition literally); " +
