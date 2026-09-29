@@ -11,7 +11,10 @@ import { useRouter } from "next/navigation";
 import { useEmma } from "@/interface/emma-context";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
 import { AppShell } from "@/components/nav/app-shell";
-import { PageHeader } from "@/components/nav/page-header";
+import { PageHeader, type PageHeaderBack } from "@/components/nav/page-header";
+
+// Cada sección es parte de Práctica: se vuelve ahí, no a la ruta.
+const BACK_TO_PRACTICE: PageHeaderBack = { href: "/practice", label: "Practice" };
 
 interface Props {
   title: string;
@@ -31,7 +34,7 @@ export function PracticeRouteShell({ title, children }: Props) {
 
   return (
     <AppShell>
-      <PageHeader title={title} />
+      <PageHeader title={title} back={BACK_TO_PRACTICE} />
       <div className="mx-auto w-full max-w-6xl space-y-6 p-6">{children(runtime)}</div>
     </AppShell>
   );

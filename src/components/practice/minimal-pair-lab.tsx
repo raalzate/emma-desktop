@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SpeakButton } from "@/components/chat/speak-button";
 import { useVoiceInput } from "@/components/chat/use-voice-input";
 import { LiveWaveform } from "@/components/chat/live-waveform";
@@ -414,20 +415,27 @@ function PerceptionRound({ contrastId, level }: { contrastId: string; level: Cef
   );
 }
 
+// El reto es lo que se practica; el protocolo de seis pasos es la ayuda de
+// cómo hacerlo, así que queda plegado hasta que el aprendiz lo pide.
 function ShadowingSection() {
   return (
     <div className="space-y-4">
-      <ol className="space-y-2">
-        {SHADOWING_PROTOCOL.map((phase) => (
-          <li key={phase.order} className="rounded-md border p-3 text-sm">
-            <p className="font-medium">
-              {phase.order}. {phase.nameEs} ({phase.minutes} min)
-            </p>
-            <p className="text-muted-foreground">{phase.actionEs}</p>
-          </li>
-        ))}
-      </ol>
       {CHALLENGE_A && <ShadowingChallenge instructionsEs={CHALLENGE_A.instructionsEs} />}
+      <details className="rounded-bubble border border-border bg-card p-4 text-sm">
+        <summary className="cursor-pointer font-medium" title="Los seis pasos del método de shadowing, con su tiempo">
+          How shadowing works
+        </summary>
+        <ol className="mt-3 space-y-2">
+          {SHADOWING_PROTOCOL.map((phase) => (
+            <li key={phase.order}>
+              <p className="font-medium">
+                {phase.order}. {phase.nameEs} ({phase.minutes} min)
+              </p>
+              <p className="text-muted-foreground">{phase.actionEs}</p>
+            </li>
+          ))}
+        </ol>
+      </details>
     </div>
   );
 }
@@ -452,8 +460,16 @@ export function MinimalPairLab({ initialContrastId }: Props = {}) {
     (levelParam && isCefrLevel(levelParam) && levelParam) || profile?.englishLevel || INITIAL_LEVEL;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
+    <Tabs defaultValue="pairs">
+      <TabsList>
+        <TabsTrigger value="pairs" title="Escuchá y distinguí dos sonidos parecidos, en oraciones">
+          Minimal pairs
+        </TabsTrigger>
+        <TabsTrigger value="shadowing" title="Repetí un texto a la par del audio, oración por oración">
+          Shadowing
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="pairs" className="space-y-3">
         <Select value={contrastId} onValueChange={setContrastId}>
           <SelectTrigger className="w-full sm:w-96">
             <SelectValue placeholder="Pick a contrast" />
@@ -467,12 +483,10 @@ export function MinimalPairLab({ initialContrastId }: Props = {}) {
           </SelectContent>
         </Select>
         {contrastId && <PerceptionRound key={contrastId} contrastId={contrastId} level={level} />}
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Shadowing</h3>
+      </TabsContent>
+      <TabsContent value="shadowing">
         <ShadowingSection />
-      </div>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }

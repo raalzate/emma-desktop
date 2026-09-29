@@ -58,7 +58,7 @@ function PracticeOverview({ runtime }: { runtime: EmmaRuntime }) {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="lessons" className="space-y-2">
-        <section aria-labelledby="mis-lecciones">
+        <section className="space-y-3 rounded-bubble border border-border bg-card p-4" aria-labelledby="mis-lecciones">
           <div>
             <p className="font-code text-[11px] uppercase tracking-wide text-muted-foreground">My lessons</p>
             <h2 id="mis-lecciones" className="font-headline text-base font-semibold">
