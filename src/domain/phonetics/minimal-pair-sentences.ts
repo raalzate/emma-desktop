@@ -7,6 +7,7 @@
 
 import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { MinimalPair } from "@/domain/phonetics/phonetics";
+import { AUTHORED_SENTENCES } from "@/lib/minimal-pair-sentences-data";
 
 export type SentenceBand = "short" | "medium" | "long";
 
@@ -26,49 +27,15 @@ function speakableWord(raw: string): string {
   return raw.split(/[/(]/)[0].trim();
 }
 
-/** Oraciones autoradas a mano para los pares citados como ejemplo (calidad de referencia). */
-const AUTHORED: Record<string, Record<SentenceBand, string>> = {
-  bit: {
-    short: "Wait a bit.",
-    medium: "Can you wait a bit before the deploy?",
-    long: "Can you please wait a bit longer before you trigger the production deploy?",
-  },
-  beat: {
-    short: "Our team beat the deadline.",
-    medium: "Our whole team beat the deadline again this sprint.",
-    long: "Somehow our whole engineering team beat the tight deadline again this sprint.",
-  },
-  live: {
-    short: "It's live now.",
-    medium: "The new feature is finally live in production.",
-    long: "After weeks of testing, the new feature is finally live in production for every user.",
-  },
-  leave: {
-    short: "I have to leave.",
-    medium: "Can I leave the stand-up a bit early today?",
-    long: "I'm sorry, but I have to leave the meeting early to catch a client call.",
-  },
-  stack: {
-    short: "The stack is broken.",
-    medium: "The whole stack is broken after that last merge.",
-    long: "The whole stack has been broken since someone merged that change without running the tests.",
-  },
-  stuck: {
-    short: "It's stuck again.",
-    medium: "The deploy pipeline is stuck again this morning.",
-    long: "The deploy pipeline has been stuck again this morning, and nobody can figure out why.",
-  },
-  ship: {
-    short: "We ship on Friday.",
-    medium: "We're shipping this feature on Friday.",
-    long: "We're planning to ship this whole feature to production on Friday afternoon.",
-  },
-  chip: {
-    short: "Check the chip specs.",
-    medium: "Can you check the chip specs before we order it?",
-    long: "Can you please check the chip specs one more time before we place the hardware order?",
-  },
-};
+/**
+ * Oraciones autoradas a mano, una por palabra hablable y banda: cubren TODAS
+ * las palabras de `SOUND_CONTRASTS` (`@/lib/phonetics-data`), no solo un
+ * puñado de ejemplo — ver `@/lib/minimal-pair-sentences-data`. La plantilla
+ * genérica de abajo queda como último recurso para palabras fuera de esos
+ * datos (hoy inalcanzable desde `SOUND_CONTRASTS`, pero cubre pares nuevos
+ * que aún no tengan autoría).
+ */
+const AUTHORED: Record<string, Record<SentenceBand, string>> = AUTHORED_SENTENCES;
 
 /** Plantillas genéricas: siempre gramaticales y contienen la palabra citada. */
 const TEMPLATES: Record<SentenceBand, (word: string) => string> = {

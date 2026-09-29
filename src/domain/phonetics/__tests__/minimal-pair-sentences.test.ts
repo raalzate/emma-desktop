@@ -6,11 +6,19 @@
 import { describe, it, expect } from "vitest";
 import type { MinimalPair } from "@/domain/phonetics/phonetics";
 import { SOUND_CONTRASTS } from "@/lib/phonetics-data";
+import { checkTargetWordInSentence } from "@/domain/phonetics/pronunciation-check";
 import { bandForLevel, sentenceForPair } from "../minimal-pair-sentences";
 
 function wordCount(sentence: string): number {
   return sentence.trim().split(/\s+/).length;
 }
+
+/** Rango de palabras esperado por banda (H8, §1.3): short 3-7, medium 7-11, long 11-18. */
+const BAND_RANGES: Record<"A1" | "B1" | "C1", [number, number]> = {
+  A1: [3, 7],
+  B1: [7, 11],
+  C1: [11, 18],
+};
 
 describe("bandForLevel", () => {
   it("A1 y A2 caen en la banda «short»", () => {
@@ -50,10 +58,10 @@ describe("sentenceForPair", () => {
     expect(n).toBeLessThanOrEqual(17);
   });
 
-  it("una palabra sin autoría cae a la plantilla genérica, que sigue conteniendo la palabra", () => {
-    const par: MinimalPair = { a: "grid", b: "greed" };
+  it("una palabra fuera de SOUND_CONTRASTS cae a la plantilla genérica, que sigue conteniendo la palabra", () => {
+    const par: MinimalPair = { a: "zzzznotaword", b: "greed" };
     const sentence = sentenceForPair(par, "a", "A2");
-    expect(sentence.toLowerCase()).toContain("grid");
+    expect(sentence.toLowerCase()).toContain("zzzznotaword");
   });
 
   it("un campo sin letras (par asimétrico) cae al valor crudo, sin lanzar", () => {
@@ -74,12 +82,20 @@ describe("sentenceForPair", () => {
         for (const side of ["a", "b"] as const) {
           const raw = side === "a" ? pair.a : pair.b;
           if (!/[a-zA-Z]/.test(raw)) continue; // pares asimétricos ("—"): sin oración que probar
-          it(`«${raw}» tiene oración en las 3 bandas y cada una contiene la palabra`, () => {
+          it(`«${raw}» tiene oración natural en las 3 bandas, con la palabra como token exacto`, () => {
             const spoken = raw.split(/[/(]/)[0].trim().toLowerCase();
             for (const level of ["A1", "B1", "C1"] as const) {
               const sentence = sentenceForPair(pair, side, level);
               expect(sentence.length).toBeGreaterThan(0);
-              expect(sentence.toLowerCase()).toContain(spoken);
+              // Nunca la plantilla genérica meta ("Can you say X clearly?").
+              expect(sentence.toLowerCase()).not.toContain('say "');
+              // La palabra objetivo aparece como token exacto, no como substring
+              // dentro de otra palabra (p. ej. "run" no debe colarse en "running").
+              expect(checkTargetWordInSentence(sentence, spoken, sentence).targetOk).toBe(true);
+              const [min, max] = BAND_RANGES[level];
+              const n = wordCount(sentence);
+              expect(n).toBeGreaterThanOrEqual(min);
+              expect(n).toBeLessThanOrEqual(max);
             }
           });
         }
