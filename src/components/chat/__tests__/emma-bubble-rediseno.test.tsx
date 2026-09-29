@@ -34,6 +34,8 @@ vi.mock("@/components/chat/use-karaoke", () => ({
 
 import { EmmaBubble } from "@/components/chat/emma-bubble";
 
+// #196: la transcripción arranca cerrada; se abre explícitamente para fijar
+// el resalte de la oración activa (no es lo que este archivo prueba en H2).
 function render(): string {
   return renderToStaticMarkup(
     createElement(EmmaBubble, {
@@ -41,6 +43,7 @@ function render(): string {
       at: Date.now(),
       onTeach: () => {},
       onTranslate: () => {},
+      initiallyOpen: true,
     }),
   );
 }

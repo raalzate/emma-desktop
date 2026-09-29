@@ -15,6 +15,7 @@ import {
   buildObservationPrompt,
   fallbackObservation,
   parseObservation,
+  resolveCoherence,
   type TurnObservation,
 } from "@/domain/chat/turn-observation";
 import { OBSERVE_MAX_TOKENS } from "@/domain/shared/token-budgets";
@@ -29,11 +30,24 @@ export interface ObserveTurnArgs {
   message: string;
   level: CefrLevel;
   timeoutMs?: number;
+  /**
+   * El turno anterior ya pidió aclaración (H3/FR-004): con esto en true, un
+   * nuevo veredicto "unclear" se degrada a "clear" — dos turnos seguidos
+   * diciendo "no te entendí" se sienten como un regaño, no como una charla.
+   */
+  previousWasClarifying?: boolean;
 }
 
 export async function observeTurn(args: ObserveTurnArgs): Promise<TurnObservation> {
-  const { llm, state, lastAgentLine, message, level } = args;
-  const red = () => fallbackObservation({ message, state, lastAgentLine });
+  const { llm, state, lastAgentLine, message, level, previousWasClarifying = false } = args;
+  // La rúbrica de coherencia (H3) se aplica al final, sobre CUALQUIER camino
+  // (juez, red o timeout): FR-004 exige que ninguno de los tres acuse en falso
+  // ni repita la aclaración dos turnos seguidos.
+  const withCoherence = (obs: TurnObservation): TurnObservation => ({
+    ...obs,
+    coherence: resolveCoherence(obs.coherence, previousWasClarifying),
+  });
+  const red = () => withCoherence(fallbackObservation({ message, state, lastAgentLine }));
   // Sin checklist no hay nada que atribuir: las heurísticas bastan y no se
   // paga una llamada.
   if (!state || state.pending.length === 0) return red();
@@ -52,7 +66,8 @@ export async function observeTurn(args: ObserveTurnArgs): Promise<TurnObservatio
       timeout,
     ]);
     if (raw === null) return red();
-    return parseObservation(raw, state.pending.map((p) => p.id)) ?? red();
+    const parsed = parseObservation(raw, state.pending.map((p) => p.id));
+    return parsed ? withCoherence(parsed) : red();
   } catch {
     return red();
   }

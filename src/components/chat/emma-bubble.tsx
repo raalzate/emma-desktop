@@ -5,8 +5,9 @@
  * texto y resalta la palabra actual (karaoke), transcripción y las acciones
  * 📚 Teach me / 🌐 Translate. Sin autoplay: la voz sólo suena al pulsar.
  *
- * La transcripción arranca ABIERTA: el aprendiz necesita leer mientras escucha
- * (input comprensible); esconderla obligaba a un clic extra en cada turno.
+ * La transcripción arranca CERRADA (#196): con la lección y las respuestas ya
+ * en karaoke en varias vistas, tenerla siempre abierta duplicaba el resalte.
+ * Un clic la abre (o pulsar play, que también la revela).
  */
 
 import { useState } from "react";
@@ -33,10 +34,12 @@ interface Props {
   persona?: Protopersona;
   onTeach?: () => void;
   onTranslate?: () => void;
+  /** Estado inicial de la transcripción; cerrada por defecto (#196). */
+  initiallyOpen?: boolean;
 }
 
-export function EmmaBubble({ text, at, gender, persona, onTeach, onTranslate }: Props) {
-  const [open, setOpen] = useState(true);
+export function EmmaBubble({ text, at, gender, persona, onTeach, onTranslate, initiallyOpen = false }: Props) {
+  const [open, setOpen] = useState(initiallyOpen);
   const k = useKaraoke(text, persona?.voice ?? gender, persona?.ttsVoice);
 
   const toggle = () => {

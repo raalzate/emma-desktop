@@ -280,7 +280,8 @@
       ".next",
       "graphify-out",
       ".serena",
-      ".claude/skills/graphify"
+      ".claude/skills/graphify",
+      ".claude/worktrees"
     ],
     "ignoreFiles": [
       "docs/English-for-Software-Engineers-fuente.md",

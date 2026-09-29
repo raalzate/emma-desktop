@@ -168,14 +168,15 @@ describe("laboratorio de sonidos", () => {
   const src = source("minimal-pair-lab.tsx");
 
   it("el botón de escuchar es visible con texto y se recrea por ítem (sin audio cacheado del anterior)", () => {
-    expect(src).toContain('label="Listen to the word"');
+    // H8: se escucha la ORACIÓN que contiene la palabra, no la palabra suelta.
+    expect(src).toContain('label="Listen to the sentence"');
     expect(src).toMatch(/<SpeakButton key=\{`speak-\$\{index\}/);
   });
 
-  it("guía la ronda en pasos: escuchar, elegir, pronunciar", () => {
-    expect(src).toContain("1 · Listen to the word");
+  it("guía la ronda en pasos: escuchar la oración, elegir, pronunciar la oración", () => {
+    expect(src).toContain("1 · Listen to the sentence");
     expect(src).toContain("2 · Which of the two did you hear?");
-    expect(src).toContain("3 · Now say it yourself");
+    expect(src).toContain("3 · Now say the sentence and check whether the machine understands");
   });
 
   it("el reto de shadowing se graba oración por oración, con pasos y aviso cuando no se oyó nada", () => {
@@ -248,18 +249,59 @@ describe("plan de estudio", () => {
   });
 });
 
-describe("mis lecciones", () => {
-  it("vive fuera de las pestañas de Práctica, como sección propia", () => {
-    const page = fs.readFileSync(path.join(process.cwd(), "src/app/practice/page.tsx"), "utf8");
-    expect(page).not.toContain('value="lessons"');
-    expect(page.indexOf("<LessonTodoList />")).toBeLessThan(page.indexOf("<Tabs "));
+// H6 (#199): las seis secciones dejaron de ser pestañas y son rutas propias;
+// /practice sólo muestra «Mis lecciones» (por defecto) y «Hoy».
+describe("/practice: dos pestañas, Mis lecciones primero", () => {
+  const page = fs.readFileSync(path.join(process.cwd(), "src/app/practice/page.tsx"), "utf8");
+
+  it("«My lessons» es la pestaña por defecto, antes que «Today»", () => {
+    expect(page).toContain('defaultValue="lessons"');
+    expect(page.indexOf('value="lessons"')).toBeLessThan(page.indexOf('value="today"'));
     expect(page).toContain("What Emma left you to practice");
   });
 
-  it("«Start» navega por deep-link y la pestaña destino se desplaza a la vista", () => {
-    const page = fs.readFileSync(path.join(process.cwd(), "src/app/practice/page.tsx"), "utf8");
-    expect(page).toContain("practiceTargetFromSearch");
-    expect(page).toContain("scrollIntoView");
+  it("«Today» sigue mostrando el panel del plan con el mismo componente", () => {
+    expect(page).toContain("<PracticeToday");
+    expect(page).toContain('value="today"');
+  });
+
+  it("ya no arma las seis pestañas de ejercicios/repaso/etc.: eso vive en las subrutas", () => {
+    expect(page).not.toContain('value="exercises"');
+    expect(page).not.toContain('value="srs"');
+    expect(page).not.toContain("<ExerciseDrill");
+    expect(page).not.toContain("<ChallengeView");
+  });
+
+  it("un enlace viejo ?tab= redirige a la subruta nueva conservando los parámetros", () => {
+    expect(page).toContain("legacyPracticeRedirect");
+    expect(page).toMatch(/router\.replace\(target\)/);
+  });
+
+  it("elegir un paso del plan «Hoy» navega a la subruta de esa pestaña", () => {
+    expect(page).toContain("practiceHrefFor(step.tab");
+    expect(page).toMatch(/router\.push\(/);
+  });
+});
+
+describe("subrutas de Práctica (H6, #199)", () => {
+  const CASES: Array<{ file: string; component: string; params: string[] }> = [
+    { file: "src/app/practice/exercises/page.tsx", component: "ExerciseDrill", params: ["unit", "exercise"] },
+    { file: "src/app/practice/review/page.tsx", component: "SrsReview", params: [] },
+    { file: "src/app/practice/pronunciation/page.tsx", component: "MinimalPairLab", params: ["contrast"] },
+    { file: "src/app/practice/plan/page.tsx", component: "StudyPlanView", params: [] },
+    { file: "src/app/practice/self-check/page.tsx", component: "SelfAssessmentView", params: ["level"] },
+    { file: "src/app/practice/challenges/page.tsx", component: "ChallengeView", params: ["unit"] },
+  ];
+
+  it.each(CASES)("$file existe, pinta $component y lee sus parámetros de la URL en Suspense", ({ file, component, params }) => {
+    const src = fs.readFileSync(path.join(process.cwd(), file), "utf8");
+    expect(src).toContain("use client");
+    expect(src).toContain(`<${component}`);
+    expect(src).toContain("Suspense");
+    expect(src).toContain("useSearchParams");
+    for (const param of params) {
+      expect(src).toContain(`"${param}"`);
+    }
   });
 });
 

@@ -13,6 +13,7 @@ import {
   RecommendationReason,
   type NextScenarioRecommendation,
 } from "@/domain/pathway/next-scenario-policy";
+import { PendingLessonsNotice } from "./pending-lessons-notice";
 
 const REASON_LABEL: Record<string, string> = {
   [RecommendationReason.ERROR_FOCUS]: "Reinforces a recurring error",
@@ -23,10 +24,13 @@ const REASON_LABEL: Record<string, string> = {
 export function RecommendedNext({
   recommendation,
   onPractice,
+  blocked,
 }: {
   recommendation: NextScenarioRecommendation | null;
   /** Si se pasa, la tarjeta muestra los CTA de práctica (contexto: home). */
   onPractice?: (scenarioType: string) => void;
+  /** La escena recomendada tiene lecciones pendientes por delante (FR-006). */
+  blocked?: boolean;
 }) {
   if (!recommendation) return null;
   return (
@@ -44,13 +48,23 @@ export function RecommendedNext({
             <Button asChild variant="outline" title="Muestra tu ruta de escenas, nivel y métricas">
               <Link href="/progress/">See my progress</Link>
             </Button>
-            <Button title="Abre la escena recomendada para hoy" className="gap-2" onClick={() => onPractice(recommendation.scenarioType)}>
+            <Button
+              title={
+                blocked
+                  ? "Termina tus lecciones pendientes en «Mis lecciones» para desbloquear esta escena"
+                  : "Abre la escena recomendada para hoy"
+              }
+              className="gap-2"
+              disabled={blocked}
+              onClick={() => onPractice(recommendation.scenarioType)}
+            >
               Practice now
               <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
         )}
       </div>
+      {blocked && <PendingLessonsNotice />}
     </section>
   );
 }

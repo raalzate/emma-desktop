@@ -9,7 +9,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["**/*.{test,spec}.{ts,tsx}"],
-    exclude: ["node_modules", "build", "dist", "out", ".next"],
+    // `.claude/worktrees/`: copias del repo de los subagentes; sin esto el gate
+    // del checkout principal corre sus pruebas y las de sus node_modules.
+    exclude: ["**/node_modules/**", "build", "dist", "out", ".next", ".claude/worktrees/**"],
     coverage: {
       provider: "v8",
       include: ["src/domain/**", "src/application/**", "src/lib/**"],

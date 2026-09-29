@@ -5,12 +5,16 @@
  * el aprendiz quiera. No hay «nueva lección» — la lista es el registro de lo
  * que EMMA recomendó, no una libreta libre (#172).
  *
+ * FR-007 (#198): sin «Dismiss» — descartar saltaría la práctica que desbloquea
+ * la siguiente escena de la ruta (FR-006). Sólo se puede cerrar practicando
+ * («Done»); el dominio conserva `dismissLessonTodo` por si otro flujo lo usa.
+ *
  * UI en inglés (Artículo 9); el contenido de la lección (frases, retos) es el
  * que escribió EMMA.
  */
 
 import Link from "next/link";
-import { Check, Play, X } from "lucide-react";
+import { Check, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLessonTodos } from "./use-lesson-todos";
@@ -25,11 +29,9 @@ function formatDay(at: number): string {
 function TodoRow({
   todo,
   onComplete,
-  onDismiss,
 }: {
   todo: LessonTodo;
   onComplete: () => void;
-  onDismiss: () => void;
 }) {
   return (
     <li className="flex flex-col rounded-lg border p-4">
@@ -53,16 +55,13 @@ function TodoRow({
         <Button size="sm" variant="outline" className="gap-1" title="Marca la lección como practicada y la quita de la lista" onClick={onComplete}>
           <Check className="h-3.5 w-3.5" /> Done
         </Button>
-        <Button size="sm" variant="ghost" className="gap-1" title="Descarta la lección sin practicarla" onClick={onDismiss}>
-          <X className="h-3.5 w-3.5" /> Dismiss
-        </Button>
       </div>
     </li>
   );
 }
 
 export function LessonTodoList() {
-  const { pending, todos, loading, complete, dismiss } = useLessonTodos();
+  const { pending, todos, loading, complete } = useLessonTodos();
   const closed = todos.filter((t) => t.status !== "pending");
 
   if (loading) return null;
@@ -77,12 +76,7 @@ export function LessonTodoList() {
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
           {pending.map((todo) => (
-            <TodoRow
-              key={todo.id}
-              todo={todo}
-              onComplete={() => void complete(todo.id)}
-              onDismiss={() => void dismiss(todo.id)}
-            />
+            <TodoRow key={todo.id} todo={todo} onComplete={() => void complete(todo.id)} />
           ))}
         </ul>
       )}

@@ -13,9 +13,15 @@
  * (`useVoiceInput`, Whisper local vía transformers.js) para grabar al
  * aprendiz y comparar lo transcrito contra el objetivo con
  * `checkPronunciation` (dominio puro de `@/domain/phonetics/pronunciation-check`).
+ *
+ * H8: "Say it" ya no pide la palabra suelta, pide una ORACIÓN corta que la
+ * contiene (`sentenceForPair`, ajustada al nivel CEFR del aprendiz) — el
+ * veredicto sigue siendo sobre la palabra objetivo, más el % de inteligibilidad
+ * de la frase completa.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronDown, Loader2, Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,8 +32,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SpeakButton } from "@/components/chat/speak-button";
 import { useVoiceInput } from "@/components/chat/use-voice-input";
+import { LiveWaveform } from "@/components/chat/live-waveform";
+import { useEmma } from "@/interface/emma-context";
+import { isCefrLevel, INITIAL_LEVEL, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import {
   buildPerceptionRound,
   checkPerception,
@@ -36,32 +46,41 @@ import {
 } from "@/domain/phonetics/minimal-pair-drill";
 import {
   checkPronunciation,
+  checkTargetWordInSentence,
   heardNothing,
   isIntelligible,
   splitSentences,
   type PronunciationCheckResult,
+  type TargetWordVerdict,
 } from "@/domain/phonetics/pronunciation-check";
+import { sentenceForPair } from "@/domain/phonetics/minimal-pair-sentences";
+import type { MinimalPair } from "@/domain/phonetics/phonetics";
 import { SOUND_CONTRASTS, SHADOWING_PROTOCOL, PART1_CHALLENGES } from "@/lib/phonetics-data";
 
 type AttemptState = "idle" | "recording" | "transcribing" | "error";
 
 /**
- * Graba con el mecanismo de voz existente del chat (Whisper local) y compara
- * lo transcrito contra `target` con `checkPronunciation`. Si el ASR no
- * devuelve texto (transcripción vacía o el pipeline falla), se trata igual:
- * "no te entendí" — es justamente el criterio del libro (si la máquina no te
+ * Graba con el mecanismo de voz existente del chat (Whisper local) y evalúa
+ * la transcripción con `checker`. Por defecto compara `target` palabra a
+ * palabra con `checkPronunciation`; "Say it" por oración (H8) pasa un checker
+ * que juzga solo la palabra objetivo dentro de la frase. Si el ASR no
+ * devuelve texto (transcripción vacía o el pipeline falla), se evalúa igual
+ * contra "" — es justamente el criterio del libro (si la máquina no te
  * entiende, un humano tampoco).
  */
-function useSpokenAttempt(target: string) {
+function useSpokenAttempt<R = PronunciationCheckResult>(
+  target: string,
+  checker: (transcript: string) => R = (t) => checkPronunciation(target, t) as R,
+) {
   const [state, setState] = useState<AttemptState>("idle");
-  const [result, setResult] = useState<PronunciationCheckResult | null>(null);
+  const [result, setResult] = useState<R | null>(null);
   // Marca que esperamos un resultado de onResult; si el ASR falla o queda en
   // silencio, el hook nunca lo llama y lo detectamos por este flag.
   const expectingRef = useRef(false);
 
   const voice = useVoiceInput((text) => {
     expectingRef.current = false;
-    setResult(checkPronunciation(target, text));
+    setResult(checker(text));
   });
 
   useEffect(() => {
@@ -75,9 +94,10 @@ function useSpokenAttempt(target: string) {
     }
     if (expectingRef.current) {
       expectingRef.current = false;
-      setResult(checkPronunciation(target, ""));
+      setResult(checker(""));
     }
     setState((prev) => (prev === "error" ? prev : "idle"));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [voice.recording, voice.busy, target]);
 
   async function toggle() {
@@ -92,7 +112,7 @@ function useSpokenAttempt(target: string) {
     }
   }
 
-  return { state, result, toggle };
+  return { state, result, toggle, stream: voice.stream };
 }
 
 function AttemptIcon({ state }: { state: AttemptState }) {
@@ -101,33 +121,48 @@ function AttemptIcon({ state }: { state: AttemptState }) {
   return <Mic className="h-4 w-4" />;
 }
 
-/** Botón "🎙️ Pronunciar" para un ítem de percepción: graba, transcribe y
- * marca en verde/rojo si la máquina reconoció la palabra objetivo. */
-function PronounceCheck({ target }: { target: string }) {
-  const { state, result, toggle } = useSpokenAttempt(target);
-  const heard = result?.verdicts.map((v) => v.heard ?? "…").join(" ") || "(nothing)";
+/**
+ * Botón "🎙️ Say it" del round de percepción (H8): pide leer la ORACIÓN
+ * completa (no la palabra suelta) y el veredicto juzga si la máquina
+ * reconoció la palabra objetivo dentro de esa oración, más el % general de
+ * inteligibilidad de la frase.
+ */
+function PerceptionSayIt({ sentence, targetWord }: { sentence: string; targetWord: string }) {
+  const checker = useMemo(
+    () => (transcript: string) => checkTargetWordInSentence(sentence, targetWord, transcript),
+    [sentence, targetWord],
+  );
+  const { state, result, toggle, stream } = useSpokenAttempt<TargetWordVerdict>(sentence, checker);
+  const heardSentence = result?.overall.verdicts.map((v) => v.heard ?? "…").join(" ") || "(nothing)";
 
   return (
     <div className="flex flex-col gap-1">
       <Button
         size="sm"
         variant={state === "recording" ? "destructive" : "outline"}
-        title={state === "recording" ? "Detiene la grabación y comprueba tu pronunciación" : "Graba la palabra para comprobar si la máquina te entiende"}
+        title={state === "recording" ? "Detiene la grabación y comprueba tu pronunciación" : "Graba la oración para comprobar si la máquina reconoce la palabra objetivo"}
         onClick={toggle}
         disabled={state === "transcribing"}
       >
         <AttemptIcon state={state} />
         <span className="ml-1">🎙️ Say it</span>
       </Button>
+      {state === "recording" && <LiveWaveform stream={stream} bars={16} />}
       {state === "error" && (
         <p className="text-xs text-red-600">Couldn't record: check the microphone permission.</p>
       )}
       {result && (
-        <p className={`text-xs ${result.score === 1 ? "text-green-600" : "text-red-600"}`}>
-          {result.score === 1
-            ? `✅ The machine understood you: "${target}"`
-            : `❌ That didn't sound like "${target}" — I heard: "${heard}"`}
-        </p>
+        <>
+          <p className={`text-xs ${result.targetOk ? "text-green-600" : "text-red-600"}`}>
+            {result.targetOk
+              ? `✅ The machine heard "${targetWord}" clearly`
+              : `❌ That didn't sound like "${targetWord}" — I heard: "${result.targetHeard ?? "…"}"`}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Heard sentence: "{heardSentence}" — {Math.round(result.overall.score * 100)}%
+            {isIntelligible(result.overall.score) ? " understood clearly" : " still hard to understand"}
+          </p>
+        </>
       )}
     </div>
   );
@@ -252,7 +287,36 @@ function extractQuotedText(instructionsEs: string): string {
   return match ? match[1] : instructionsEs;
 }
 
-function PerceptionRound({ contrastId }: { contrastId: string }) {
+/** Resalta `word` dentro de `sentence` (coincidencia de palabra completa, sin distinguir mayúsculas). */
+function HighlightWord({ sentence, word }: { sentence: string; word: string }) {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = sentence.split(new RegExp(`(\\b${escaped}\\b)`, "i"));
+  return (
+    <p className="text-sm">
+      {parts.map((part, i) =>
+        part.toLowerCase() === word.toLowerCase() ? (
+          <strong key={i} className="text-primary">
+            {part}
+          </strong>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </p>
+  );
+}
+
+/** Encuentra el `MinimalPair` de origen de un `PerceptionItem` y de qué lado (a/b) vino el prompt. */
+function pairForItem(
+  contrastPairs: MinimalPair[],
+  item: PerceptionItem,
+): { pair: MinimalPair; side: "a" | "b" } {
+  const pair = contrastPairs.find((p) => p.a === item.options[0] && p.b === item.options[1]);
+  if (!pair) throw new Error(`source pair not found for "${item.prompt}"`);
+  return { pair, side: item.prompt === pair.a ? "a" : "b" };
+}
+
+function PerceptionRound({ contrastId, level }: { contrastId: string; level: CefrLevel }) {
   const contrast = CONTRASTS.find((c) => c.id === contrastId)!;
   // Seed aleatoria por montaje: cada vez que se entra al laboratorio la ronda es distinta.
   const seed = useMemo(() => Math.floor(Math.random() * 1_000_000), [contrastId]);
@@ -283,6 +347,10 @@ function PerceptionRound({ contrastId }: { contrastId: string }) {
   }
 
   const item: PerceptionItem = items[index];
+  // H8: la palabra suena dentro de una oración corta ajustada al nivel del
+  // aprendiz, no suelta — el par mínimo sigue siendo la palabra objetivo.
+  const { pair, side } = pairForItem(contrast.pairs, item);
+  const sentence = sentenceForPair(pair, side, level);
 
   /** Registra la respuesta elegida y muestra el acierto/fallo. */
   function choose(optionIndex: number) {
@@ -305,9 +373,10 @@ function PerceptionRound({ contrastId }: { contrastId: string }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <p className="text-sm font-medium">1 · Listen to the word (repeat it as many times as you like)</p>
-          {/* key por ítem: cada palabra tiene su propio audio, nunca el de la anterior. */}
-          <SpeakButton key={`speak-${index}-${item.prompt}`} text={item.prompt} label="Listen to the word" />
+          <p className="text-sm font-medium">1 · Listen to the sentence</p>
+          {/* key por ítem: cada oración tiene su propio audio, nunca el de la anterior. */}
+          <SpeakButton key={`speak-${index}-${item.prompt}`} text={sentence} label="Listen to the sentence" />
+          <HighlightWord sentence={sentence} word={item.prompt} />
         </div>
         <div className="space-y-2">
           <p className="text-sm font-medium">2 · Which of the two did you hear?</p>
@@ -333,8 +402,8 @@ function PerceptionRound({ contrastId }: { contrastId: string }) {
               <span className="font-code">&quot;{item.prompt}&quot;</span>
             </p>
             <div className="space-y-2">
-              <p className="text-sm font-medium">3 · Now say it yourself and check whether the machine understands you</p>
-              <PronounceCheck key={`pron-${index}-${item.prompt}`} target={item.prompt} />
+              <p className="text-sm font-medium">3 · Now say the sentence and check whether the machine understands "{item.prompt}"</p>
+              <PerceptionSayIt key={`say-${index}-${item.prompt}`} sentence={sentence} targetWord={item.prompt} />
             </div>
             <Button size="sm" title="Pasa al siguiente par mínimo" onClick={next}>
               Next
@@ -346,20 +415,27 @@ function PerceptionRound({ contrastId }: { contrastId: string }) {
   );
 }
 
+// El reto es lo que se practica; el protocolo de seis pasos es la ayuda de
+// cómo hacerlo, así que queda plegado hasta que el aprendiz lo pide.
 function ShadowingSection() {
   return (
     <div className="space-y-4">
-      <ol className="space-y-2">
-        {SHADOWING_PROTOCOL.map((phase) => (
-          <li key={phase.order} className="rounded-md border p-3 text-sm">
-            <p className="font-medium">
-              {phase.order}. {phase.nameEs} ({phase.minutes} min)
-            </p>
-            <p className="text-muted-foreground">{phase.actionEs}</p>
-          </li>
-        ))}
-      </ol>
       {CHALLENGE_A && <ShadowingChallenge instructionsEs={CHALLENGE_A.instructionsEs} />}
+      <details className="rounded-bubble border border-border bg-card p-4 text-sm">
+        <summary className="cursor-pointer font-medium" title="Los seis pasos del método de shadowing, con su tiempo">
+          How shadowing works
+        </summary>
+        <ol className="mt-3 space-y-2">
+          {SHADOWING_PROTOCOL.map((phase) => (
+            <li key={phase.order}>
+              <p className="font-medium">
+                {phase.order}. {phase.nameEs} ({phase.minutes} min)
+              </p>
+              <p className="text-muted-foreground">{phase.actionEs}</p>
+            </li>
+          ))}
+        </ol>
+      </details>
     </div>
   );
 }
@@ -375,10 +451,25 @@ export function MinimalPairLab({ initialContrastId }: Props = {}) {
       CONTRASTS[0]?.id ||
       "",
   );
+  // Nivel CEFR del aprendiz: sale del perfil, salvo que ?level lo sobrescriba
+  // (deep-link de una recomendación de Emma a un nivel puntual).
+  const { profile } = useEmma();
+  const params = useSearchParams();
+  const levelParam = params.get("level");
+  const level: CefrLevel =
+    (levelParam && isCefrLevel(levelParam) && levelParam) || profile?.englishLevel || INITIAL_LEVEL;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
+    <Tabs defaultValue="pairs">
+      <TabsList>
+        <TabsTrigger value="pairs" title="Escuchá y distinguí dos sonidos parecidos, en oraciones">
+          Minimal pairs
+        </TabsTrigger>
+        <TabsTrigger value="shadowing" title="Repetí un texto a la par del audio, oración por oración">
+          Shadowing
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="pairs" className="space-y-3">
         <Select value={contrastId} onValueChange={setContrastId}>
           <SelectTrigger className="w-full sm:w-96">
             <SelectValue placeholder="Pick a contrast" />
@@ -391,13 +482,11 @@ export function MinimalPairLab({ initialContrastId }: Props = {}) {
             ))}
           </SelectContent>
         </Select>
-        {contrastId && <PerceptionRound key={contrastId} contrastId={contrastId} />}
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Shadowing</h3>
+        {contrastId && <PerceptionRound key={contrastId} contrastId={contrastId} level={level} />}
+      </TabsContent>
+      <TabsContent value="shadowing">
         <ShadowingSection />
-      </div>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }

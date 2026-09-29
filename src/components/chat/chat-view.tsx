@@ -20,6 +20,9 @@ import { ChatSidebar } from "./chat-sidebar";
 import { ChatPane } from "./chat-pane";
 import { useChatHistory } from "./use-chat-history";
 import type { SessionSnapshot } from "./use-chat-session";
+import { Button } from "@/components/ui/button";
+import { PendingLessonsNotice } from "@/components/progress/pending-lessons-notice";
+import { useScenarioGate } from "@/components/lessons/use-scenario-gate";
 
 interface Props {
   runtime: EmmaRuntime;
@@ -55,6 +58,21 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
       createdAt.current = Date.now();
     },
     [],
+  );
+
+  // #202: «Next scene» y el selector respetan el mismo gate que el trazado.
+  const gate = useScenarioGate(runtime, profile.englishLevel);
+  const [blocked, setBlocked] = useState(false);
+  const selectScenario = useCallback(
+    (s: Scenario) => {
+      if (!gate.check(s.scenarioType, scenario.scenarioType).allowed) {
+        setBlocked(true);
+        return;
+      }
+      setBlocked(false);
+      startNew(s);
+    },
+    [gate, scenario.scenarioType, startNew],
   );
 
   const openChat = useCallback(
@@ -122,17 +140,32 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
         />
       }
     >
-      <ChatPane
-        key={sessionId}
-        runtime={runtime}
-        profile={profile}
-        settings={settings}
-        scenario={scenario}
-        scenarios={scenarios}
-        onSelectScenario={startNew}
-        restore={restore}
-        onSnapshot={onSnapshot}
-      />
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        {blocked && (
+          <div className="flex items-center justify-center gap-3 border-b bg-muted/40 px-4 py-2">
+            <PendingLessonsNotice />
+            <Button
+              variant="ghost"
+              size="sm"
+              title="Cierra el aviso y sigue en esta escena"
+              onClick={() => setBlocked(false)}
+            >
+              Close
+            </Button>
+          </div>
+        )}
+        <ChatPane
+          key={sessionId}
+          runtime={runtime}
+          profile={profile}
+          settings={settings}
+          scenario={scenario}
+          scenarios={scenarios}
+          onSelectScenario={selectScenario}
+          restore={restore}
+          onSnapshot={onSnapshot}
+        />
+      </div>
     </AppShell>
   );
 }

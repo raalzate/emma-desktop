@@ -13,6 +13,20 @@ import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
  * navegación principal, una ranura opcional (`extra`, p. ej. sesiones de chat)
  * y el sello local-first. El contenido de la página va en `children`.
  */
+/**
+ * Secciones de Práctica (H6, #199): dejaron de ser pestañas dentro de
+ * /practice y son rutas propias; el submenú es el único lugar donde se ven
+ * juntas, y sólo cuando la ruta actual está bajo /practice.
+ */
+const PRACTICE_SECTIONS = [
+  { href: "/practice/exercises", label: "Exercises" },
+  { href: "/practice/review", label: "Review" },
+  { href: "/practice/pronunciation", label: "Pronunciation" },
+  { href: "/practice/plan", label: "Study plan" },
+  { href: "/practice/self-check", label: "Self-check" },
+  { href: "/practice/challenges", label: "Challenges" },
+] as const;
+
 const NAV_ITEMS = [
   { href: "/", label: "Your path", icon: MapPin },
   { href: "/practice", label: "Practice", icon: Target },
@@ -25,6 +39,43 @@ function esActivo(pathname: string, href: string): boolean {
     return pathname === "/" || pathname.startsWith("/chat");
   }
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** Submenú de las seis secciones de Práctica, visible sólo bajo /practice. */
+function PracticeSubNav({ pathname }: { pathname: string }) {
+  if (!esActivo(pathname, "/practice")) return null;
+  return (
+    <ul className="ml-9 flex flex-col gap-0.5 border-l border-border pl-3">
+      {PRACTICE_SECTIONS.map(({ href, label }) => (
+        <li key={href}>
+          <Link
+            href={href}
+            title={
+              href === "/practice/exercises"
+                ? "Ejercicios por unidad, ítem a ítem"
+                : href === "/practice/review"
+                  ? "Repaso espaciado de tus tarjetas"
+                  : href === "/practice/pronunciation"
+                    ? "Pares mínimos y shadowing: escuchá, distinguí y repetí"
+                    : href === "/practice/plan"
+                      ? "Tu plan de estudio semana a semana"
+                      : href === "/practice/self-check"
+                        ? "Autoevaluación: marcá lo que ya dominás"
+                        : "Retos de escritura para cerrar cada unidad"
+            }
+            className={cn(
+              "block rounded-md px-2 py-1 text-sm transition-colors",
+              esActivo(pathname, href)
+                ? "bg-primary-soft text-primary-deep"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+            )}
+          >
+            {label}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /**
@@ -53,21 +104,31 @@ export function AppShell({ extra, children }: { extra?: ReactNode; children: Rea
         <BrandWordmark className="px-3 text-2xl" />
         <nav className="flex flex-col gap-0.5">
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              title={href === "/" ? "Tu ruta: las escenas que siguen y tu próxima conversación" : href === "/practice" ? "Práctica: repasos del día y lecciones pendientes" : href === "/progress" ? "Progreso: cómo avanzas en cada habilidad" : "Ajustes: modelo de IA, voz y datos locales"}
-              className={cn(
-                "flex items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium transition-colors",
-                esActivo(pathname, href)
-                  ? "bg-primary-soft text-primary-deep"
-                  : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-              )}
-            >
-              <Icon className="h-[18px] w-[18px]" aria-hidden />
-              {label}
-              {href === "/practice" && <PendingLessonsBadge />}
-            </Link>
+            <div key={href} className="flex flex-col gap-0.5">
+              <Link
+                href={href}
+                title={
+                  href === "/"
+                    ? "Tu ruta: las escenas que siguen y tu próxima conversación"
+                    : href === "/practice"
+                      ? "Práctica: repasos del día y lecciones pendientes"
+                      : href === "/progress"
+                        ? "Progreso: cómo avanzas en cada habilidad"
+                        : "Ajustes: modelo de IA, voz y datos locales"
+                }
+                className={cn(
+                  "flex items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm font-medium transition-colors",
+                  esActivo(pathname, href)
+                    ? "bg-primary-soft text-primary-deep"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                )}
+              >
+                <Icon className="h-[18px] w-[18px]" aria-hidden />
+                {label}
+                {href === "/practice" && <PendingLessonsBadge />}
+              </Link>
+              {href === "/practice" && <PracticeSubNav pathname={pathname} />}
+            </div>
           ))}
         </nav>
         {extra ? <div className="min-h-0 flex-1 overflow-y-auto">{extra}</div> : null}

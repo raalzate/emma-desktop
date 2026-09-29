@@ -14,9 +14,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useEmma } from "@/interface/emma-context";
 import { SpeakButton } from "./speak-button";
+import { KaraokeLine } from "./karaoke-line";
 import type {
   GrammarExample,
   GrammarForm,
+  ReplySuggestion,
   TeachingResult,
 } from "@/domain/english-teacher/teaching-models";
 
@@ -85,6 +87,22 @@ export function GrammarForms({ examples }: { examples: GrammarExample[] }) {
           </span>
           <MarkedSentence example={e} />
         </div>
+      ))}
+    </div>
+  );
+}
+
+/** Cada sugerencia de respuesta en karaoke, con su nota (p.ej. «Casual») al final de la fila. */
+export function ReplySuggestions({ replies }: { replies: ReplySuggestion[] }) {
+  return (
+    <div className="space-y-2">
+      {replies.map((r, i) => (
+        <KaraokeLine
+          key={i}
+          text={r.english}
+          className="rounded-lg border p-2.5"
+          trailing={r.note && <Badge variant="secondary" className="shrink-0">{r.note}</Badge>}
+        />
       ))}
     </div>
   );
@@ -182,15 +200,7 @@ export function TeachDialog({ text, onClose }: Props) {
 
               {s.replies.length > 0 && (
                 <Section icon={<Lightbulb className="h-4 w-4 text-primary" />} title="Reply suggestions">
-                  <div className="space-y-2">
-                    {s.replies.map((r, i) => (
-                      <div key={i} className="flex items-center gap-2 rounded-lg border p-2.5">
-                        <SpeakButton text={r.english} />
-                        <span className="flex-1 text-sm font-medium">{r.english}</span>
-                        {r.note && <Badge variant="secondary" className="shrink-0">{r.note}</Badge>}
-                      </div>
-                    ))}
-                  </div>
+                  <ReplySuggestions replies={s.replies} />
                 </Section>
               )}
 

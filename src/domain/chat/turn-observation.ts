@@ -30,6 +30,15 @@ import {
 /** Cuánta sustancia trae el mensaje, relativa al nivel del aprendiz. */
 export type Substance = "none" | "thin" | "full";
 
+/**
+ * Veredicto de coherencia del mensaje (H3): tres preguntas de la rúbrica en
+ * una sola etiqueta — ¿se entiende?, ¿responde a lo que Emma preguntó?,
+ * ¿pertenece a la escena? "clear" cubre las tres; "unclear" falla la primera o
+ * la segunda (no se entiende o no contesta); "off-topic" se entiende y
+ * contesta ALGO, pero no pertenece a esta conversación.
+ */
+export type Coherence = "clear" | "unclear" | "off-topic";
+
 export interface TurnObservation {
   /** Ítem del checklist que este mensaje contesta, o null si ninguno. */
   answersItem: string | null;
@@ -37,6 +46,7 @@ export interface TurnObservation {
   negative: boolean;
   intent: LearnerIntent;
   substance: Substance;
+  coherence: Coherence;
   /**
    * Quién etiquetó: el juez LLM o la red determinista. Observable a propósito —
    * el primer despliegue del juez falló EN SILENCIO (hacía cola detrás del
@@ -67,13 +77,20 @@ export function buildObservationPrompt(args: ObservationPromptArgs): string {
     `Learner said: "${args.message}"\n` +
     `Open topics — ${topics || "(none)"}\n` +
     'Return ONLY JSON: {"answers":"<topic id or none>","negative":true|false,' +
-    '"kind":"scene|help|greeting","substance":"none|thin|full"}\n' +
+    '"kind":"scene|help|greeting","substance":"none|thin|full",' +
+    '"coherence":"clear|unclear|off-topic"}\n' +
     '- "answers": the topic this message answers, or "none".\n' +
     '- "negative": true if it says no / nothing / declines the topic, however phrased.\n' +
     '- "kind": "help" if they ask about English or the exercise, or write Spanish; ' +
     '"greeting" if it is ONLY a greeting; else "scene".\n' +
     `- "substance": work detail relative to a ${args.level} learner — ` +
-    '"full" real detail, "thin" answers with little, "none" filler or a bare no.'
+    '"full" real detail, "thin" answers with little, "none" filler or a bare no.\n' +
+    '- "coherence": judge three things — can you tell what they mean; does it respond to what ' +
+    "the agent just asked; does it belong to this scene. Be generous: this is a learner, so " +
+    'grammar mistakes or broken English with a guessable meaning are still "clear", and ' +
+    'answering another topic of this scene is "clear" too. "unclear" ONLY if you genuinely ' +
+    'cannot tell what they mean or it makes no sense as a reply; "off-topic" if it is ' +
+    "understandable but about something unrelated to this scene. When in doubt, \"clear\"."
   );
 }
 
@@ -84,6 +101,7 @@ const KIND_TO_INTENT: Record<string, LearnerIntent> = {
 };
 
 const SUBSTANCES: readonly Substance[] = ["none", "thin", "full"];
+const COHERENCES: readonly Coherence[] = ["clear", "unclear", "off-topic"];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -117,7 +135,15 @@ export function parseObservation(raw: string, validItemIds: readonly string[]): 
   const substance = SUBSTANCES.includes(data.substance as Substance)
     ? (data.substance as Substance)
     : "none";
-  return { answersItem, negative: data.negative, intent, substance, source: "judge" };
+  // Guarda de borde (FR-004): un valor que no venga o que el modelo invente
+  // cae a "clear" — ante la duda nunca se acusa. Saludo y meta son andamiaje
+  // de la conversación, no contenido de la escena: siempre clear, aunque el
+  // modelo derive y marque otra cosa.
+  const rawCoherence = COHERENCES.includes(data.coherence as Coherence)
+    ? (data.coherence as Coherence)
+    : "clear";
+  const coherence: Coherence = intent === "in-scene" ? rawCoherence : "clear";
+  return { answersItem, negative: data.negative, intent, substance, coherence, source: "judge" };
 }
 
 export interface FallbackArgs {
@@ -144,5 +170,41 @@ export function fallbackObservation(args: FallbackArgs): TurnObservation {
     }
   }
   const substance: Substance = negative ? "none" : isSubstantive(message) ? "full" : "none";
-  return { answersItem, negative, intent, substance, source: "heuristics" };
+  // La red nunca juzga coherencia (FR-004): sin el modelo no hay rúbrica que
+  // aplicar, y el peor caso posible es acusar en falso — así que siempre clear.
+  return { answersItem, negative, intent, substance, coherence: "clear", source: "heuristics" };
 }
+
+/**
+ * ¿Toca degradar "unclear" a "clear"? (FR-004: nunca dos turnos de aclaración
+ * seguidos — sentirse regañado por no entender, dos veces, rompe la escena
+ * más que dejar pasar una duda real). Sólo mira hacia atrás UN turno: el
+ * caller decide qué cuenta como "el turno anterior pidió aclaración" a partir
+ * de la directiva que de verdad se envió.
+ */
+export function resolveCoherence(coherence: Coherence, previousWasClarifying: boolean): Coherence {
+  if (coherence === "unclear" && previousWasClarifying) return "clear";
+  return coherence;
+}
+
+/**
+ * Directiva EN PERSONAJE para "unclear": Emma no entendió o el mensaje no
+ * contesta lo que preguntó. Nunca corrige gramática ni da clase — sólo dice,
+ * con sus propias palabras, que no sigue el hilo y ofrece una salida (pedir
+ * que lo repita de otra forma, o arriesgar una interpretación).
+ */
+export const UNCLEAR_CUE =
+  "You did not really follow what they meant — their message was hard to make sense of as a " +
+  "reply. Say, in your own natural words, that you're not sure you follow, " +
+  'and ask them to say it another way or take a guess — like "Sorry, I\'m not sure I follow — do ' +
+  'you mean...?" Do not correct their grammar and do not lecture: you are a colleague, not a teacher.';
+
+/**
+ * Directiva EN PERSONAJE para "off-topic": el mensaje se entiende, pero no
+ * pertenece a esta escena. Un roce breve y amable, no un reto — y de vuelta
+ * al objetivo de la conversación en la MISMA línea.
+ */
+export const OFF_TOPIC_CUE =
+  "What they just said does not really connect to this conversation. Acknowledge it briefly and " +
+  'warmly in one short clause, then steer back to the scene in the same line — like "Ha, fair ' +
+  'enough — anyway, back to..." Do not lecture them and do not just ignore what they said.';
