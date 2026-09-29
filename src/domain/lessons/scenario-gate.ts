@@ -32,3 +32,21 @@ export function canStartScenario(
   if (isTargetOfPendingScenario) return { allowed: true };
   return { allowed: false, reason: "pending_todos" };
 }
+
+export interface ScenarioSwitch {
+  target: string;
+  /** Escena abierta ahora en el chat. */
+  current: string;
+  todos: readonly LessonTodo[];
+  passedScenarios: readonly string[];
+}
+
+/**
+ * Cambio de escena desde el chat («Next scene», selector). Reiniciar la escena
+ * abierta siempre se permite: ya pasó el gate al entrar, y el trazado del
+ * chat puede no saber todavía que se acaba de superar.
+ */
+export function canSwitchScenario(change: ScenarioSwitch): ScenarioGateResult {
+  if (change.target === change.current) return { allowed: true };
+  return canStartScenario(change.target, change.todos, change.passedScenarios);
+}

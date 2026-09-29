@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { canStartScenario } from "../scenario-gate";
+import { canStartScenario, canSwitchScenario } from "../scenario-gate";
 import type { LessonTodo } from "../lesson-todo";
 
 const origin = {
@@ -63,5 +63,27 @@ describe("canStartScenario", () => {
       allowed: false,
       reason: "pending_todos",
     });
+  });
+});
+
+describe("canSwitchScenario — cambiar de escena desde el chat (#202)", () => {
+  const pendiente = [todo()];
+
+  it("reiniciar la escena que ya está abierta siempre se permite", () => {
+    expect(
+      canSwitchScenario({ target: "code_review", current: "code_review", todos: pendiente, passedScenarios: [] }),
+    ).toEqual({ allowed: true });
+  });
+
+  it("«Next scene» con lecciones pendientes queda bloqueado", () => {
+    expect(
+      canSwitchScenario({ target: "code_review", current: "daily_standup", todos: pendiente, passedScenarios: [] }),
+    ).toEqual({ allowed: false, reason: "pending_todos" });
+  });
+
+  it("sin lecciones pendientes, cambiar de escena sigue libre", () => {
+    expect(
+      canSwitchScenario({ target: "code_review", current: "daily_standup", todos: [], passedScenarios: [] }),
+    ).toEqual({ allowed: true });
   });
 });
