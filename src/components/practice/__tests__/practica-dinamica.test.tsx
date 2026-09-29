@@ -168,14 +168,15 @@ describe("laboratorio de sonidos", () => {
   const src = source("minimal-pair-lab.tsx");
 
   it("el botón de escuchar es visible con texto y se recrea por ítem (sin audio cacheado del anterior)", () => {
-    expect(src).toContain('label="Listen to the word"');
+    // H8: se escucha la ORACIÓN que contiene la palabra, no la palabra suelta.
+    expect(src).toContain('label="Listen to the sentence"');
     expect(src).toMatch(/<SpeakButton key=\{`speak-\$\{index\}/);
   });
 
-  it("guía la ronda en pasos: escuchar, elegir, pronunciar", () => {
-    expect(src).toContain("1 · Listen to the word");
+  it("guía la ronda en pasos: escuchar la oración, elegir, pronunciar la oración", () => {
+    expect(src).toContain("1 · Listen to the sentence");
     expect(src).toContain("2 · Which of the two did you hear?");
-    expect(src).toContain("3 · Now say it yourself");
+    expect(src).toContain("3 · Now say the sentence and check whether the machine understands");
   });
 
   it("el reto de shadowing se graba oración por oración, con pasos y aviso cuando no se oyó nada", () => {
