@@ -11,9 +11,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmma } from "@/interface/emma-context";
-import { SpeakButton } from "./speak-button";
+import { KaraokeLine } from "./karaoke-line";
 import { SUPPORTED_LANGUAGES } from "@/domain/translation/supported-language";
 import type { BilingualPair } from "@/domain/translation/translation-prompt";
+
+/** Solo el inglés (`source`) suena en karaoke; el destino queda estático debajo. */
+export function TranslationPairs({ pairs }: { pairs: BilingualPair[] }) {
+  return (
+    <div className="space-y-3">
+      {pairs.map((p, i) => (
+        <div key={i} className="space-y-1 rounded-lg border p-3 text-sm">
+          <KaraokeLine text={p.source} textClassName="text-muted-foreground" />
+          <p className="pl-9 font-medium">{p.target}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function TranslateDialog({ text, onClose }: { text: string | null; onClose: () => void }) {
   const { runtime } = useEmma();
@@ -52,15 +66,7 @@ export function TranslateDialog({ text, onClose }: { text: string | null; onClos
         </Select>
         <div className="space-y-3">
           {pairs === null && <Skeleton className="h-24 w-full" />}
-          {pairs?.map((p, i) => (
-            <div key={i} className="flex items-start gap-2 rounded-lg border p-3 text-sm">
-              <SpeakButton text={p.source} />
-              <div className="min-w-0 flex-1">
-                <p className="text-muted-foreground">{p.source}</p>
-                <p className="font-medium">{p.target}</p>
-              </div>
-            </div>
-          ))}
+          {pairs && <TranslationPairs pairs={pairs} />}
         </div>
       </DialogContent>
     </Dialog>
