@@ -36,6 +36,12 @@ describe("buildObservationPrompt", () => {
     expect(prompt).toContain("coherence");
     expect(prompt).toMatch(/clear.*unclear.*off-topic|clear\|unclear\|off-topic/i);
   });
+
+  it("es indulgente con el aprendiz: los errores de gramática y contestar otro tema de la escena siguen siendo clear", () => {
+    expect(prompt).toMatch(/grammar mistakes.*still "clear"/i);
+    expect(prompt).toMatch(/another topic of this scene.*"clear"/i);
+    expect(prompt).not.toMatch(/ignores what was asked/i);
+  });
 });
 
 describe("parseObservation — guarda de borde sobre lo que devuelve el modelo", () => {

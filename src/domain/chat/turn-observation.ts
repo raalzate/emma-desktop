@@ -85,10 +85,12 @@ export function buildObservationPrompt(args: ObservationPromptArgs): string {
     '"greeting" if it is ONLY a greeting; else "scene".\n' +
     `- "substance": work detail relative to a ${args.level} learner — ` +
     '"full" real detail, "thin" answers with little, "none" filler or a bare no.\n' +
-    '- "coherence": judge three things — is it understandable English with a clear meaning; ' +
-    "does it respond to what the agent just asked; does it belong to this scene. " +
-    '"clear" if yes to all; "unclear" if you cannot make sense of it or it ignores what was ' +
-    'asked; "off-topic" if it is understandable but about something unrelated to this scene.'
+    '- "coherence": judge three things — can you tell what they mean; does it respond to what ' +
+    "the agent just asked; does it belong to this scene. Be generous: this is a learner, so " +
+    'grammar mistakes or broken English with a guessable meaning are still "clear", and ' +
+    'answering another topic of this scene is "clear" too. "unclear" ONLY if you genuinely ' +
+    'cannot tell what they mean or it makes no sense as a reply; "off-topic" if it is ' +
+    "understandable but about something unrelated to this scene. When in doubt, \"clear\"."
   );
 }
 
@@ -192,8 +194,8 @@ export function resolveCoherence(coherence: Coherence, previousWasClarifying: bo
  * que lo repita de otra forma, o arriesgar una interpretación).
  */
 export const UNCLEAR_CUE =
-  "You did not really follow what they meant — their message was hard to understand or did not " +
-  "answer what you just asked. Say, in your own natural words, that you're not sure you follow, " +
+  "You did not really follow what they meant — their message was hard to make sense of as a " +
+  "reply. Say, in your own natural words, that you're not sure you follow, " +
   'and ask them to say it another way or take a guess — like "Sorry, I\'m not sure I follow — do ' +
   'you mean...?" Do not correct their grammar and do not lecture: you are a colleague, not a teacher.';
 
