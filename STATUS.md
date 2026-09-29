@@ -8,25 +8,20 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.6.0 (2026-09-29, marcada Latest): milestones v0.5.0 y
-  v0.6.0 más el fix #188. v0.1.0 quedó retirada de hecho (dmg roto, gotcha 2026-08-31) y
-  v0.1.1 sigue en BORRADOR con sus 3 instaladores. Publicar un borrador sigue siendo gesto
-  del humano.
+- **Último release publicado:** v0.8.0 (2026-09-29, marcada Latest, 3 instaladores): UI
+  en inglés (v0.7.0), gramática correcta en Teach me (#193/#194) y la feature #195
+  «práctica guiada y conversación coherente» (coherencia del turno, prácticas que
+  desbloquean la ruta, Práctica en subpáginas, karaoke reutilizable, ondas en vivo, pares
+  mínimos en oraciones; PR #201). Antes, el mismo día: v0.7.0 (UI en inglés, #192) y
+  v0.6.0. v0.1.0 quedó retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1 sigue en
+  BORRADOR con sus 3 instaladores. Publicar un borrador sigue siendo gesto del humano.
+- **Pendiente de #195:** T7 (#203), vistas de PFA (requiere la app conectada).
 - **Milestone v0.5.0 fusionado (2026-09-25):** lección en karaoke con audio al lado, escena
   visible en modal durante el chat, correcciones triviales fuera del feedback, gramática con
   tres formas y verbos resaltados, lista de lecciones («Mis lecciones» en Práctica), turnos
   con voz obligatoria y corrector ortográfico en inglés en todas las plataformas (issues
   #167–#174, #182; PRs #175–#179, #181, #185). Más **v0.6.0**: prácticas dinámicas (#183,
   PR #184).
-- **v0.7.0 quedó en BORRADOR sin publicar** (tag sobre #192): la reemplaza v0.8.0, que trae
-  todo lo suyo más el arreglo de gramática de «Teach me» (#194).
-- **Release v0.8.0 en curso (2026-09-29):** `package.json` en 0.8.0 y notas en
-  `docs/releases/0.8.0.md`: todo desde v0.6.0 — UI en inglés (v0.7.0), gramática correcta
-  en Teach me (#193/#194) y la feature #195 «práctica guiada y conversación coherente»
-  (coherencia del turno, prácticas que desbloquean la ruta, Práctica en subpáginas,
-  karaoke reutilizable, ondas en vivo, pares mínimos en oraciones; PR #201). El tag
-  `v0.8.0` se crea sobre `main` tras fusionar; publicar el borrador es gesto del humano.
-  Pendiente de #195: T7 (#203) vistas de PFA.
 - **Vitrina pública:** https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
   botones de descarga apuntan a la última release publicada (la API de GitHub los
