@@ -2,11 +2,18 @@ import { describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
+import type { LessonTodo } from "@/domain/lessons/lesson-todo";
 import { PathwayHome } from "@/components/progress/pathway-home";
 
 // El hook de datos se mockea: la prueba valida el markup, no el IO del runtime.
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
+}));
+
+// Lecciones pendientes mockeadas: por defecto ninguna (comportamiento actual).
+let mockPendingTodos: LessonTodo[] = [];
+vi.mock("@/components/lessons/use-lesson-todos", () => ({
+  useLessonTodos: () => ({ todos: mockPendingTodos }),
 }));
 
 vi.mock("@/components/progress/use-progress-data", () => {
@@ -73,5 +80,27 @@ describe("PathwayHome (rediseño Café sereno, FR-023/FR-024)", () => {
 
   it("omite la pill de racha: el dominio aún no expone ese dato (FR-024)", () => {
     expect(render()).not.toMatch(/racha|streak/i);
+  });
+});
+
+describe("PathwayHome — gate de lecciones pendientes (FR-006, #198)", () => {
+  it("con una lección pendiente ajena a la recomendación, bloquea la ruta y el CTA", () => {
+    mockPendingTodos = [
+      {
+        id: "exercise:u13-fill:1",
+        kind: "exercise",
+        target: "u13-fill",
+        titleEs: "Ejercicio",
+        reasonEs: "razón",
+        href: "/practice?tab=exercises&unit=13&exercise=u13-fill",
+        origin: { sessionAt: 1, scenarioType: "s1", scenarioTitle: "Ordering Coffee" },
+        status: "pending",
+        createdAt: 1,
+      },
+    ];
+    const html = render();
+    mockPendingTodos = [];
+    expect(html).toContain("Finish your pending lessons to unlock the next scene");
+    expect(html).toContain("disabled");
   });
 });

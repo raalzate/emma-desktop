@@ -15,7 +15,10 @@
 import { useRouter } from "next/navigation";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
 import { pathwayPassedCount, pathwayTotal } from "@/domain/pathway/pathway";
+import { isPathwayItemPassed } from "@/domain/pathway/pathway-item";
 import { nextLevel } from "@/domain/cefr/cefr-ladder";
+import { canStartScenario } from "@/domain/lessons/scenario-gate";
+import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
 import { useProgressData } from "./use-progress-data";
 import { currentPathway } from "./pathway-select";
 import { PathwayTrail } from "./pathway-trail";
@@ -27,6 +30,7 @@ import { RecommendedNext } from "./recommended-next";
 export function PathwayHome({ runtime, level }: { runtime: EmmaRuntime; level: string }) {
   const router = useRouter();
   const { roadmap, recommendation, loading } = useProgressData(runtime, level);
+  const { todos } = useLessonTodos();
 
   const openScene = (scenarioType: string) =>
     router.push(`/chat/?scenario=${encodeURIComponent(scenarioType)}`);
@@ -37,6 +41,11 @@ export function PathwayHome({ runtime, level }: { runtime: EmmaRuntime; level: s
   const total = pathwayTotal(pathway);
   const percent = total ? Math.round((passed / total) * 100) : 0;
   const goal = nextLevel(level);
+  // La recomendación bloqueada no ofrece su CTA de práctica (FR-006).
+  const passedScenarios = pathway.items.filter(isPathwayItemPassed).map((i) => i.scenarioType);
+  const recommendationBlocked = recommendation
+    ? !canStartScenario(recommendation.scenarioType, todos, passedScenarios).allowed
+    : false;
 
   return (
     <main className="mx-auto w-full max-w-6xl space-y-8 p-6 pb-16">
@@ -62,11 +71,16 @@ export function PathwayHome({ runtime, level }: { runtime: EmmaRuntime; level: s
           pathway={pathway}
           recommendedType={recommendation?.scenarioType}
           onSelect={openScene}
+          todos={todos}
         />
         <PathwayProgress pathway={pathway} level={level} />
       </section>
 
-      <RecommendedNext recommendation={recommendation} onPractice={openScene} />
+      <RecommendedNext
+        recommendation={recommendation}
+        onPractice={openScene}
+        blocked={recommendationBlocked}
+      />
     </main>
   );
 }

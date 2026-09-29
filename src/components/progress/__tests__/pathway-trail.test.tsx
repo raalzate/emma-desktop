@@ -3,6 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PathwayStatus } from "@/domain/pathway/pathway-status";
 import type { Pathway } from "@/domain/pathway/pathway";
+import type { LessonTodo } from "@/domain/lessons/lesson-todo";
 import { PathwayTrail } from "@/components/progress/pathway-trail";
 
 // Catálogo mockeado: la prueba controla la categoría sin depender del catálogo real.
@@ -77,5 +78,63 @@ describe("PathwayTrail (rediseño Café sereno, FR-026)", () => {
     expect(html).not.toContain("In progress");
     expect(html).toContain("Next");
     expect(html).toContain("Locked");
+  });
+});
+
+const origin = {
+  sessionAt: 1,
+  scenarioType: "s1",
+  scenarioTitle: "Ordering Coffee",
+};
+
+function unrelatedTodo(): LessonTodo {
+  return {
+    id: "exercise:u13-fill:1",
+    kind: "exercise",
+    target: "u13-fill",
+    titleEs: "Ejercicio",
+    reasonEs: "razón",
+    href: "/practice?tab=exercises&unit=13&exercise=u13-fill",
+    origin,
+    status: "pending",
+    createdAt: 1,
+  };
+}
+
+function renderWithGate(todos: LessonTodo[]): string {
+  return renderToStaticMarkup(
+    createElement(PathwayTrail, { pathway, recommendedType: "s2", onSelect: () => {}, todos }),
+  );
+}
+
+describe("PathwayTrail — gate de lecciones pendientes (FR-006, #198)", () => {
+  it("sin lecciones pendientes, todas las escenas son clicables", () => {
+    const html = renderWithGate([]);
+    expect(html.match(/<button/g) ?? []).toHaveLength(4);
+  });
+
+  it("con una lección pendiente sin escenario objetivo, solo la escena ya superada sigue clicable", () => {
+    const html = renderWithGate([unrelatedTodo()]);
+    // s1 ya está superada (repaso libre); s2/s3/s4 quedan bloqueadas.
+    expect(html.match(/<button/g) ?? []).toHaveLength(1);
+    expect(html).toContain("Finish your pending lessons to unlock the next scene");
+    expect(html).toContain('href="/practice"');
+  });
+
+  it("la escena objetivo de una lección pendiente de tipo escenario sigue clicable", () => {
+    const withScenarioTodo: LessonTodo = {
+      ...unrelatedTodo(),
+      id: "scenario:s3:1",
+      kind: "scenario",
+      target: "s3",
+    };
+    const html = renderWithGate([unrelatedTodo(), withScenarioTodo]);
+    // s1 (superada) + s3 (objetivo de la lección pendiente) = 2 clicables.
+    expect(html.match(/<button/g) ?? []).toHaveLength(2);
+  });
+
+  it("el nodo bloqueado lleva tooltip en español", () => {
+    const html = renderWithGate([unrelatedTodo()]);
+    expect(html).toContain("Termina tus lecciones pendientes");
   });
 });
