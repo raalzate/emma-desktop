@@ -16,6 +16,7 @@ import { useTypeahead } from "./use-typeahead";
 import { useSuggestions } from "./use-suggestions";
 import { SuggestionChips } from "./suggestion-chips";
 import { useVoiceInput } from "./use-voice-input";
+import { LiveWaveform } from "./live-waveform";
 import type { VoiceRequirement } from "@/domain/chat/voice-requirement";
 
 interface Props {
@@ -96,6 +97,12 @@ export function Composer({
     <div className="border-t border-border bg-background px-4 py-3 lg:px-6">
       <div className="w-full">
         <SuggestionChips suggestions={suggestions} />
+        {voice.recording && (
+          <div className="mb-2 flex items-center gap-2 rounded-[10px] bg-accent-soft px-3 py-2">
+            <span className="text-xs font-medium text-accent">Recording…</span>
+            <LiveWaveform stream={voice.stream ?? null} bars={24} className="flex h-5 flex-1 items-center gap-0.5" />
+          </div>
+        )}
         <div className="flex items-end gap-2">
           {/* Superficie blanca con borde y radio 14px (FR-022). */}
           <div className="relative flex-1 rounded-[14px] border border-border bg-card">

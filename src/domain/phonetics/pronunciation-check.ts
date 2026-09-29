@@ -133,3 +133,38 @@ export function splitSentences(text: string): string[] {
 export function heardNothing(result: PronunciationCheckResult): boolean {
   return result.verdicts.every((v) => v.heard === null);
 }
+
+/**
+ * Veredicto de "Say it" por oración (H8): se pide leer una frase completa,
+ * pero lo que importa es si la máquina reconoció la PALABRA OBJETIVO dentro
+ * de esa frase, más el porcentaje general de inteligibilidad de la oración.
+ */
+export interface TargetWordVerdict {
+  targetWord: string;
+  targetHeard: string | null;
+  targetOk: boolean;
+  overall: PronunciationCheckResult;
+}
+
+/**
+ * Compara `transcript` contra `sentence` con `checkPronunciation` y extrae el
+ * veredicto de la palabra objetivo dentro de esa alineación.
+ */
+export function checkTargetWordInSentence(
+  sentence: string,
+  targetWord: string,
+  transcript: string,
+): TargetWordVerdict {
+  const overall = checkPronunciation(sentence, transcript);
+  const normalizedTarget = normalizeSpoken(targetWord);
+  const verdict = overall.verdicts.find((v) => v.expected === normalizedTarget);
+  if (!verdict) {
+    throw new Error(`targetWord "${targetWord}" no aparece en sentence "${sentence}"`);
+  }
+  return {
+    targetWord: normalizedTarget,
+    targetHeard: verdict.heard,
+    targetOk: verdict.ok,
+    overall,
+  };
+}

@@ -37,13 +37,16 @@ export function useVoiceInput(
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
   const [available, setAvailable] = useState(true);
+  // El stream en vivo se expone para dibujar la onda mientras se graba
+  // (LiveWaveform); nulo fuera de una grabación activa.
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
   async function start() {
-    let stream: MediaStream;
+    let mediaStream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
       // Sin micrófono o sin permiso: la UI necesita saberlo para ofrecer la
       // salida de emergencia en un turno obligatoriamente hablado.
@@ -51,11 +54,13 @@ export function useVoiceInput(
       onProblem?.("The microphone couldn’t be used: check the system permission.");
       return;
     }
-    const rec = new MediaRecorder(stream);
+    setStream(mediaStream);
+    const rec = new MediaRecorder(mediaStream);
     chunksRef.current = [];
     rec.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
     rec.onstop = async () => {
-      stream.getTracks().forEach((t) => t.stop());
+      mediaStream.getTracks().forEach((t) => t.stop());
+      setStream(null);
       setBusy(true);
       try {
         const blob = new Blob(chunksRef.current, { type: rec.mimeType });
@@ -82,5 +87,5 @@ export function useVoiceInput(
     setRecording(false);
   }
 
-  return { recording, busy, available, toggle: () => (recording ? stop() : void start()) };
+  return { recording, busy, available, stream, toggle: () => (recording ? stop() : void start()) };
 }
