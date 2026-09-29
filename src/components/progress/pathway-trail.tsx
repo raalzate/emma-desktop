@@ -19,8 +19,11 @@ import { Check, Lock, Play } from "lucide-react";
 import { isPathwayItemPassed, type PathwayItem } from "@/domain/pathway/pathway-item";
 import type { Pathway } from "@/domain/pathway/pathway";
 import { getScenario } from "@/domain/scenarios/scenario-catalog";
+import { canStartScenario } from "@/domain/lessons/scenario-gate";
+import type { LessonTodo } from "@/domain/lessons/lesson-todo";
 import { cn } from "@/lib/utils";
 import { CATEGORY_VISUALS, visualFor } from "./category-visuals";
+import { PendingLessonsNotice } from "./pending-lessons-notice";
 
 // Geometría del trazado. La X va en porcentaje del ancho (el SVG se estira con
 // preserveAspectRatio="none"), así los nodos y la línea coinciden a cualquier tamaño.
@@ -71,8 +74,9 @@ const STATE_LABEL: Record<NodeState, string> = {
   locked: "Locked",
 };
 
-/** Forma del nodo según su estado (el color de categoría solo tiñe «siguiente»). */
-function shapeClass(state: NodeState, categoryText: string): string {
+/** Forma del nodo según su estado (el color de categoría solo tiñe «siguiente»); bloqueada por FR-006 pisa cualquier estado visual. */
+function shapeClass(state: NodeState, categoryText: string, blocked: boolean): string {
+  if (blocked) return "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-transparent bg-secondary text-muted-foreground";
   return cn(
     "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2",
     state === "completed" && "border-primary bg-primary text-primary-foreground",
@@ -86,11 +90,14 @@ export function PathwayTrail({
   pathway,
   recommendedType,
   onSelect,
+  todos = [],
 }: {
   pathway: Pathway;
   recommendedType?: string | null;
   /** Si se pasa, cada nodo entra a esa escena; si no, el trazado es solo lectura. */
   onSelect?: (scenarioType: string) => void;
+  /** Lecciones pendientes: con al menos una, sólo repasos y objetivos pendientes se pueden abrir (FR-006). */
+  todos?: readonly LessonTodo[];
 }) {
   const items = pathway.items;
   if (items.length === 0) {
@@ -99,6 +106,9 @@ export function PathwayTrail({
   const height = yAt(items.length - 1) + TOP_PAD;
   const states = trailStates(items, recommendedType);
   const visuals = items.map((item) => visualFor(getScenario(item.scenarioType)?.category));
+  const passedScenarios = items.filter(isPathwayItemPassed).map((i) => i.scenarioType);
+  const gates = items.map((item) => canStartScenario(item.scenarioType, todos, passedScenarios));
+  const anyBlocked = gates.some((g) => !g.allowed);
   // Solo se listan en la leyenda las categorías que aparecen en este nivel.
   const legend = Object.entries(CATEGORY_VISUALS).filter(([key]) =>
     items.some((i) => getScenario(i.scenarioType)?.category === key),
@@ -137,25 +147,27 @@ export function PathwayTrail({
           const visual = visuals[i];
           const Icon = visual.icon;
           const labelLeft = xAt(i) > CENTER_X;
+          const blocked = !gates[i].allowed;
           const face = (
             <>
-              {state === "completed" && <Check className="h-5 w-5" />}
-              {state === "current" && <Play className="h-5 w-5" />}
-              {state === "next" && <Icon className="h-5 w-5" />}
-              {state === "locked" && <Lock className="h-4 w-4" />}
+              {blocked && <Lock className="h-4 w-4" />}
+              {!blocked && state === "completed" && <Check className="h-5 w-5" />}
+              {!blocked && state === "current" && <Play className="h-5 w-5" />}
+              {!blocked && state === "next" && <Icon className="h-5 w-5" />}
+              {!blocked && state === "locked" && <Lock className="h-4 w-4" />}
               <span className="sr-only">
-                {item.title} — {visual.label} — {STATE_LABEL[state]}
+                {item.title} — {visual.label} — {blocked ? "Blocked" : STATE_LABEL[state]}
               </span>
             </>
           );
-          const shape = shapeClass(state, visual.text);
+          const shape = shapeClass(state, visual.text, blocked);
           return (
             <div
               key={item.scenarioType}
               className="absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-3"
               style={{ left: `${xAt(i)}%`, top: yAt(i), flexDirection: labelLeft ? "row-reverse" : "row" }}
             >
-              {onSelect ? (
+              {onSelect && !blocked && (
                 <button
                   type="button"
                   title={"Abre la escena «" + item.title + "» para practicarla ahora"}
@@ -167,14 +179,21 @@ export function PathwayTrail({
                 >
                   {face}
                 </button>
-              ) : (
-                <span className={shape}>{face}</span>
               )}
+              {onSelect && blocked && (
+                <span
+                  title={"Termina tus lecciones pendientes en «Mis lecciones» para desbloquear «" + item.title + "»"}
+                  className={cn(shape, "cursor-not-allowed")}
+                >
+                  {face}
+                </span>
+              )}
+              {!onSelect && <span className={shape}>{face}</span>}
               <span className={cn("w-36 leading-tight", labelLeft ? "text-right" : "text-left")}>
                 <span
                   className={cn(
                     "block truncate text-xs font-medium",
-                    state === "locked" && "text-muted-foreground",
+                    (blocked || state === "locked") && "text-muted-foreground",
                   )}
                   title={item.title}
                 >
@@ -183,16 +202,18 @@ export function PathwayTrail({
                 <span
                   className={cn(
                     "block font-code text-[10px] uppercase tracking-wide",
-                    state === "current" ? "text-accent" : "text-muted-foreground",
+                    !blocked && state === "current" ? "text-accent" : "text-muted-foreground",
                   )}
                 >
-                  {STATE_LABEL[state]}
+                  {blocked ? "Locked" : STATE_LABEL[state]}
                 </span>
               </span>
             </div>
           );
         })}
       </div>
+
+      {anyBlocked && <PendingLessonsNotice />}
 
       <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2" aria-label="Scene types">
         {legend.map(([key, visual]) => {

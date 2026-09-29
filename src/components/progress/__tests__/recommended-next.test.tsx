@@ -60,3 +60,27 @@ describe("RecommendedNext (rediseño Café sereno, FR-028)", () => {
     expect(html).not.toContain("Practice now");
   });
 });
+
+describe("RecommendedNext — bloqueada por lecciones pendientes (FR-006, #198)", () => {
+  function renderBlocked(): string {
+    return renderToStaticMarkup(
+      createElement(RecommendedNext, {
+        recommendation: recomendacion,
+        onPractice: vi.fn(),
+        blocked: true,
+      }),
+    );
+  }
+
+  it("el CTA de práctica queda deshabilitado con tooltip en español", () => {
+    const html = renderBlocked();
+    expect(html).toContain("disabled");
+    expect(html).toContain("Termina tus lecciones pendientes");
+  });
+
+  it("muestra el aviso de lecciones pendientes con enlace a Mis lecciones", () => {
+    const html = renderBlocked();
+    expect(html).toContain("Finish your pending lessons to unlock the next scene");
+    expect(html).toMatch(/href="\/practice\/?"/);
+  });
+});
