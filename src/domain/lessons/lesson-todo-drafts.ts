@@ -7,6 +7,7 @@
  * Dominio puro: sólo datos, ninguna navegación.
  */
 
+import { practiceHrefFor as routeHrefFor } from "@/domain/practice/practice-deeplink";
 import type { PracticeRecommendation } from "@/domain/tutor/practice-recommender";
 import type { LessonTodoDraft, LessonTodoOrigin } from "./lesson-todo";
 
@@ -14,13 +15,13 @@ import type { LessonTodoDraft, LessonTodoOrigin } from "./lesson-todo";
 export function practiceHrefFor(rec: PracticeRecommendation): string | null {
   switch (rec.kind) {
     case "exercise":
-      return `/practice?tab=exercises&unit=${rec.unit}&exercise=${rec.exerciseId}`;
+      return routeHrefFor("exercises", { unit: rec.unit, exercise: rec.exerciseId });
     case "srs-review":
-      return "/practice?tab=srs";
+      return routeHrefFor("srs");
     case "minimal-pair":
-      return `/practice?tab=pronunciation&contrast=${rec.contrastId}`;
+      return routeHrefFor("pronunciation", { contrast: rec.contrastId });
     case "checklist":
-      return `/practice?tab=assessment&level=${rec.level}`;
+      return routeHrefFor("self-assessment", { level: rec.level });
     case "scenario":
       return null;
   }
@@ -75,7 +76,7 @@ export function draftFromChallenge(
     target: `unit-${challenge.unit}`,
     titleEs: `Unit ${challenge.unit} challenge`,
     reasonEs: challenge.instructionsEs,
-    href: `/practice?tab=challenges&unit=${challenge.unit}`,
+    href: routeHrefFor("challenges", { unit: challenge.unit }),
     origin,
   };
 }

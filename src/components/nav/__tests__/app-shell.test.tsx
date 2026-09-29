@@ -75,3 +75,38 @@ describe("AppShell", () => {
     expect(html).toContain("<main");
   });
 });
+
+// H6 (#199): las seis secciones de Práctica son rutas propias; el submenú
+// de la barra lateral es el único lugar donde siguen viéndose juntas.
+describe("submenú de Práctica", () => {
+  it("no se ve fuera de /practice", () => {
+    ruta.pathname = "/";
+    const html = render();
+    expect(html).not.toContain("/practice/exercises");
+  });
+
+  it("lista las seis secciones cuando la ruta empieza con /practice", () => {
+    ruta.pathname = "/practice";
+    const html = render();
+    for (const href of [
+      "/practice/exercises",
+      "/practice/review",
+      "/practice/pronunciation",
+      "/practice/plan",
+      "/practice/self-check",
+      "/practice/challenges",
+    ]) {
+      expect(anclaDe(html, href), href).not.toBe("");
+    }
+    for (const label of ["Exercises", "Review", "Pronunciation", "Study plan", "Self-check", "Challenges"]) {
+      expect(html).toContain(label);
+    }
+  });
+
+  it("marca como activa la sección de la subruta actual", () => {
+    ruta.pathname = "/practice/review";
+    const html = render();
+    expect(anclaDe(html, "/practice/review")).toContain("bg-primary-soft");
+    expect(anclaDe(html, "/practice/exercises")).not.toContain("bg-primary-soft");
+  });
+});

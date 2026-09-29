@@ -13,16 +13,16 @@ describe("draftFromRecommendation — cada recomendación sabe su destino", () =
   const casos: Array<[PracticeRecommendation, string]> = [
     [
       { kind: "exercise", exerciseId: "u13-fill", unit: 13, reasonEs: "artículos" },
-      "/practice?tab=exercises&unit=13&exercise=u13-fill",
+      "/practice/exercises/?unit=13&exercise=u13-fill",
     ],
-    [{ kind: "srs-review", due: 7, reasonEs: "repaso" }, "/practice?tab=srs"],
+    [{ kind: "srs-review", due: 7, reasonEs: "repaso" }, "/practice/review/"],
     [
       { kind: "minimal-pair", contrastId: "i-vs-ii", reasonEs: "vocales" },
-      "/practice?tab=pronunciation&contrast=i-vs-ii",
+      "/practice/pronunciation/?contrast=i-vs-ii",
     ],
     [
       { kind: "checklist", level: "B1", reasonEs: "checklist" },
-      "/practice?tab=assessment&level=B1",
+      "/practice/self-check/?level=B1",
     ],
     [
       { kind: "scenario", scenarioType: "sprint_planning", reasonEs: "escenario" },
@@ -54,7 +54,7 @@ describe("draftFromChallenge", () => {
   it("anota el reto de la unidad con su destino y su consigna", () => {
     const draft = draftFromChallenge({ unit: 16, instructionsEs: "Escribe tu update" }, origin);
     expect(draft.kind).toBe("challenge");
-    expect(draft.href).toBe("/practice?tab=challenges&unit=16");
+    expect(draft.href).toBe("/practice/challenges/?unit=16");
     expect(draft.titleEs).toContain("16");
     expect(draft.reasonEs).toBe("Escribe tu update");
   });
