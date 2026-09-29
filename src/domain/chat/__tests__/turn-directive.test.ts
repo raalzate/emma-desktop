@@ -121,4 +121,52 @@ describe("buildTurnDirective", () => {
     });
     expect(d).toContain("You already know");
   });
+
+  it("ante un mensaje unclear pide seguir el hilo, en personaje, y NO avanza el tema", () => {
+    const d = buildTurnDirective({
+      ...base,
+      state: standupAfterFirstAnswer(),
+      coherence: "unclear",
+    });
+    expect(d.toLowerCase()).toContain("not sure i follow");
+    expect(d).not.toContain("ask ONLY about");
+  });
+
+  it("ante un mensaje off-topic lo reconoce en una frase y vuelve a la escena", () => {
+    const d = buildTurnDirective({
+      ...base,
+      state: standupAfterFirstAnswer(),
+      coherence: "off-topic",
+    });
+    expect(d.toLowerCase()).toContain("back to");
+    expect(d).not.toContain("ask ONLY about");
+  });
+
+  it("la reparación explícita (meta) manda sobre un veredicto unclear inferido", () => {
+    const d = buildTurnDirective({
+      ...base,
+      state: standupAfterFirstAnswer(),
+      intent: "meta",
+      coherence: "unclear",
+    });
+    expect(d.toLowerCase()).toContain("simpler words");
+    expect(d.toLowerCase()).not.toContain("not sure i follow");
+  });
+
+  it("unclear/off-topic mandan sobre wrapUp: cortar a quien no se entendió es peor que alargar un turno", () => {
+    const d = buildTurnDirective({
+      ...base,
+      state: standupAfterFirstAnswer(),
+      coherence: "unclear",
+      wrapUp: true,
+    });
+    expect(d.toLowerCase()).toContain("not sure i follow");
+    expect(d.toLowerCase()).not.toContain("do not ask any further questions");
+  });
+
+  it("sin coherence explícito el comportamiento por defecto es clear (no cambia nada)", () => {
+    const d = buildTurnDirective({ ...base, state: standupAfterFirstAnswer() });
+    expect(d.toLowerCase()).not.toContain("not sure i follow");
+    expect(d).toContain("their plan for TODAY");
+  });
 });

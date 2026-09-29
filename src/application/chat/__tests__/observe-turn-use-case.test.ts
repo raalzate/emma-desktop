@@ -26,6 +26,7 @@ describe("observeTurn — LLM juzga, código decide", () => {
       negative: true,
       intent: "in-scene",
       substance: "none",
+      coherence: "clear",
       source: "judge",
     });
   });
@@ -62,5 +63,42 @@ describe("observeTurn — LLM juzga, código decide", () => {
     const obs = await observeTurn({ llm, ...base, state: null });
     expect(llamadas).toBe(0);
     expect(obs.answersItem).toBeNull();
+  });
+
+  it("pasa a través el veredicto de coherencia del modelo (H3)", async () => {
+    const llm: LlmGenerate = async () =>
+      '{"answers":"none","negative":false,"kind":"scene","substance":"thin","coherence":"unclear"}';
+    const obs = await observeTurn({ llm, ...base });
+    expect(obs.coherence).toBe("unclear");
+  });
+
+  it("degrada a clear si el turno anterior ya pidió aclaración (no dos veces seguidas, FR-004)", async () => {
+    const llm: LlmGenerate = async () =>
+      '{"answers":"none","negative":false,"kind":"scene","substance":"thin","coherence":"unclear"}';
+    const obs = await observeTurn({ llm, ...base, previousWasClarifying: true });
+    expect(obs.coherence).toBe("clear");
+  });
+
+  it("la red heurística nunca acusa: timeout, error o basura del modelo caen a coherence clear", async () => {
+    const timeoutObs = await observeTurn({
+      llm: () => new Promise(() => {}),
+      ...base,
+      timeoutMs: 30,
+    });
+    expect(timeoutObs.coherence).toBe("clear");
+
+    const garbageObs = await observeTurn({
+      llm: async () => "I cannot help with that.",
+      ...base,
+    });
+    expect(garbageObs.coherence).toBe("clear");
+
+    const throwingObs = await observeTurn({
+      llm: async () => {
+        throw new Error("engine busy");
+      },
+      ...base,
+    });
+    expect(throwingObs.coherence).toBe("clear");
   });
 });

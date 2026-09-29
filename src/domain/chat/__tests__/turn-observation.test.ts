@@ -3,6 +3,7 @@ import {
   buildObservationPrompt,
   fallbackObservation,
   parseObservation,
+  resolveCoherence,
 } from "../turn-observation";
 import { advanceScene, createSceneState } from "../scene-state";
 
@@ -30,6 +31,11 @@ describe("buildObservationPrompt", () => {
     expect(prompt).toMatch(/ONLY JSON/i);
     expect(prompt).toContain("A1");
   });
+
+  it("pide la rúbrica de coherencia: entendible, responde a lo preguntado, pertenece a la escena", () => {
+    expect(prompt).toContain("coherence");
+    expect(prompt).toMatch(/clear.*unclear.*off-topic|clear\|unclear\|off-topic/i);
+  });
 });
 
 describe("parseObservation — guarda de borde sobre lo que devuelve el modelo", () => {
@@ -46,7 +52,46 @@ describe("parseObservation — guarda de borde sobre lo que devuelve el modelo",
       intent: "in-scene",
       substance: "none",
       source: "judge",
+      // Sin campo "coherence" en la respuesta del modelo: nunca se acusa por
+      // defecto (FR-004).
+      coherence: "clear",
     });
+  });
+
+  it("acepta coherence del modelo cuando el mensaje es de escena (in-scene)", () => {
+    const unclear = parseObservation(
+      '{"answers":"none","negative":false,"kind":"scene","substance":"none","coherence":"unclear"}',
+      ids,
+    );
+    expect(unclear?.coherence).toBe("unclear");
+
+    const offTopic = parseObservation(
+      '{"answers":"none","negative":false,"kind":"scene","substance":"thin","coherence":"off-topic"}',
+      ids,
+    );
+    expect(offTopic?.coherence).toBe("off-topic");
+  });
+
+  it("un coherence inventado por el modelo cae a clear (FR-004: ante la duda, nunca se acusa)", () => {
+    const obs = parseObservation(
+      '{"answers":"none","negative":false,"kind":"scene","substance":"none","coherence":"confused"}',
+      ids,
+    );
+    expect(obs?.coherence).toBe("clear");
+  });
+
+  it("saludo o meta siempre es coherence clear, aunque el modelo derive: son andamiaje, no contenido a juzgar", () => {
+    const greeting = parseObservation(
+      '{"answers":"none","negative":false,"kind":"greeting","substance":"none","coherence":"off-topic"}',
+      ids,
+    );
+    expect(greeting?.coherence).toBe("clear");
+
+    const meta = parseObservation(
+      '{"answers":"none","negative":false,"kind":"help","substance":"none","coherence":"unclear"}',
+      ids,
+    );
+    expect(meta?.coherence).toBe("clear");
   });
 
   it("tolera texto alrededor del JSON (modelo pequeño)", () => {
@@ -119,5 +164,29 @@ describe("fallbackObservation — las heurísticas viejas, ahora como red", () =
     });
     expect(obs.intent).toBe("meta");
     expect(obs.answersItem).toBeNull();
+  });
+
+  it("la red nunca acusa de incoherente: coherence siempre clear (FR-004)", () => {
+    const obs = fallbackObservation({
+      message: "asdkjf random gibberish about spaceships",
+      state: standup(),
+      lastAgentLine: "What did you do yesterday?",
+    });
+    expect(obs.coherence).toBe("clear");
+  });
+});
+
+describe("resolveCoherence — no pedir aclaración dos turnos seguidos", () => {
+  it("degrada unclear a clear si el turno anterior ya pidió aclaración", () => {
+    expect(resolveCoherence("unclear", true)).toBe("clear");
+  });
+
+  it("deja unclear si el turno anterior NO pidió aclaración", () => {
+    expect(resolveCoherence("unclear", false)).toBe("unclear");
+  });
+
+  it("off-topic y clear no se ven afectados por el turno anterior", () => {
+    expect(resolveCoherence("off-topic", true)).toBe("off-topic");
+    expect(resolveCoherence("clear", true)).toBe("clear");
   });
 });

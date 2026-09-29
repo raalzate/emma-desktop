@@ -13,6 +13,7 @@
 import { WRAP_UP_CUE } from "./scene-closing";
 import { GREETING_CUE, REPAIR_CUE, type LearnerIntent } from "./learner-intent";
 import { sceneDirective, type SceneState } from "./scene-state";
+import { OFF_TOPIC_CUE, UNCLEAR_CUE, type Coherence } from "./turn-observation";
 
 export interface TurnDirectiveInput {
   state: SceneState | null;
@@ -30,6 +31,15 @@ export interface TurnDirectiveInput {
   wrapUp: boolean;
   /** Directiva de recast ya construida (puede venir vacía). */
   recastCue: string;
+  /**
+   * Veredicto de coherencia del turno (H3). Manda sobre wrapUp/elaborate/deepen
+   * y sobre el guion de escena: seguir cerrando o pidiendo detalle cuando Emma
+   * no entendió, o cuando el aprendiz se fue del tema, se lee como que no
+   * estaba escuchando. Va DESPUÉS de meta/greeting — una intención explícita
+   * del aprendiz manda sobre una inferencia del juez. Por defecto "clear" (no
+   * cambia nada).
+   */
+  coherence?: Coherence;
 }
 
 /** Contexto de lo ya sabido, para no repreguntarlo aunque cambie la orden. */
@@ -46,10 +56,12 @@ import { buildElaborationCue } from "./elaboration";
 const ELABORATE_CUE = buildElaborationCue();
 
 export function buildTurnDirective(input: TurnDirectiveInput): string {
-  const { state, elaborate, deepen, wrapUp, recastCue, intent = "in-scene" } = input;
+  const { state, elaborate, deepen, wrapUp, recastCue, intent = "in-scene", coherence = "clear" } = input;
   const order = (() => {
     if (intent === "meta") return `${knownFacts(state)}${REPAIR_CUE}`;
     if (intent === "greeting") return `${knownFacts(state)}${GREETING_CUE}`;
+    if (coherence === "unclear") return `${knownFacts(state)}${UNCLEAR_CUE}`;
+    if (coherence === "off-topic") return `${knownFacts(state)}${OFF_TOPIC_CUE}`;
     if (wrapUp) return `${knownFacts(state)}${WRAP_UP_CUE}`;
     if (elaborate) return `${knownFacts(state)}${ELABORATE_CUE}`;
     if (state) return sceneDirective(state, { deepen });

@@ -158,6 +158,9 @@ export function useChatSession(d: Deps) {
   const RECAST_BUDGET_MS = 1200;
   // Ítem para el que ya se pidió un detalle (no se insiste dos veces).
   const elaborationAskedFor = useRef<string | null>(null);
+  // H3/FR-004: si el turno anterior ya pidió aclaración ("unclear"), el
+  // siguiente veredicto unclear se degrada a clear — no dos turnos seguidos.
+  const previousWasClarifying = useRef(false);
   // Objetivos cubiertos de la escena, para que la UI muestre el avance.
   const [sceneGoals, setSceneGoals] = useState<{ done: number; total: number } | null>(null);
   // Lección de cierre ya entregada (guardada con la conversación). Al reabrir
@@ -320,7 +323,9 @@ export function useChatSession(d: Deps) {
         lastAgentLine,
         message: clean,
         level,
+        previousWasClarifying: previousWasClarifying.current,
       });
+      previousWasClarifying.current = observation.coherence === "unclear";
       if (observation.source === "heuristics" && process.env.NODE_ENV !== "production") {
         // Visible en la consola de dev: si esto aparece en cada turno, el juez
         // no está corriendo y hay que mirar la cola del motor.
@@ -371,6 +376,7 @@ export function useChatSession(d: Deps) {
       const directive = buildTurnDirective({
         state: sceneState.current,
         intent,
+        coherence: observation.coherence,
         elaborate: askElaboration,
         deepen,
         wrapUp: shouldWrapUp(turn, maxTurns) && !deepen,
