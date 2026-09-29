@@ -24,6 +24,7 @@ import { buildTurnDirective } from "../turn-directive";
 import { buildElaborationCue } from "../elaboration";
 import { GREETING_CUE, REPAIR_CUE } from "../learner-intent";
 import { WRAP_UP_CUE } from "../scene-closing";
+import { OFF_TOPIC_CUE, UNCLEAR_CUE } from "../turn-observation";
 
 /** Jerga de asistente: describe el acto de habla en vez de la escena. */
 const JERGA_DE_ASISTENTE =
@@ -47,6 +48,8 @@ const TODAS_LAS_DIRECTIVAS = (): [string, string][] => [
   ["reparación", REPAIR_CUE],
   ["saludo", GREETING_CUE],
   ["cierre", WRAP_UP_CUE],
+  ["unclear", UNCLEAR_CUE],
+  ["off-topic", OFF_TOPIC_CUE],
   ["siguiente tema", sceneDirective(advanceScene(standup(), "yesterday i merged the PR."))],
   ["profundizar", sceneDirective(cubierto(), { deepen: true })],
 ];
