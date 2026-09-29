@@ -46,7 +46,7 @@ function formatRow(idx: number, err: SilentError): string {
 }
 
 function formatPatterns(errors: SilentError[]): string {
-  const lines = mostCommon(errors).map(([label, n]) => `- **${label}** — ${n} aparición(es)`);
+  const lines = mostCommon(errors).map(([label, n]) => `- **${label}** — ${n} occurrence(s)`);
   return PATTERN_HEADER + lines.join("\n") + "\n";
 }
 
@@ -58,19 +58,19 @@ function formatLesson(errors: SilentError[]): string {
     .map((label) => `- **${label}**: ${LESSON_TIPS[label] ?? LESSON_TIPS.grammar}`)
     .join("\n");
   const drill =
-    "Reescribe tus tres últimos mensajes aplicando la corrección " +
-    "y léelos en voz alta dos veces.";
-  let lesson = `${LESSON_HEADER}${tips}\n\n**Ejercicio:** ${drill}\n`;
+    "Rewrite your last three messages applying the correction " +
+    "and read them aloud twice.";
+  let lesson = `${LESSON_HEADER}${tips}\n\n**Exercise:** ${drill}\n`;
   const scenario = topTypes.length > 0 ? scenarioForError(topTypes[0]) : null;
   if (scenario) {
-    lesson += `\n**Escenario recomendado para practicar:** \`${scenario}\`\n`;
+    lesson += `\n**Recommended scenario to practice:** \`${scenario}\`\n`;
   }
   return lesson;
 }
 
 function formatSituation(binding: FeedbackSituation, title: string): string {
   const commentary = CHARACTER_COMMENTARY[binding.character] ?? "";
-  return `\n### Situación activa\n**${title}** (variante \`${binding.variantId}\`)\n\n${commentary}\n`;
+  return `\n### Active situation\n**${title}** (variant \`${binding.variantId}\`)\n\n${commentary}\n`;
 }
 
 /** Parte tras el primer punto del variantId (equivalente a split(".", 1)[-1]). */

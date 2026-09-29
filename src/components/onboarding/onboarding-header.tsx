@@ -11,9 +11,9 @@ export function OnboardingHeader() {
     <header className="flex items-center gap-3">
       <EmmaAvatar size="lg" />
       <div>
-        <h1 className="text-lg font-semibold leading-tight">Hola, soy Emma</h1>
+        <h1 className="text-lg font-semibold leading-tight">Hi, I'm Emma</h1>
         <p className="text-sm text-muted-foreground">
-          Charlemos un momento para conocerte y armar tu práctica a tu medida.
+          Let's chat for a moment so I can get to know you and tailor your practice.
         </p>
       </div>
     </header>

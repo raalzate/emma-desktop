@@ -31,7 +31,7 @@ export default function ProgressPage() {
   if (!profile) return null; // redirigiendo al onboarding
   return (
     <AppShell>
-      <PageHeader title="Mi progreso" />
+      <PageHeader title="My progress" />
       <ProgressView runtime={runtime} level={profile.englishLevel} />
     </AppShell>
   );

@@ -32,12 +32,12 @@ describe("diagnosis-summary — summarize", () => {
 });
 
 describe("diagnosis-summary — friendlyLabel", () => {
-  it("traduce categorías conocidas a etiquetas humanas en español", () => {
-    expect(friendlyLabel("tense_error")).toBe("tiempos verbales");
-    expect(friendlyLabel("article_misuse")).toBe("artículos (a/an/the)");
-    expect(friendlyLabel("two failed attempts")).toBe("expresar respuestas con claridad");
-    expect(friendlyLabel("non-numeric value after retry")).toBe("números y cantidades");
-    expect(friendlyLabel("spanish_interference")).toBe("traducciones directas del español");
+  it("traduce categorías conocidas a etiquetas humanas en inglés", () => {
+    expect(friendlyLabel("tense_error")).toBe("verb tenses");
+    expect(friendlyLabel("article_misuse")).toBe("articles (a/an/the)");
+    expect(friendlyLabel("two failed attempts")).toBe("expressing answers clearly");
+    expect(friendlyLabel("non-numeric value after retry")).toBe("numbers and quantities");
+    expect(friendlyLabel("spanish_interference")).toBe("direct translations from Spanish");
   });
 
   it("convierte guiones bajos en espacios para categorías desconocidas", () => {

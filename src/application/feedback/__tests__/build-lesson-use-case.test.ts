@@ -82,7 +82,9 @@ describe("buildLesson — foco de la unidad del libro (trampas + errores comunes
 
   it("sin scenarioType y sin match de COMMON_ERRORS no añade el bloque de refuerzo", async () => {
     const noMatchErrors = [
-      { label: "grammar", original: "zzz qqq.", corrected: "www rrr." },
+      // Corrección real (forma verbal) que no figura en COMMON_ERRORS; una
+      // frase inventada ya no sirve: el filtro de reformulaciones la descarta.
+      { label: "word_form", original: "She write clean code.", corrected: "She writes clean code." },
     ] as unknown as SilentError[];
     const { llm, calls } = fakeLlm("Lesson text long enough to pass validation checks here.");
     await buildLesson({ llm, errors: noMatchErrors, level: "B1" });

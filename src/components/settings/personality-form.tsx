@@ -36,7 +36,7 @@ export function PersonalityForm() {
     try {
       await saveChatSettings(draft);
       setSettings(draft);
-      toast({ title: "Personalidad guardada", description: "Emma usará estos ajustes." });
+      toast({ title: "Personality saved", description: "Emma will use these settings." });
     } finally {
       setSaving(false);
     }
@@ -45,8 +45,8 @@ export function PersonalityForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Personalidad de Emma</CardTitle>
-        <CardDescription>Ajusta cómo habla y reacciona tu tutora.</CardDescription>
+        <CardTitle>Emma's personality</CardTitle>
+        <CardDescription>Adjust how your tutor speaks and reacts.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -62,8 +62,8 @@ export function PersonalityForm() {
             />
           ))}
         </div>
-        <Button onClick={save} disabled={saving}>
-          {saving ? "Guardando…" : "Guardar personalidad"}
+        <Button title="Guarda el tono y estilo con que Emma te enseña" onClick={save} disabled={saving}>
+          {saving ? "Saving…" : "Save personality"}
         </Button>
       </CardContent>
     </Card>

@@ -18,14 +18,14 @@ describe("splitReportAtLesson — la lección se renderiza aparte, en karaoke (#
 
   it("separa el reporte en lo que va antes y después de la lección", () => {
     const { before, after } = splitReportAtLesson(report);
-    expect(before).toContain("Tus correcciones");
-    expect(after).toContain("Siguiente paso");
+    expect(before).toContain("Your corrections");
+    expect(after).toContain("Next step");
   });
 
   it("ninguna de las dos partes repite la lección: la sección entera sale del markdown", () => {
     const { before, after } = splitReportAtLesson(report);
-    expect(before).not.toContain("Lección de Emma");
-    expect(after).not.toContain("Lección de Emma");
+    expect(before).not.toContain("Emma's lesson");
+    expect(after).not.toContain("Emma's lesson");
     expect(before + after).not.toContain("Use contractions");
   });
 

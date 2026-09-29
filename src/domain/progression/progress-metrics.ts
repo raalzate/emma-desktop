@@ -25,40 +25,40 @@ export interface ProgressMetric {
 export const PROGRESS_METRICS: readonly ProgressMetric[] = [
   {
     id: "reading-speed",
-    name: "Velocidad de lectura técnica",
-    how: "palabras/min en documentación real, con comprensión",
+    name: "Technical reading speed",
+    how: "words/min in real documentation, with comprehension",
     orientation: "higher-is-better",
     thresholds: { A1: "<80", A2: "80-120", B1: "120-180", B2: "180-250" },
     breakpoints: [80, 120, 180],
   },
   {
     id: "response-latency",
-    name: "Latencia de respuesta",
-    how: "segundos hasta empezar a responder una pregunta directa",
+    name: "Response latency",
+    how: "seconds before you start answering a direct question",
     orientation: "lower-is-better",
     thresholds: { A1: ">8", A2: "5-8", B1: "2-4", B2: "<2" },
     breakpoints: [8, 4, 2],
   },
   {
     id: "error-density",
-    name: "Densidad de error",
-    how: "errores gramaticales por 100 palabras escritas",
+    name: "Error density",
+    how: "grammar errors per 100 written words",
     orientation: "lower-is-better",
     thresholds: { A1: ">15", A2: "10-15", B1: "5-10", B2: "<5" },
     breakpoints: [15, 10, 5],
   },
   {
     id: "sustained-monologue",
-    name: "Monólogo sostenido",
-    how: "minutos hablando de un tema técnico sin parar",
+    name: "Sustained monologue",
+    how: "minutes talking about a technical topic without stopping",
     orientation: "higher-is-better",
     thresholds: { A1: "<1", A2: "1-2", B1: "3-4", B2: "5+" },
     breakpoints: [1, 3, 5],
   },
   {
     id: "listening-comprehension",
-    name: "Comprensión de audio nativo",
-    how: "% de un vídeo técnico entendido sin subtítulos",
+    name: "Native audio comprehension",
+    how: "% of a technical video understood without subtitles",
     orientation: "higher-is-better",
     thresholds: { A1: "<30%", A2: "30-50%", B1: "50-75%", B2: "75-90%" },
     breakpoints: [30, 50, 75],
@@ -90,7 +90,7 @@ function classifyDescending(
 /** Nivel MCER correspondiente a un valor medido de la métrica *metricId*. */
 export function levelForMetric(metricId: string, value: number): ProgressCefrLevel {
   const metric = PROGRESS_METRICS.find((m) => m.id === metricId);
-  if (!metric) throw new Error(`la métrica de progreso "${metricId}" no existe`);
+  if (!metric) throw new Error(`progress metric "${metricId}" does not exist`);
 
   return metric.orientation === "higher-is-better"
     ? classifyAscending(value, metric.breakpoints)

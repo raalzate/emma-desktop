@@ -2,7 +2,7 @@
  * FR-021/022 (rediseño «Café sereno»): el composer es una superficie blanca
  * con borde y radio 14px, el typeahead fantasma va en text-muted-foreground atenuado, los botones
  * de mic (con borde) y enviar (azul) son circulares, y bajo el composer vive
- * la línea mono PERSISTENTE «ENTER envía · La conversación es solo en inglés»,
+ * la línea mono PERSISTENTE «ENTER sends · This conversation is English only»,
  * con el segmento de TAB solo cuando hay fantasma que aceptar (enmienda de
  * coherencia: ver composer-hint-coherente.test.tsx).
  *
@@ -40,7 +40,7 @@ function render(): string {
   );
 }
 
-const PERSISTENTE = "ENTER envía · La conversación es solo en inglés";
+const PERSISTENTE = "ENTER sends · This conversation is English only";
 
 describe("Composer (rediseño Café sereno)", () => {
   it("el contenedor es superficie blanca con borde y radio 14px (FR-022)", () => {
@@ -59,8 +59,8 @@ describe("Composer (rediseño Café sereno)", () => {
   it("mic y enviar son circulares: mic con borde, enviar azul (FR-022)", () => {
     const html = render();
     const botones = html.match(/<button\b[^>]*>/g) ?? [];
-    const mic = botones.find((b) => b.includes("nota de voz")) ?? "";
-    const enviar = botones.find((b) => b.includes('aria-label="Enviar"')) ?? "";
+    const mic = botones.find((b) => b.includes("voice note")) ?? "";
+    const enviar = botones.find((b) => b.includes('aria-label="Send"')) ?? "";
     expect(mic).toContain("rounded-full");
     expect(mic).toContain("border");
     expect(enviar).toContain("rounded-full");
@@ -70,9 +70,9 @@ describe("Composer (rediseño Café sereno)", () => {
   it("la línea de ayuda mono es persistente; el segmento TAB es condicional (FR-021)", () => {
     const html = render();
     // Con fantasma (el mock lo da) se anuncia TAB; ENTER e inmersión son fijos.
-    expect(html).toContain("TAB acepta la sugerencia");
-    expect(html).toContain("ENTER envía");
-    expect(html).toContain("La conversación es solo en inglés");
+    expect(html).toContain("TAB accepts the suggestion");
+    expect(html).toContain("ENTER sends");
+    expect(html).toContain("This conversation is English only");
     expect(html).toMatch(/font-code[^"]*"[^>]*>|<p[^>]*font-code/);
     const src = fs.readFileSync(
       path.join(process.cwd(), "src/components/chat/composer.tsx"),
@@ -81,7 +81,7 @@ describe("Composer (rediseño Café sereno)", () => {
     expect(src).not.toContain("Pulsa Tab para aceptar la sugerencia");
     // La parte persistente NO depende del fantasma; el atajo TAB sí.
     expect(src).toContain(PERSISTENTE);
-    expect(src).toMatch(/ghost\s*&&\s*"TAB acepta la sugerencia · "/);
+    expect(src).toMatch(/ghost\s*&&\s*"TAB accepts the suggestion · "/);
   });
 
   it("los contratos de useTypeahead/useSuggestions/useVoiceInput siguen intactos (FR-022)", () => {

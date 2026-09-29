@@ -53,7 +53,7 @@ function TurnDots({ turnCount, maxTurns }: { turnCount: number; maxTurns: number
       title="Turnos usados de los disponibles en esta escena"
     >
       <span className="whitespace-nowrap text-xs text-muted-foreground">
-        Turno {turnCount} de {maxTurns}
+        Turn {turnCount} of {maxTurns}
       </span>
       <div className="flex items-center gap-1" aria-hidden>
         {Array.from({ length: maxTurns }).map((_, i) => (
@@ -73,12 +73,19 @@ export function ChatHeader({
 }: Props) {
   const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
   return (
-    <header className="flex items-center gap-3 border-b border-border bg-background px-4 py-3">
-      <Button asChild variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-        <Link href="/" aria-label="Volver a tu ruta">
+    <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-2.5">
+      <Button asChild variant="ghost" size="icon" className="h-8 w-8 shrink-0" title="Vuelve a tu ruta sin perder esta conversación">
+        <Link href="/" aria-label="Back to your path">
           <ArrowLeft className="h-4 w-4" />
         </Link>
       </Button>
+      {/* Avatar de la persona con la que se habla, como la cabecera de un chat 1:1. */}
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent font-headline text-base font-bold text-accent-foreground"
+        aria-hidden
+      >
+        {persona.name.trim().charAt(0).toUpperCase()}
+      </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -87,6 +94,7 @@ export function ChatHeader({
                 variant="ghost"
                 size="sm"
                 className="-ml-2 h-auto gap-1 truncate py-1 font-headline text-lg font-semibold tracking-tight"
+                title="Cambia de escenario para practicar otra situación"
               >
                 {scenario.title}
                 <ChevronDown className="h-4 w-4 opacity-60" />
@@ -105,7 +113,7 @@ export function ChatHeader({
           </span>
         </div>
         <p className="truncate text-xs text-muted-foreground">
-          Con <span className="font-medium text-foreground">{persona.name}</span> ({persona.role})
+          With <span className="font-medium text-foreground">{persona.name}</span> ({persona.role})
           {situationTitle ? ` — ${situationTitle}` : ""}
         </p>
       </div>
@@ -116,7 +124,7 @@ export function ChatHeader({
           title="Temas de la conversación que ya cubriste. Al completarlos, la escena se cierra."
         >
           <Target className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-          Objetivos {sceneGoals.done}/{sceneGoals.total}
+          Goals {sceneGoals.done}/{sceneGoals.total}
         </span>
       )}
       {onShowScene && (
@@ -128,7 +136,7 @@ export function ChatHeader({
           title="Volver a leer dónde estás, con quién hablas y cuál es tu misión"
         >
           <Clapperboard className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
-          Ver la escena
+          View the scene
         </Button>
       )}
       {onFinishEarly && (
@@ -138,7 +146,7 @@ export function ChatHeader({
           className="h-8 w-8"
           onClick={onFinishEarly}
           disabled={finishEarlyDisabled}
-          aria-label="Terminar la escena antes"
+          aria-label="End the scene early"
           title="Terminar antes y ver tu lección"
         >
           <Flag className="h-4 w-4" />

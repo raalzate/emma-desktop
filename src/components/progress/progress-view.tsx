@@ -20,7 +20,7 @@ export function ProgressView({ runtime, level }: { runtime: EmmaRuntime; level: 
   if (loading || !roadmap) return <ProgressSkeleton />;
   const pathway = currentPathway(roadmap);
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
       <CurrentLevelHeader level={level} />
       <StudyPlanCard runtime={runtime} />
       <MetricsCard runtime={runtime} />

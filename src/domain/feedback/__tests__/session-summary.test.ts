@@ -12,21 +12,21 @@ const errors: SilentError[] = [
 ];
 
 describe("composeSessionSummary — resumen rediseñado (BUG-001)", () => {
-  it("estructura en español con secciones, sin tablas markdown", () => {
+  it("estructura en inglés con secciones, sin tablas markdown", () => {
     const md = composeSessionSummary({
       scenarioTitle: "Daily Standup",
       situationTitle: "Quiet sprint morning",
       level: "B1",
       turns: 3,
       errors,
-      lesson: "El inglés hablado usa contracciones: I'm, you're. Ejemplo: I'm working on it.",
+      lesson: "Spoken English uses contractions: I'm, you're. Example: I'm working on it.",
     });
     expect(md).toContain("Daily Standup");
-    expect(md).toMatch(/### ✏️ Tus correcciones/);
-    expect(md).toMatch(/### 📚 Lección de Emma/);
+    expect(md).toMatch(/### ✏️ Your corrections/);
+    expect(md).toMatch(/### 📚 Emma's lesson/);
     expect(md).toContain("I am working on it today.");
     expect(md).toContain("I'm working on it today.");
-    expect(md).toContain("contracciones");
+    expect(md).toContain("contractions");
     expect(md).not.toContain("| # |");
     expect(md).not.toMatch(/Your wording|Recurring patterns|Practice lesson/);
   });
@@ -39,7 +39,7 @@ describe("composeSessionSummary — resumen rediseñado (BUG-001)", () => {
       errors,
       lesson: null,
     });
-    expect(md).toMatch(/### 📚 Lección de Emma/);
+    expect(md).toMatch(/### 📚 Emma's lesson/);
     expect(md.length).toBeGreaterThan(100);
   });
 
@@ -51,7 +51,7 @@ describe("composeSessionSummary — resumen rediseñado (BUG-001)", () => {
       errors: [],
       lesson: null,
     });
-    expect(md).toMatch(/sin correcciones/i);
+    expect(md).toMatch(/with no corrections/i);
     expect(md).not.toMatch(/### ✏️/);
   });
 
@@ -63,6 +63,6 @@ describe("composeSessionSummary — resumen rediseñado (BUG-001)", () => {
       errors,
       lesson: null,
     });
-    expect(md).toMatch(/### 🎯 Siguiente paso/);
+    expect(md).toMatch(/### 🎯 Next step/);
   });
 });

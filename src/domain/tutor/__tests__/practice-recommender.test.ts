@@ -13,7 +13,7 @@ describe("recommendPractice", () => {
     expect(recomendaciones[0]).toEqual({
       kind: "srs-review",
       due: 5,
-      reasonEs: "5 tarjetas pendientes de repaso",
+      reasonEs: "5 cards due for review",
     });
   });
 
@@ -41,7 +41,7 @@ describe("recommendPractice", () => {
       kind: "exercise",
       exerciseId: "1A",
       unit: 1,
-      reasonEs: "débil en article → ejercicio 1A de la unidad 1",
+      reasonEs: "weak in article → exercise 1A from unit 1",
     });
   });
 
@@ -69,7 +69,7 @@ describe("recommendPractice", () => {
     expect(sugerencia).toEqual({
       kind: "minimal-pair",
       contrastId: "i-vs-ii",
-      reasonEs: "la unidad activa entrena /ɪ/ vs /iː/: practica el par mínimo",
+      reasonEs: "your active unit trains /ɪ/ vs /iː/: practice the minimal pair",
     });
   });
 
@@ -85,7 +85,7 @@ describe("recommendPractice", () => {
     expect(sugerencia).toEqual({
       kind: "scenario",
       scenarioType: "intro_yourself",
-      reasonEs: 'débil en article → practica el escenario "intro_yourself"',
+      reasonEs: 'weak in article → practice the "intro_yourself" scenario',
     });
   });
 
@@ -100,7 +100,7 @@ describe("recommendPractice", () => {
     expect(recomendaciones[0]).toEqual({
       kind: "checklist",
       level: "A1",
-      reasonEs: "checklist de A1 incompleta (5/9)",
+      reasonEs: "A1 checklist incomplete (5/9)",
     });
   });
 

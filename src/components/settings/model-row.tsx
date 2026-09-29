@@ -40,21 +40,21 @@ export function ModelRow(props: ModelRowProps) {
           checked={selected}
           disabled={!model.downloaded}
           onChange={props.onSelect}
-          aria-label={`Usar ${model.label}`}
+          aria-label={`Use ${model.label}`}
         />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{model.label}</span>
-            {recommended && <Badge variant="secondary">Recomendado</Badge>}
+            {recommended && <Badge variant="secondary">Recommended</Badge>}
             {model.downloaded && (
               <Badge variant="outline" className="gap-1">
-                <CheckCircle2 className="h-3 w-3" /> Descargado
+                <CheckCircle2 className="h-3 w-3" /> Downloaded
               </Badge>
             )}
           </div>
           <p className="text-sm text-muted-foreground">{model.blurb}</p>
           <p className="text-xs text-muted-foreground">
-            ~{model.approxGB} GB · RAM sugerida {model.minRamGB} GB
+            ~{model.approxGB} GB · suggested RAM {model.minRamGB} GB
           </p>
           {downloading && <Progress value={progress ?? 0} className="mt-2 h-2" />}
         </div>
@@ -70,18 +70,18 @@ function RowActions({
 }: ModelRowProps & { busy: boolean; onDownloadClick: () => void }) {
   if (!model.downloaded) {
     return (
-      <Button size="sm" onClick={onDownloadClick} disabled={busy}>
+      <Button size="sm" title="Descarga el modelo a tu equipo para usarlo sin internet" onClick={onDownloadClick} disabled={busy}>
         <Download className="mr-1 h-4 w-4" />
-        {busy ? "Descargando…" : "Descargar"}
+        {busy ? "Downloading…" : "Download"}
       </Button>
     );
   }
   return (
     <div className="flex gap-1">
-      <Button size="icon" variant="ghost" onClick={onReveal} aria-label="Mostrar en carpeta">
+      <Button size="icon" variant="ghost" title="Abre la carpeta donde está guardado el modelo" onClick={onReveal} aria-label="Show in folder">
         <FolderOpen className="h-4 w-4" />
       </Button>
-      <Button size="icon" variant="ghost" onClick={onDelete} aria-label="Eliminar modelo">
+      <Button size="icon" variant="ghost" title="Elimina el archivo del modelo de tu equipo para liberar espacio" onClick={onDelete} aria-label="Delete model">
         <Trash2 className="h-4 w-4" />
       </Button>
     </div>

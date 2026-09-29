@@ -17,12 +17,12 @@ export function GenerationConfigField() {
 
   const save = () => {
     setGenerationConfig({ ...getGenerationConfig(), maxTokens });
-    toast({ title: "Configuración guardada", description: `Ventana: ${maxTokens} tokens.` });
+    toast({ title: "Settings saved", description: `Window: ${maxTokens} tokens.` });
   };
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor="max-tokens">Ventana máxima de tokens</Label>
+      <Label htmlFor="max-tokens">Max token window</Label>
       <div className="flex gap-2">
         <Input
           id="max-tokens"
@@ -34,10 +34,10 @@ export function GenerationConfigField() {
           onChange={(e) => setMaxTokens(Number(e.target.value) || 0)}
           className="max-w-[10rem]"
         />
-        <Button variant="secondary" onClick={save}>Guardar</Button>
+        <Button variant="secondary" title="Guarda el máximo de tokens por respuesta del modelo local" onClick={save}>Save</Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Máximo de tokens que genera el motor local por respuesta.
+        Maximum number of tokens the local engine generates per reply.
       </p>
     </div>
   );

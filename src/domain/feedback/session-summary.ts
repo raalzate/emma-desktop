@@ -1,5 +1,5 @@
 /**
- * Resumen de sesión rediseñado (BUG-001): markdown en español, por secciones y
+ * Resumen de sesión rediseñado (BUG-001): markdown en inglés, por secciones y
  * sin tablas (el dialog las renderizaba rotas). La lección viene del tutor
  * (LLM) o, como respaldo determinista, del consejo del tipo de error dominante.
  * Dominio puro: solo texto.
@@ -42,39 +42,39 @@ function correctionsSection(errors: SilentError[]): string {
   const items = errors
     .map((e, i) => `${i + 1}. “${e.original.trim()}” → **“${e.corrected.trim()}”** _(${e.label})_`)
     .join("\n");
-  return `### ✏️ Tus correcciones\n\n${items}\n`;
+  return `### ✏️ Your corrections\n\n${items}\n`;
 }
 
 function lessonSection(errors: SilentError[], lesson: string | null): string {
-  if (lesson) return `### 📚 Lección de Emma\n${lesson.trim()}\n`;
+  if (lesson) return `### 📚 Emma's lesson\n${lesson.trim()}\n`;
   const label = dominantLabel(errors);
   const tip = label ? (LESSON_TIPS[label] ?? LESSON_TIPS.grammar) : LESSON_TIPS.grammar;
   const drill =
-    "Reto: reescribe tus tres últimos mensajes aplicando la corrección y léelos en voz alta dos veces.";
-  return `### 📚 Lección de Emma\n${label ? `**${label}** — ` : ""}${tip}\n\n${drill}\n`;
+    "Challenge: rewrite your last three messages applying the correction and read them aloud twice.";
+  return `### 📚 Emma's lesson\n${label ? `**${label}** — ` : ""}${tip}\n\n${drill}\n`;
 }
 
 function nextStepSection(errors: SilentError[], level: string): string {
   const label = dominantLabel(errors);
   const scenario = label ? scenarioForError(label) : null;
   const practice = scenario
-    ? `Práctica recomendada: **${titleCase(scenario.replaceAll("_", " "))}**.`
-    : "Sigue con el siguiente escenario de tu ruta.";
-  return `### 🎯 Siguiente paso\n${practice} Nivel actual: **${level}**.\n`;
+    ? `Recommended practice: **${titleCase(scenario.replaceAll("_", " "))}**.`
+    : "Continue with the next scenario on your path.";
+  return `### 🎯 Next step\n${practice} Current level: **${level}**.\n`;
 }
 
-/** Compone el resumen completo de la sesión en markdown (español). */
+/** Compone el resumen completo de la sesión en markdown (inglés). */
 export function composeSessionSummary(input: SessionSummaryInput): string {
   const { scenarioTitle, situationTitle, level, turns, errors, lesson } = input;
   const scene = situationTitle ? `${scenarioTitle} · ${situationTitle}` : scenarioTitle;
   const header =
-    `## 🏁 ${scene} — sesión completada\n` +
-    `**Nivel:** ${level} · **Turnos:** ${turns} · **Correcciones:** ${errors.length}\n`;
+    `## 🏁 ${scene} — session complete\n` +
+    `**Level:** ${level} · **Turns:** ${turns} · **Corrections:** ${errors.length}\n`;
   if (errors.length === 0) {
     return (
       header +
-      `\n¡Excelente! Terminaste la escena **sin correcciones**. ` +
-      `Tu inglés fluyó natural durante toda la conversación.\n\n` +
+      `\nExcellent! You finished the scene **with no corrections**. ` +
+      `Your English flowed naturally throughout the conversation.\n\n` +
       nextStepSection(errors, level)
     );
   }

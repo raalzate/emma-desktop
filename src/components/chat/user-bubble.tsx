@@ -5,7 +5,7 @@
  * y, si fue nota de voz, un reproductor del audio grabado sobre la transcripción.
  */
 
-import { Play } from "lucide-react";
+import { CheckCheck, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatTime } from "./chat-time";
 
@@ -15,17 +15,19 @@ function playAudio(url: string) {
 
 export function UserBubble({ text, at, audioUrl }: { text: string; at?: number; audioUrl?: string }) {
   return (
-    <div className="flex flex-col items-end duration-300 animate-in fade-in slide-in-from-bottom-1">
-      {/* Azul primary con esquina inferior derecha 4px (FR-018). */}
-      <div className="max-w-[80%] whitespace-pre-wrap rounded-bubble rounded-br-[4px] bg-primary px-4 py-2 text-sm text-primary-foreground shadow-[0_1px_2px_rgba(31,41,51,0.08)]">
+    <div className="flex justify-end duration-300 animate-in fade-in slide-in-from-bottom-1">
+      {/* Azul primary con esquina inferior derecha 4px (FR-018); abraza el
+          texto y lleva la hora dentro, estilo mensajería. */}
+      <div className="w-fit max-w-[75%] whitespace-pre-wrap rounded-bubble rounded-br-[4px] bg-primary px-3 py-1.5 text-sm text-primary-foreground shadow-[0_1px_2px_rgba(31,41,51,0.08)]">
         {audioUrl && (
           <div className="mb-1 flex items-center gap-2">
             <Button
               size="icon"
               variant="secondary"
               className="h-7 w-7 rounded-full"
+              title="Vuelve a escuchar tu nota de voz para comparar tu pronunciación"
               onClick={() => playAudio(audioUrl)}
-              aria-label="Reproducir nota de voz"
+              aria-label="Play voice note"
             >
               <Play className="h-3.5 w-3.5" />
             </Button>
@@ -41,8 +43,12 @@ export function UserBubble({ text, at, audioUrl }: { text: string; at?: number; 
           </div>
         )}
         {text}
+        {/* Hora + doble check al final de la línea, como «enviado». */}
+        <span className="ml-2 inline-flex translate-y-0.5 items-center gap-0.5 whitespace-nowrap font-code text-[10px] text-primary-foreground/70">
+          {at ? formatTime(at) : ""}
+          <CheckCheck className="h-3 w-3" aria-label="Sent" />
+        </span>
       </div>
-      {at && <span className="mt-0.5 px-1 text-[10px] text-muted-foreground">{formatTime(at)}</span>}
     </div>
   );
 }

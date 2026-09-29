@@ -2,7 +2,7 @@
  * FR-019/020 (rediseño «Café sereno»): los chips del andamiaje usan los tokens
  * scaffold (clases literales completas: el purge de Tailwind no ve clases
  * compuestas) con punto de color por nivel, y el grupo lleva el tag mono con
- * borde punteado «ANDAMIAJE · ES». Siguen siendo de solo lectura y en inglés.
+ * borde punteado «HINTS». Siguen siendo de solo lectura y en inglés.
  */
 
 import { describe, expect, it } from "vitest";
@@ -42,9 +42,9 @@ describe("SuggestionChips (rediseño Café sereno)", () => {
     expect(src).not.toMatch(/\b(emerald|amber|rose)-\d{2,3}\b/);
   });
 
-  it("el grupo lleva el tag mono punteado «ANDAMIAJE · ES» (FR-020)", () => {
+  it("el grupo lleva el tag mono punteado «HINTS» (FR-020)", () => {
     const html = render();
-    expect(html).toContain("ANDAMIAJE · ES");
+    expect(html).toContain("HINTS");
     expect(html).toMatch(/font-code[^"]*border-dashed|border-dashed[^"]*font-code/);
   });
 

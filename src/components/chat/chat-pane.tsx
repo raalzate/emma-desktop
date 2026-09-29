@@ -64,13 +64,13 @@ export function ChatPane({
     storedLesson: s.lesson,
     onLessonReady: (lesson) => {
       s.saveLesson(lesson);
-      toast({ title: "Sesión evaluada", description: lesson.verdict });
+      toast({ title: "Session reviewed", description: lesson.verdict });
     },
     autoFinish: s.sceneComplete && !s.restoredComplete,
   });
 
   // Etiqueta del cierre: revisar lo guardado no cuesta una generación nueva.
-  const reviewLabel = end.hasStoredLesson ? "Ver tu lección" : "Finalizar y ver lección";
+  const reviewLabel = end.hasStoredLesson ? "See your lesson" : "Finish and see your lesson";
 
   return (
     <main className="flex h-full min-h-0 flex-1 flex-col bg-background">
@@ -122,18 +122,18 @@ export function ChatPane({
               <span className="flex items-center gap-2">
                 <GraduationCap className="h-4 w-4" />
                 {end.hasStoredLesson
-                  ? "Esta sesión ya terminó — su lección quedó guardada en tu histórico."
+                  ? "This session is over — its lesson is saved in your history."
                   : end.running
-                    ? "Escena completada — Emma está preparando tu lección…"
-                    : "Escena completada — revisa tu lección cuando quieras."}
+                    ? "Scene complete — Emma is preparing your lesson…"
+                    : "Scene complete — review your lesson whenever you like."}
               </span>
-              <Button size="sm" className="gap-1" onClick={end.review} disabled={end.running}>
+              <Button size="sm" className="gap-1" title="Abre la lección que Emma preparó con tus errores y aciertos" onClick={end.review} disabled={end.running}>
                 {end.running ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <GraduationCap className="h-4 w-4" />
                 )}
-                {end.running ? "Evaluando…" : reviewLabel}
+                {end.running ? "Reviewing…" : reviewLabel}
               </Button>
             </div>
           ) : (

@@ -5,7 +5,21 @@ import {
   weekForUnit,
   weeksForCefrTarget,
   unitsForWeek,
+  currentStudyWeek,
 } from "../study-plan";
+
+describe("currentStudyWeek", () => {
+  it("sin unidad activa, el aprendiz está en la semana 1 (sonidos)", () => {
+    expect(currentStudyWeek(null).week).toBe(1);
+  });
+  it("con unidad activa devuelve la semana que la cubre", () => {
+    expect(currentStudyWeek(3).week).toBe(5);
+    expect(currentStudyWeek(10).week).toBe(12);
+  });
+  it("una unidad fuera del plan cae en la última semana", () => {
+    expect(currentStudyWeek(99).week).toBe(24);
+  });
+});
 
 describe("STUDY_PLAN_24_WEEKS", () => {
   it("tiene 24 semanas numeradas de 1 a 24", () => {
@@ -24,13 +38,13 @@ describe("STUDY_PLAN_24_WEEKS", () => {
   it("la semana 4 cubre las unidades 1 y 2 con su hito del Apéndice J", () => {
     const week4 = STUDY_PLAN_24_WEEKS.find((w) => w.week === 4);
     expect(week4?.units).toEqual([1, 2]);
-    expect(week4?.milestone).toMatch(/Presentarte en 60 s/);
+    expect(week4?.milestone).toMatch(/Introduce yourself in 60 s/);
   });
 
   it("la semana 24 cubre las unidades 25 y 26 con el hito Reto 72", () => {
     const week24 = STUDY_PLAN_24_WEEKS.find((w) => w.week === 24);
     expect(week24?.units).toEqual([25, 26]);
-    expect(week24?.milestone).toMatch(/Reto 72/);
+    expect(week24?.milestone).toMatch(/Challenge 72/);
   });
 
   it("cubre en total las 26 unidades, cada una exactamente una vez", () => {

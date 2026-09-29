@@ -27,36 +27,36 @@ export function RemoteKeyField({ provider, configured, onSave, onDelete }: Remot
     setBusy(true);
     try {
       const res = await onSave(provider.id, value.trim());
-      if (res.ok) { setValue(""); toast({ title: "Llave guardada" }); }
-      else toast({ title: "No se pudo guardar", description: res.error, variant: "destructive" });
+      if (res.ok) { setValue(""); toast({ title: "Key saved" }); }
+      else toast({ title: "Could not save", description: res.error, variant: "destructive" });
     } finally { setBusy(false); }
   };
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2">
-        <Label htmlFor="api-key">Llave de API</Label>
+        <Label htmlFor="api-key">API key</Label>
         <Badge variant={configured ? "default" : "outline"}>
-          {configured ? "Configurada" : "No configurada"}
+          {configured ? "Configured" : "Not configured"}
         </Badge>
       </div>
       <div className="flex gap-2">
         <Input
           id="api-key"
           type="password"
-          placeholder={configured ? "•••••••• (guardada)" : "Pega tu llave"}
+          placeholder={configured ? "•••••••• (saved)" : "Paste your key"}
           value={value}
           onChange={(e) => setValue(e.target.value)}
         />
-        <Button onClick={save} disabled={busy || !value.trim()}>Guardar</Button>
+        <Button title="Guarda la clave cifrada en tu equipo; nunca sale de él salvo hacia este proveedor" onClick={save} disabled={busy || !value.trim()}>Save</Button>
         {configured && (
-          <Button variant="ghost" onClick={() => void onDelete(provider.id)}>Borrar</Button>
+          <Button variant="ghost" title="Borra la clave guardada; la IA en la nube deja de estar disponible" onClick={() => void onDelete(provider.id)}>Delete</Button>
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        Se guarda cifrada en tu equipo.{" "}
+        It is stored encrypted on your device.{" "}
         <a href={provider.keysUrl} target="_blank" rel="noreferrer" className="underline">
-          Obtener una llave
+          Get a key
         </a>
       </p>
     </div>

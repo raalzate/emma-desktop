@@ -48,7 +48,7 @@ export function useVoiceInput(
       // Sin micrófono o sin permiso: la UI necesita saberlo para ofrecer la
       // salida de emergencia en un turno obligatoriamente hablado.
       setAvailable(false);
-      onProblem?.("No se pudo usar el micrófono: revisa el permiso del sistema.");
+      onProblem?.("The microphone couldn’t be used: check the system permission.");
       return;
     }
     const rec = new MediaRecorder(stream);
@@ -65,9 +65,9 @@ export function useVoiceInput(
         // Transcripción vacía: el turno NO avanza y hay que poder reintentar,
         // o el aprendiz queda atrapado en un turno hablado sin salida.
         if (text) onResult(text, audioUrl);
-        else onProblem?.("No se entendió nada de la grabación. Intenta de nuevo, más cerca del micrófono.");
+        else onProblem?.("Nothing came through in the recording. Try again, closer to the microphone.");
       } catch {
-        onProblem?.("No se pudo procesar la grabación. Intenta de nuevo.");
+        onProblem?.("The recording couldn’t be processed. Try again.");
       } finally {
         setBusy(false);
       }

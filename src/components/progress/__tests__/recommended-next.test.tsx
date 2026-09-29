@@ -31,9 +31,9 @@ describe("RecommendedNext (rediseño Café sereno, FR-028)", () => {
     expect(html).toContain("rounded-bubble");
   });
 
-  it("lleva el tag «Recomendado para hoy» en font-code uppercase", () => {
+  it("lleva el tag «Recommended for today» en font-code uppercase", () => {
     const html = render();
-    expect(html).toContain("Recomendado para hoy");
+    expect(html).toContain("Recommended for today");
     expect(html).toContain("font-code");
     expect(html).toContain("uppercase");
   });
@@ -42,14 +42,14 @@ describe("RecommendedNext (rediseño Café sereno, FR-028)", () => {
     const html = render();
     expect(html).toContain("font-headline");
     expect(html).toContain("Code Review");
-    expect(html).toContain("Siguiente en tu ruta de aprendizaje");
+    expect(html).toContain("Next on your learning path");
   });
 
   it("con onPractice muestra CTA primario y secundario con borde", () => {
     const html = render(vi.fn());
-    expect(html).toContain("Practicar ahora");
+    expect(html).toContain("Practice now");
     expect(html).toContain("bg-primary");
-    expect(html).toContain("Ver mi progreso");
+    expect(html).toContain("See my progress");
     expect(html).toContain("border");
     // Next normaliza el trailing slash del href en SSR.
     expect(html).toMatch(/href="\/progress\/?"/);
@@ -57,6 +57,6 @@ describe("RecommendedNext (rediseño Café sereno, FR-028)", () => {
 
   it("sin onPractice no muestra los CTA (contexto solo informativo)", () => {
     const html = render();
-    expect(html).not.toContain("Practicar ahora");
+    expect(html).not.toContain("Practice now");
   });
 });

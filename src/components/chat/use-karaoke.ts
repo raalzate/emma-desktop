@@ -147,13 +147,22 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
     [script.sentences, playFrom, ensureAudio, playWebSpeech],
   );
 
+  // El audio se cachea por texto: si el texto cambia (el mismo botón pasa a
+  // otra palabra), se descarta el anterior. Si no, se oiría la palabra vieja
+  // (gotcha del laboratorio de sonidos). También limpia al desmontar.
   useEffect(
     () => () => {
       webHandle.current?.stop();
+      webHandle.current = null;
       audioRef.current?.pause();
       audioRef.current = null;
+      timingsRef.current = [];
+      stopAtRef.current = null;
+      setPlaying(false);
+      setActiveWord(-1);
+      setCanSeek(false);
     },
-    [],
+    [script.speakText, gender, voiceId],
   );
 
   return {

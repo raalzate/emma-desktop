@@ -6,8 +6,8 @@
  * con quién hablás, qué tenés que lograr— y desemboca en la primera línea del
  * personaje. El aprendiz entra caminando a la ficción, como en un videojuego.
  *
- * Contenido en INGLÉS (es la escena); el andamiaje —el aviso de saltar— en
- * español (Artículo 9).
+ * Todo en INGLÉS: la escena porque es la ficción y el aviso de saltar porque
+ * la UI habla inglés (Artículo 9).
  */
 
 import { useEffect, useMemo } from "react";
@@ -71,12 +71,12 @@ export function SceneNarration({ scenario, situation, animate = true, onDone, na
   }, [done, onDone]);
 
   // Franja de escena (FR-014): la narración vive en una banda ámbar suave con
-  // tag mono «ESCENA»; el texto de la ficción va en itálica y sigue en inglés.
+  // tag mono «SCENE»; el texto de la ficción va en itálica y sigue en inglés.
   return (
     <div className="mx-auto w-full max-w-xl py-2">
       <div className="space-y-2 rounded-[12px] bg-accent-soft px-4 py-3">
         <span className="block font-code text-[10px] font-medium tracking-[0.15em] text-accent">
-          ESCENA
+          SCENE
         </span>
         {visible.map((text, i) => {
         const beat = beats[i];
@@ -113,10 +113,11 @@ export function SceneNarration({ scenario, situation, animate = true, onDone, na
         {!done && (
           <button
             type="button"
+            title="Salta la narración y entra a la conversación"
             onClick={skip}
             className="ml-6 text-xs text-muted-foreground/70 underline-offset-2 hover:underline"
           >
-            Saltar la introducción
+            Skip intro
           </button>
         )}
       </div>

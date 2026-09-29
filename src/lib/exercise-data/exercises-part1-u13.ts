@@ -15,7 +15,7 @@ export const EXERCISES_P1_U13: UnitExercise[] = [
     unit: 0,
     kind: "classify",
     promptEs:
-      "Clasifica la pronunciación de la terminación -ed de cada verbo: /ɪd/ (sílaba extra, tras /t/ o /d/), /t/ (tras sonido sordo) o /d/ (tras sonido sonoro).",
+      "¿Cómo suena la -ed final de este verbo en pasado? Escúchalo y elige: /t/ (seca, como en «worked»), /d/ (suave, como en «played») o /ɪd/ (se oye una sílaba más, como en «wanted»).",
     items: [
       { stem: "shipped", answer: "/t/" },
       { stem: "migrated", answer: "/ɪd/" },
@@ -39,7 +39,7 @@ export const EXERCISES_P1_U13: UnitExercise[] = [
     unit: 0,
     kind: "choose",
     promptEs:
-      "Marca la sílaba fuerte de cada palabra (en la respuesta, la sílaba fuerte va en mayúsculas).",
+      "¿Qué sílaba se pronuncia con más fuerza? Escucha la palabra y toca la versión que la marca bien (la sílaba fuerte va en MAYÚSCULAS).",
     items: [
       { stem: "deployment", answer: "dePLOYment" },
       { stem: "configuration", answer: "configuRAtion" },
@@ -60,7 +60,7 @@ export const EXERCISES_P1_U13: UnitExercise[] = [
     unit: 0,
     kind: "choose",
     promptEs:
-      "Sentence stress: frase base «I didn't say the deploy broke it.» Indica qué implica el pico tonal en cada palabra. (En la grabación, las seis versiones deben sonar distintas.)",
+      "La misma frase cambia de sentido según la palabra que se acentúa: «I didn't say the deploy broke it.» En cada versión, elige qué quiere decir quien la pronuncia con ese énfasis.",
     items: [
       { stem: "Énfasis en «I»: I didn't say the deploy broke it.", answer: "Lo dijo otro, no yo" },
       { stem: "Énfasis en «didn't»: I didn't say the deploy broke it.", answer: "Lo niego rotundamente" },

@@ -65,10 +65,10 @@ function trailStates(items: PathwayItem[], recommendedType?: string | null): Nod
 }
 
 const STATE_LABEL: Record<NodeState, string> = {
-  completed: "Completada",
-  current: "En curso",
-  next: "Siguiente",
-  locked: "Bloqueada",
+  completed: "Completed",
+  current: "In progress",
+  next: "Next",
+  locked: "Locked",
 };
 
 /** Forma del nodo según su estado (el color de categoría solo tiñe «siguiente»). */
@@ -94,7 +94,7 @@ export function PathwayTrail({
 }) {
   const items = pathway.items;
   if (items.length === 0) {
-    return <p className="text-sm text-muted-foreground">Este nivel aún no tiene escenarios.</p>;
+    return <p className="text-sm text-muted-foreground">This level has no scenarios yet.</p>;
   }
   const height = yAt(items.length - 1) + TOP_PAD;
   const states = trailStates(items, recommendedType);
@@ -158,6 +158,7 @@ export function PathwayTrail({
               {onSelect ? (
                 <button
                   type="button"
+                  title={"Abre la escena «" + item.title + "» para practicarla ahora"}
                   onClick={() => onSelect(item.scenarioType)}
                   className={cn(
                     shape,
@@ -193,7 +194,7 @@ export function PathwayTrail({
         })}
       </div>
 
-      <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2" aria-label="Tipos de escena">
+      <ul className="flex flex-wrap justify-center gap-x-4 gap-y-2" aria-label="Scene types">
         {legend.map(([key, visual]) => {
           const Icon = visual.icon;
           return (

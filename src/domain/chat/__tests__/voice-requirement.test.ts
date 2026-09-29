@@ -18,7 +18,7 @@ describe("requiresVoice", () => {
   it("el primer turno de la escena se saluda hablando", () => {
     const req = requiresVoice({ ...base, turn: 1, lastVoiceTurn: null });
     expect(req?.reason).toBe("greeting");
-    expect(req?.promptEs).toContain("saluda con tu voz");
+    expect(req?.promptEs).toContain("say hello with your voice");
   });
 
   it("el último turno antes del fin se cierra hablando", () => {

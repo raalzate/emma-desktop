@@ -1,6 +1,6 @@
 "use client";
 
-/** Select etiquetado reutilizable (opción → etiqueta en español). */
+/** Select etiquetado reutilizable (opción → etiqueta visible). */
 
 import { Label } from "@/components/ui/label";
 import {

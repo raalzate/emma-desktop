@@ -39,13 +39,13 @@ export function PathwayHome({ runtime, level }: { runtime: EmmaRuntime; level: s
   const goal = nextLevel(level);
 
   return (
-    <main className="mx-auto max-w-3xl space-y-8 p-6 pb-16">
+    <main className="mx-auto w-full max-w-6xl space-y-8 p-6 pb-16">
       <header className="space-y-1">
-        <h1 className="font-headline text-[32px] font-bold leading-tight">¡Hola de nuevo!</h1>
+        <h1 className="font-headline text-[32px] font-bold leading-tight">Welcome back!</h1>
         <p className="text-muted-foreground">
           {goal
-            ? `Vas camino a ${goal}. Elige una escena del trazado para practicarla.`
-            : `Estás en ${level}, el último nivel de la ruta. Elige una escena para seguir afinando.`}
+            ? `You're on your way to ${goal}. Pick a scene on the path to practice it.`
+            : `You're at ${level}, the last level on the path. Pick a scene to keep sharpening.`}
         </p>
       </header>
 
@@ -53,9 +53,9 @@ export function PathwayHome({ runtime, level }: { runtime: EmmaRuntime; level: s
 
       <section className="space-y-5 rounded-bubble border border-border bg-card p-6">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h2 className="text-lg font-semibold">Tu ruta · Nivel {level}</h2>
+          <h2 className="text-lg font-semibold">Your path · Level {level}</h2>
           <span className="text-sm text-muted-foreground">
-            {passed} de {total} escenas completadas
+            {passed} of {total} scenes completed
           </span>
         </div>
         <PathwayTrail

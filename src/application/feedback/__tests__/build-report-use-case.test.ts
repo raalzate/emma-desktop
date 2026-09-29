@@ -21,7 +21,7 @@ function input(overrides: Partial<FeedbackReportInput> = {}): FeedbackReportInpu
 describe("buildFeedbackReport — sin errores", () => {
   it("usa la plantilla de felicitación cuando no hay errores", () => {
     const md = buildFeedbackReport(input({ errors: [] }));
-    expect(md).toContain("## Simulación completada — ¡buen trabajo!");
+    expect(md).toContain("## Simulation complete — good job!");
   });
 
   it("interpola escenario en Title Case y guiones bajos como espacios", () => {
@@ -31,7 +31,7 @@ describe("buildFeedbackReport — sin errores", () => {
 
   it("interpola el número de turnos de la métrica", () => {
     const md = buildFeedbackReport(input({ errors: [], metric: { turns: 7, errors: 0 } }));
-    expect(md).toContain("en 7 turnos");
+    expect(md).toContain("in 7 turns");
   });
 
   it("trata errores no accionables (sugerencia == original) como cero errores", () => {
@@ -39,18 +39,18 @@ describe("buildFeedbackReport — sin errores", () => {
     const md = buildFeedbackReport(
       input({ errors: [err({ original: " hola ", corrected: "hola" })] }),
     );
-    expect(md).toContain("## Simulación completada — ¡buen trabajo!");
+    expect(md).toContain("## Simulation complete — good job!");
   });
 });
 
 describe("buildFeedbackReport — con errores", () => {
-  it("emite el encabezado Code Review Lingüístico con el escenario", () => {
+  it("emite el encabezado Language code review con el escenario", () => {
     const md = buildFeedbackReport(input());
-    expect(md).toContain("## Revisión de código lingüística — Daily Standup");
+    expect(md).toContain("## Language code review — Daily Standup");
   });
 
   it("muestra el conteo de capturas igual a los errores accionables, no a los crudos", () => {
-    // 2 accionables + 1 no accionable -> Capturas silenciosas: 2
+    // 2 accionables + 1 no accionable -> Silent captures: 2
     const md = buildFeedbackReport(
       input({
         errors: [
@@ -60,7 +60,7 @@ describe("buildFeedbackReport — con errores", () => {
         ],
       }),
     );
-    expect(md).toContain("**Capturas silenciosas:** 2");
+    expect(md).toContain("**Silent captures:** 2");
   });
 
   it("numera las filas de la tabla desde 1", () => {
@@ -93,8 +93,8 @@ describe("buildFeedbackReport — con errores", () => {
         ],
       }),
     );
-    expect(md).toContain("### Patrones recurrentes");
-    expect(md).toContain("- **article** — 2 aparición(es)");
+    expect(md).toContain("### Recurring patterns");
+    expect(md).toContain("- **article** — 2 occurrence(s)");
   });
 
   it("ordena patrones por conteo desc y rompe empates por primera aparición", () => {
@@ -127,7 +127,7 @@ describe("buildFeedbackReport — con errores", () => {
         ],
       }),
     );
-    expect(md).toContain("### Lección de práctica");
+    expect(md).toContain("### Practice lesson");
     expect(md).toContain(`- **article**: ${LESSON_TIPS.article}`);
     expect(md).toContain(`- **preposition**: ${LESSON_TIPS.preposition}`);
   });
@@ -150,7 +150,7 @@ describe("buildFeedbackReport — con errores", () => {
     const md = buildFeedbackReport(
       input({ errors: [err({ label: "article", original: "saw cat", corrected: "saw a cat" })] }),
     );
-    expect(md).toContain("**Escenario recomendado para practicar:** `intro_yourself`");
+    expect(md).toContain("**Recommended scenario to practice:** `intro_yourself`");
   });
 
   it("omite la recomendación cuando la etiqueta no tiene escenario mapeado", () => {
@@ -159,12 +159,12 @@ describe("buildFeedbackReport — con errores", () => {
       input({ errors: [err({ label: "grammar", original: "me want", corrected: "I want" })] }),
     );
     // grammar SÍ mapea a daily_standup segun el catalogo
-    expect(md).toContain("**Escenario recomendado para practicar:** `daily_standup`");
+    expect(md).toContain("**Recommended scenario to practice:** `daily_standup`");
   });
 
   it("incluye el drill de reescritura y lectura en voz alta", () => {
     const md = buildFeedbackReport(input());
-    expect(md).toContain("**Ejercicio:** Reescribe tus tres últimos mensajes");
+    expect(md).toContain("**Exercise:** Rewrite your last three messages");
   });
 });
 
@@ -175,7 +175,7 @@ describe("buildFeedbackReport — bloque de situación", () => {
         situation: { character: "incident", variantId: "incident.server_down" },
       }),
     );
-    expect(md).toContain("### Situación activa");
+    expect(md).toContain("### Active situation");
     expect(md).toContain(CHARACTER_COMMENTARY.incident);
   });
 
@@ -183,24 +183,24 @@ describe("buildFeedbackReport — bloque de situación", () => {
     const md = buildFeedbackReport(
       input({ situation: { character: "conflict", variantId: "conflict.late_delivery" } }),
     );
-    expect(md).toContain("**late_delivery** (variante `conflict.late_delivery`)");
+    expect(md).toContain("**late_delivery** (variant `conflict.late_delivery`)");
   });
 
   it("usa el variantId completo como título cuando no tiene punto", () => {
     const md = buildFeedbackReport(
       input({ situation: { character: "routine", variantId: "standalone" } }),
     );
-    expect(md).toContain("**standalone** (variante `standalone`)");
+    expect(md).toContain("**standalone** (variant `standalone`)");
   });
 
   it("prioriza situationTitle explícito sobre el derivado del variantId", () => {
     const md = buildFeedbackReport(
       input({
         situation: { character: "onboarding", variantId: "onboarding.day_one" },
-        situationTitle: "Primer día",
+        situationTitle: "First day",
       }),
     );
-    expect(md).toContain("**Primer día** (variante `onboarding.day_one`)");
+    expect(md).toContain("**First day** (variant `onboarding.day_one`)");
   });
 
   it("adjunta el bloque de situación también en el reporte sin errores", () => {
@@ -210,8 +210,8 @@ describe("buildFeedbackReport — bloque de situación", () => {
         situation: { character: "incident", variantId: "incident.outage" },
       }),
     );
-    expect(md).toContain("## Simulación completada — ¡buen trabajo!");
-    expect(md).toContain("### Situación activa");
+    expect(md).toContain("## Simulation complete — good job!");
+    expect(md).toContain("### Active situation");
   });
 
   it("deja el comentario vacío cuando el carácter no está en el catálogo", () => {
@@ -222,6 +222,6 @@ describe("buildFeedbackReport — bloque de situación", () => {
         situation: { character: "unknown" as any, variantId: "x.y" },
       }),
     );
-    expect(md).toContain("**y** (variante `x.y`)");
+    expect(md).toContain("**y** (variant `x.y`)");
   });
 });

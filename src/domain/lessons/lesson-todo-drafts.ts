@@ -1,7 +1,7 @@
 /**
  * Traduce lo que el cierre recomienda —recomendaciones de práctica y el reto de
  * la unidad— a lecciones anotables. Aquí vive el destino de cada clase
- * (deep-link) y su título en español, porque es la misma información que la
+ * (deep-link) y su título de producto, porque es la misma información que la
  * lista necesita después para ofrecer «Empezar» (#172).
  *
  * Dominio puro: sólo datos, ninguna navegación.
@@ -43,11 +43,11 @@ function targetOf(rec: PracticeRecommendation): string {
 }
 
 const TITLE_BY_KIND: Record<PracticeRecommendation["kind"], string> = {
-  exercise: "Ejercicio de la unidad",
-  "srs-review": "Repaso de tus tarjetas",
-  "minimal-pair": "Par mínimo de pronunciación",
-  scenario: "Escenario de conversación",
-  checklist: "Autoevaluación del nivel",
+  exercise: "Unit exercise",
+  "srs-review": "Review your cards",
+  "minimal-pair": "Pronunciation minimal pair",
+  scenario: "Conversation scenario",
+  checklist: "Level self-check",
 };
 
 export function draftFromRecommendation(
@@ -73,7 +73,7 @@ export function draftFromChallenge(
   return {
     kind: "challenge",
     target: `unit-${challenge.unit}`,
-    titleEs: `Reto de la unidad ${challenge.unit}`,
+    titleEs: `Unit ${challenge.unit} challenge`,
     reasonEs: challenge.instructionsEs,
     href: `/practice?tab=challenges&unit=${challenge.unit}`,
     origin,

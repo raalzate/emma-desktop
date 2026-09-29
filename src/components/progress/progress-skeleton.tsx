@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function ProgressSkeleton() {
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6">
+    <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
       <Skeleton className="h-8 w-48" />
       <Skeleton className="h-9 w-full max-w-xs" />
       <Skeleton className="h-4 w-full" />

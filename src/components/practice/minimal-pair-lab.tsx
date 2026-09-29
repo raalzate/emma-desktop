@@ -16,7 +16,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, Mic, Square } from "lucide-react";
+import { ChevronDown, Loader2, Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -36,7 +36,9 @@ import {
 } from "@/domain/phonetics/minimal-pair-drill";
 import {
   checkPronunciation,
+  heardNothing,
   isIntelligible,
+  splitSentences,
   type PronunciationCheckResult,
 } from "@/domain/phonetics/pronunciation-check";
 import { SOUND_CONTRASTS, SHADOWING_PROTOCOL, PART1_CHALLENGES } from "@/lib/phonetics-data";
@@ -103,78 +105,142 @@ function AttemptIcon({ state }: { state: AttemptState }) {
  * marca en verde/rojo si la máquina reconoció la palabra objetivo. */
 function PronounceCheck({ target }: { target: string }) {
   const { state, result, toggle } = useSpokenAttempt(target);
-  const heard = result?.verdicts.map((v) => v.heard ?? "…").join(" ") || "(nada)";
+  const heard = result?.verdicts.map((v) => v.heard ?? "…").join(" ") || "(nothing)";
 
   return (
     <div className="flex flex-col gap-1">
       <Button
         size="sm"
         variant={state === "recording" ? "destructive" : "outline"}
+        title={state === "recording" ? "Detiene la grabación y comprueba tu pronunciación" : "Graba la palabra para comprobar si la máquina te entiende"}
         onClick={toggle}
         disabled={state === "transcribing"}
       >
         <AttemptIcon state={state} />
-        <span className="ml-1">🎙️ Pronunciar</span>
+        <span className="ml-1">🎙️ Say it</span>
       </Button>
       {state === "error" && (
-        <p className="text-xs text-red-600">No se pudo grabar: revisa el permiso del micrófono.</p>
+        <p className="text-xs text-red-600">Couldn't record: check the microphone permission.</p>
       )}
       {result && (
         <p className={`text-xs ${result.score === 1 ? "text-green-600" : "text-red-600"}`}>
           {result.score === 1
-            ? `✅ La máquina te entendió: "${target}"`
-            : `❌ No sonó como "${target}" — oí: "${heard}"`}
+            ? `✅ The machine understood you: "${target}"`
+            : `❌ That didn't sound like "${target}" — I heard: "${heard}"`}
         </p>
       )}
     </div>
   );
 }
 
-/** Reto A completo: graba el texto largo y muestra el veredicto palabra a
- * palabra, resaltando lo que el dictado no entendió. */
-function ShadowingPronunciationCheck({ target }: { target: string }) {
-  const { state, result, toggle } = useSpokenAttempt(target);
+/**
+ * Una oración del reto: escuchar, grabar y ver el veredicto palabra a palabra.
+ * De a una oración —un párrafo entero de un tirón no se puede dictar— y con un
+ * mensaje claro cuando el dictado no oyó nada, en vez de un «0 %» mudo.
+ */
+function SentenceCheck({ index, sentence }: { index: number; sentence: string }) {
+  const { state, result, toggle } = useSpokenAttempt(sentence);
+  const nothing = result ? heardNothing(result) : false;
 
   return (
-    <div className="space-y-2">
-      <Button
-        size="sm"
-        variant={state === "recording" ? "destructive" : "outline"}
-        onClick={toggle}
-        disabled={state === "transcribing"}
-      >
-        <AttemptIcon state={state} />
-        <span className="ml-1">🎙️ Pronunciar el texto completo</span>
-      </Button>
-      {state === "error" && (
-        <p className="text-xs text-red-600">No se pudo grabar: revisa el permiso del micrófono.</p>
-      )}
-      {result && (
-        <div className="space-y-2 rounded-md border p-3">
-          <p className="text-sm">
-            Puntaje de inteligibilidad:{" "}
+    <li className="space-y-2 rounded-md border p-3">
+      <p className="text-sm">
+        <span className="mr-2 font-code text-[11px] text-muted-foreground">{index + 1}</span>
+        {sentence}
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <SpeakButton text={sentence} />
+        <Button
+          size="sm"
+          variant={state === "recording" ? "destructive" : "outline"}
+          title={state === "recording" ? "Detiene la grabación y compara tu lectura con la oración" : "Graba esta oración para comprobar si el dictado te entiende"}
+          onClick={toggle}
+          disabled={state === "transcribing"}
+        >
+          <AttemptIcon state={state} />
+          <span className="ml-1">{state === "recording" ? "Stop and check" : "Record this sentence"}</span>
+        </Button>
+        {result && !nothing && (
+          <span className="text-sm">
             <span className="font-semibold">{Math.round(result.score * 100)}%</span>{" "}
-            {isIntelligible(result.score) ? "— se entendió bien" : "— todavía cuesta entenderte"}
-          </p>
-          <p className="flex flex-wrap gap-1 text-sm">
-            {result.verdicts.map((v, i) => (
-              <span
-                key={`${v.expected}-${i}`}
-                className={v.ok ? "text-foreground" : "rounded bg-red-100 px-1 text-red-700"}
-              >
-                {v.expected}
-              </span>
-            ))}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Criterio del libro: si el dictado no te entiende, un humano tampoco. El objetivo no es sonar
-            nativo, es ser inteligible.
-          </p>
-        </div>
+            {isIntelligible(result.score) ? "— understood well" : "— still hard to understand"}
+          </span>
+        )}
+      </div>
+      {state === "error" && (
+        <p className="text-xs text-red-600">Couldn't record: check the microphone permission.</p>
       )}
-    </div>
+      {result && nothing && (
+        <p className="text-xs text-amber-700">
+          Nothing was recognized. Speak closer to the microphone, a bit louder, and try again.
+        </p>
+      )}
+      {result && !nothing && !isIntelligible(result.score) && (
+        <p className="flex flex-wrap gap-1 text-sm">
+          {result.verdicts.map((v, i) => (
+            <span
+              key={`${v.expected}-${i}`}
+              className={v.ok ? "text-foreground" : "rounded bg-red-100 px-1 text-red-700"}
+              title={v.ok ? "El dictado entendió esta palabra" : v.heard ? "El dictado oyó «" + v.heard + "»: repite esta palabra despacio" : "El dictado no oyó esta palabra: repítela marcando cada sílaba"}
+            >
+              {v.expected}
+            </span>
+          ))}
+        </p>
+      )}
+    </li>
   );
 }
+
+/** Reto A: shadowing del texto del libro, oración por oración. */
+function ShadowingChallenge({ instructionsEs }: { instructionsEs: string }) {
+  const text = extractQuotedText(instructionsEs);
+  const sentences = useMemo(() => splitSentences(text), [text]);
+  const [notesOpen, setNotesOpen] = useState(false);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">Challenge A · Shadow the text, one sentence at a time</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ol className="grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
+          <li>1. Listen to each sentence twice.</li>
+          <li>2. Read it aloud together with the audio.</li>
+          <li>3. Record it and see which words the dictation missed.</li>
+          <li>4. Repeat the red words slowly, then record again.</li>
+        </ol>
+        <div className="flex items-center gap-2">
+          <SpeakButton text={text} />
+          <span className="text-sm">Listen to the whole text</span>
+        </div>
+        <ol className="space-y-2">
+          {sentences.map((sentence, i) => (
+            <SentenceCheck key={sentence} index={i} sentence={sentence} />
+          ))}
+        </ol>
+        <p className="text-xs text-muted-foreground">
+          Golden rule: if dictation can't understand you, neither can a human. The goal is not to
+          sound native, it is to be intelligible.
+        </p>
+        <div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="gap-1 px-2 text-xs"
+            title="Notas de preparación en español: marcar vocales, sílabas fuertes y puntos de linking antes de grabar"
+            onClick={() => setNotesOpen((o) => !o)}
+          >
+            <ChevronDown className={notesOpen ? "h-3.5 w-3.5 rotate-180 transition-transform" : "h-3.5 w-3.5 transition-transform"} />
+            Preparation notes (Spanish)
+          </Button>
+          {notesOpen && <p className="mt-1 text-sm text-muted-foreground">{instructionsEs}</p>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 
 const ROUND_SIZE = 10;
 const CONTRASTS = SOUND_CONTRASTS.filter((c) => c.id !== "vowel-atlas");
@@ -204,11 +270,11 @@ function PerceptionRound({ contrastId }: { contrastId: string }) {
       <Card>
         <CardContent className="space-y-2 p-4">
           <p className="text-sm">
-            Aciertos: <span className="font-semibold">{score.correct}</span> de {score.total}
+            Correct: <span className="font-semibold">{score.correct}</span> of {score.total}
           </p>
           {score.weakPairs.length > 0 && (
             <p className="text-sm text-muted-foreground">
-              Palabras a reforzar: {score.weakPairs.join(", ")}
+              Words to reinforce: {score.weakPairs.join(", ")}
             </p>
           )}
         </CardContent>
@@ -234,34 +300,44 @@ function PerceptionRound({ contrastId }: { contrastId: string }) {
     <Card>
       <CardHeader>
         <CardTitle className="text-sm text-muted-foreground">
-          Ítem {index + 1} de {items.length}
+          Item {index + 1} of {items.length}
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex items-center gap-2">
-          <SpeakButton text={item.prompt} />
-          <span className="text-sm text-muted-foreground">Escucha y elige qué palabra sonó</span>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <p className="text-sm font-medium">1 · Listen to the word (repeat it as many times as you like)</p>
+          {/* key por ítem: cada palabra tiene su propio audio, nunca el de la anterior. */}
+          <SpeakButton key={`speak-${index}-${item.prompt}`} text={item.prompt} label="Listen to the word" />
         </div>
-        <PronounceCheck key={item.prompt} target={item.prompt} />
-        <div className="flex gap-2">
-          {item.options.map((option, i) => (
-            <Button
-              key={option}
-              variant={feedback !== null && i === item.answerIndex ? "default" : "outline"}
-              disabled={feedback !== null}
-              onClick={() => choose(i)}
-            >
-              {option}
-            </Button>
-          ))}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">2 · Which of the two did you hear?</p>
+          <div className="flex gap-2">
+            {item.options.map((option, i) => (
+              <Button
+                key={option}
+                variant={feedback !== null && i === item.answerIndex ? "default" : "outline"}
+                title="Marca la palabra que creés haber oído"
+                disabled={feedback !== null}
+                onClick={() => choose(i)}
+                className="min-w-24 text-base"
+              >
+                {option}
+              </Button>
+            ))}
+          </div>
         </div>
         {feedback !== null && (
-          <div className="space-y-2">
-            <p className={feedback ? "text-green-600" : "text-red-600"}>
-              {feedback ? "✅ Correcto" : "❌ Incorrecto"}
+          <div className="space-y-3">
+            <p className={feedback ? "font-medium text-scaffold-easy" : "font-medium text-scaffold-hard"}>
+              {feedback ? "Correct: it was " : "No: the word you heard was "}
+              <span className="font-code">&quot;{item.prompt}&quot;</span>
             </p>
-            <Button size="sm" onClick={next}>
-              Siguiente
+            <div className="space-y-2">
+              <p className="text-sm font-medium">3 · Now say it yourself and check whether the machine understands you</p>
+              <PronounceCheck key={`pron-${index}-${item.prompt}`} target={item.prompt} />
+            </div>
+            <Button size="sm" title="Pasa al siguiente par mínimo" onClick={next}>
+              Next
             </Button>
           </div>
         )}
@@ -283,21 +359,7 @@ function ShadowingSection() {
           </li>
         ))}
       </ol>
-      {CHALLENGE_A && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Reto A</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm text-muted-foreground">{CHALLENGE_A.instructionsEs}</p>
-            <div className="flex items-center gap-2">
-              <SpeakButton text={extractQuotedText(CHALLENGE_A.instructionsEs)} />
-              <span className="text-sm">Escuchar el texto del reto</span>
-            </div>
-            <ShadowingPronunciationCheck target={extractQuotedText(CHALLENGE_A.instructionsEs)} />
-          </CardContent>
-        </Card>
-      )}
+      {CHALLENGE_A && <ShadowingChallenge instructionsEs={CHALLENGE_A.instructionsEs} />}
     </div>
   );
 }
@@ -319,7 +381,7 @@ export function MinimalPairLab({ initialContrastId }: Props = {}) {
       <div className="space-y-3">
         <Select value={contrastId} onValueChange={setContrastId}>
           <SelectTrigger className="w-full sm:w-96">
-            <SelectValue placeholder="Elige un contraste" />
+            <SelectValue placeholder="Pick a contrast" />
           </SelectTrigger>
           <SelectContent>
             {CONTRASTS.map((c) => (

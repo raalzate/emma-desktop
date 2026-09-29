@@ -19,14 +19,14 @@ type Info = Record<string, unknown>;
 function rows(i: Info): [string, string][] {
   const g = (k: string) => (i[k] ?? "n/d") as string | number;
   return [
-    ["Sistema operativo", `${g("osName")} ${g("osVersion")} (${g("arch")})`],
-    ["CPU", `${g("cpuModel")} · ${g("cpuCores")} núcleos`],
-    ["Memoria", `${g("freeRamGB")} GB libres de ${g("totalRamGB")} GB`],
-    ["Disco (datos)", `${g("diskFreeGB")} GB libres de ${g("diskTotalGB")} GB`],
-    ["Versión de EMMA", String(g("appVersion"))],
+    ["Operating system", `${g("osName")} ${g("osVersion")} (${g("arch")})`],
+    ["CPU", `${g("cpuModel")} · ${g("cpuCores")} cores`],
+    ["Memory", `${g("freeRamGB")} GB free of ${g("totalRamGB")} GB`],
+    ["Disk (data)", `${g("diskFreeGB")} GB free of ${g("diskTotalGB")} GB`],
+    ["EMMA version", String(g("appVersion"))],
     ["Electron / Chromium", `${g("electronVersion")} / ${g("chromeVersion")}`],
     ["Node", String(g("nodeVersion"))],
-    ["Carpeta de datos", String(g("userDataPath"))],
+    ["Data folder", String(g("userDataPath"))],
   ];
 }
 
@@ -46,8 +46,8 @@ export function SystemInfoCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sistema</CardTitle>
-        <CardDescription>Datos del equipo y del runtime de EMMA.</CardDescription>
+        <CardTitle>System</CardTitle>
+        <CardDescription>Details about your device and EMMA's runtime.</CardDescription>
       </CardHeader>
       <CardContent>
         <dl className="divide-y text-sm">
@@ -68,9 +68,9 @@ function Unavailable() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sistema</CardTitle>
+        <CardTitle>System</CardTitle>
         <CardDescription>
-          La información del sistema sólo está disponible en la app de escritorio.
+          System information is only available in the desktop app.
         </CardDescription>
       </CardHeader>
     </Card>

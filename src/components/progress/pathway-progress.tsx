@@ -14,7 +14,7 @@ export function PathwayProgress({ pathway, level }: { pathway: Pathway; level: s
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium">Escenarios superados</span>
+        <span className="font-medium">Scenarios passed</span>
         <span className="text-muted-foreground">
           {passed}/{total}
         </span>
@@ -31,8 +31,8 @@ function PassBarHint({ level }: { level: string }) {
     <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
       <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <span>
-        Apruebas un escenario con ≤ {passBar(level)} errores por turno; {PROMOTION_STREAK} aprobados
-        seguidos te promueven al siguiente nivel.
+        You pass a scenario with ≤ {passBar(level)} errors per turn; {PROMOTION_STREAK} passes
+        in a row move you up to the next level.
       </span>
     </p>
   );

@@ -7,7 +7,7 @@ const card: SrsCard = {
   kind: "sentence-production",
   box: 2,
   lastReviewedDay: 0,
-  front: 'Di esto correctamente: "I go yesterday"',
+  front: 'Corrige esta frase: "I go yesterday"',
   back: "I went yesterday.",
 };
 
@@ -20,6 +20,15 @@ describe("checkRecall", () => {
   });
   it("marca mal cuando es otra frase", () => {
     expect(checkRecall(card, "I go yesterday")).toBe("wrong");
+  });
+  it("otra palabra entera no es «casi» aunque la frase se parezca: issues ≠ tasks", () => {
+    const tasks = { ...card, front: 'Corrige esta frase: "I finished the issues"', back: "I finished the tasks." };
+    expect(checkRecall(tasks, "I finished the issues.")).toBe("wrong");
+  });
+  it("acepta escribir sólo las palabras que faltan en los huecos", () => {
+    expect(checkRecall(card, "went")).toBe("correct");
+    expect(checkRecall(card, "wnet")).toBe("near");
+    expect(checkRecall(card, "go")).toBe("wrong");
   });
 });
 

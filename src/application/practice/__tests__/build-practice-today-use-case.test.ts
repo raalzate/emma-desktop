@@ -29,7 +29,7 @@ describe("getPracticeToday", () => {
     const srsStep = plan.steps.find((s) => s.tab === "srs");
     expect(srsStep?.count).toBe(1);
     const challengeStep = plan.steps.find((s) => s.tab === "challenges");
-    expect(challengeStep?.titleEs).toMatch(/Reto \d+/);
-    expect(challengeStep?.titleEs).not.toBe("Reto 1");
+    expect(challengeStep?.titleEs).toMatch(/Challenge \d+/);
+    expect(challengeStep?.titleEs).not.toBe("Challenge 1");
   });
 });

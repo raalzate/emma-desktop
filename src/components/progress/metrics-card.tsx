@@ -38,27 +38,27 @@ function buildRows(averages: SessionAverages): MetricRow[] {
   return [
     {
       icon: Timer,
-      label: "Latencia de respuesta",
+      label: "Response latency",
       value: averages.responseLatencySeconds.toFixed(1),
       unit: "s",
       level: levels["response-latency"],
-      note: "Segundos hasta empezar a responder una pregunta directa. Menos es mejor.",
+      note: "Seconds before you start answering a direct question. Lower is better.",
     },
     {
       icon: MessageSquareText,
-      label: "Monólogo sostenido",
+      label: "Sustained monologue",
       value: `${Math.round(averages.longestMonologueWords)}`,
-      unit: "palabras",
+      unit: "words",
       level: levels["sustained-monologue"],
-      note: "Palabras del turno más largo del aprendiz (proxy de hablar sin parar).",
+      note: "Words in your longest turn (a proxy for speaking without stopping).",
     },
     {
       icon: SpellCheck,
-      label: "Densidad de error",
+      label: "Error density",
       value: averages.errorDensityPer100Words.toFixed(1),
-      unit: "/ 100 palabras",
+      unit: "/ 100 words",
       level: levels["error-density"],
-      note: "Errores gramaticales por cada 100 palabras escritas. Menos es mejor.",
+      note: "Grammar errors per 100 written words. Lower is better.",
     },
   ];
 }
@@ -70,7 +70,7 @@ export function MetricsCardView({ averages }: { averages: SessionAverages }) {
     <section className="space-y-4 rounded-bubble border border-border bg-card p-5">
       <p className="flex items-center gap-1.5 font-code text-[11px] uppercase tracking-widest text-muted-foreground">
         <Gauge className="h-3.5 w-3.5" />
-        Tus métricas
+        Your metrics
       </p>
       <ul className="grid gap-5 sm:grid-cols-3">
         {rows.map((row) => {
@@ -81,21 +81,21 @@ export function MetricsCardView({ averages }: { averages: SessionAverages }) {
                 <Icon className="h-3.5 w-3.5 text-accent" />
                 {row.label}
               </p>
-              <p className="flex items-baseline gap-1.5">
+              <div className="flex items-baseline gap-1.5">
                 <span className="font-headline text-3xl font-bold">{row.value}</span>
                 <span className="text-sm text-muted-foreground">{row.unit}</span>
                 <Badge variant="outline" className="ml-auto">
                   {row.level}
                 </Badge>
-              </p>
+              </div>
               <p className="text-xs text-muted-foreground">{row.note}</p>
             </li>
           );
         })}
       </ul>
       <p className="text-xs text-muted-foreground">
-        Las otras dos métricas del libro (velocidad de lectura y comprensión auditiva) no
-        se calculan aquí: se autoevalúan manualmente.
+        The other two metrics of the method (reading speed and listening comprehension) are
+        not computed here: you self-assess them manually.
       </p>
     </section>
   );

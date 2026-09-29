@@ -10,12 +10,16 @@
  * El `resolve` actual vive en un ref, de modo que sólo hay una pregunta viva a
  * la vez (flujo estricto por turnos). Un segundo envío sin pregunta activa se
  * ignora, evitando dobles envíos.
+ *
+ * Cada mensaje de Emma se locuta en segundo plano (sin botón): el onboarding
+ * es una charla, y oírla ayuda a quien todavía no lee inglés con soltura.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { OnboardingIo } from "@/domain/onboarding/i-onboarding-repository";
 import { REQUIRED_FIELDS } from "@/domain/onboarding/agentic-onboarding";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
+import { useBackgroundVoice } from "./use-background-voice";
 
 export type BubbleRole = "emma" | "user";
 export interface Bubble {
@@ -24,9 +28,9 @@ export interface Bubble {
   text: string;
 }
 
-/** Aviso en español cuando el motor de IA no pudo atender el onboarding. */
+/** Aviso cuando el motor de IA no pudo atender el onboarding. */
 export const ONBOARDING_ERROR =
-  "No pude conectar con el motor de IA. Revisá el modelo local o la clave de la nube en Ajustes y volvé a intentar.";
+  "I couldn't connect to the AI engine. Check the local model or the cloud key in Settings and try again.";
 
 // La escala real del flujo agéntico: campos requeridos, no pasos de formulario.
 const TOTAL_STEPS = REQUIRED_FIELDS.length;
@@ -56,10 +60,15 @@ export function useOnboardingFlow(
   const resolveRef = useRef<((v: string) => void) | null>(null);
   const idRef = useRef(0);
   const startedRef = useRef(false);
+  const voice = useBackgroundVoice();
 
-  const push = useCallback((role: BubbleRole, text: string) => {
-    setMessages((prev) => [...prev, { id: idRef.current++, role, text }]);
-  }, []);
+  const push = useCallback(
+    (role: BubbleRole, text: string) => {
+      setMessages((prev) => [...prev, { id: idRef.current++, role, text }]);
+      if (role === "emma") void voice.speak(text);
+    },
+    [voice],
+  );
 
   // Resuelve la pregunta viva; sin pregunta activa el envío se descarta.
   const submit = useCallback(

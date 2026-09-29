@@ -17,19 +17,19 @@ export type ErrorLabel =
   | "grammar";
 
 const STRIP_PUNCT = /[.,;:!?¿¡]/g;
-const ARTICLES = new Set(["a", "an", "the"]);
-const PREPOSITIONS = new Set([
+export const ARTICLES = new Set(["a", "an", "the"]);
+export const PREPOSITIONS = new Set([
   "in", "on", "at", "to", "for", "of", "with", "by", "from", "about",
   "into", "over", "under", "after", "before", "during", "between",
   "against", "since", "until", "through",
 ]);
 
-function tokens(text: string): string[] {
+export function tokens(text: string): string[] {
   return text.replace(STRIP_PUNCT, "").toLowerCase().split(/\s+/).filter(Boolean);
 }
 
 /** go/goes, task/tasks, want/wanted — una palabra es extensión corta de la otra. */
-function sameStem(a: string, b: string): boolean {
+export function sameStem(a: string, b: string): boolean {
   const [short, longer] = a.length <= b.length ? [a, b] : [b, a];
   return longer.startsWith(short) || a.slice(0, 3) === b.slice(0, 3);
 }
@@ -61,11 +61,20 @@ function isSubset(small: Set<string>, big: Set<string>): boolean {
   return true;
 }
 
+/** Palabras que sobran y faltan entre la frase original y la corregida (multiconjunto). */
+export function wordDelta(original: string, corrected: string): { removed: string[]; added: string[] } {
+  const orig = tokens(original);
+  const corr = tokens(corrected);
+  return {
+    removed: subtract(counter(orig), counter(corr)),
+    added: subtract(counter(corr), counter(orig)),
+  };
+}
+
 function wordLevelLabel(original: string, corrected: string): ErrorLabel {
   const orig = tokens(original);
   const corr = tokens(corrected);
-  const removed = subtract(counter(orig), counter(corr));
-  const added = subtract(counter(corr), counter(orig));
+  const { removed, added } = wordDelta(original, corrected);
   const changed = new Set([...removed, ...added]);
   if (changed.size === 0) {
     return orig.join(" ") !== corr.join(" ") ? "word_order" : "grammar";

@@ -221,7 +221,7 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
           idPrefix: `session-${Date.now()}`,
         });
       } catch (err) {
-        console.error("No se pudieron guardar las tarjetas SRS de la sesión", err);
+        console.error("Could not save the session's SRS cards", err);
       }
       // Métricas de progreso de la sesión (0.6 del libro: latencia, monólogo,
       // densidad de error); un fallo del repo no debe impedir cerrar la sesión.
@@ -233,7 +233,7 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
           at: Date.now(),
         });
       } catch (err) {
-        console.error("No se pudieron guardar las métricas de progreso de la sesión", err);
+        console.error("Could not save the session's progress metrics", err);
       }
       // Recomendaciones de práctica ("próximos pasos"), con el escenario recién
       // jugado como unidad activa; un fallo no debe impedir cerrar la sesión.

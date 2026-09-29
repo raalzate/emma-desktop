@@ -33,14 +33,14 @@ describe("MetricsCardView (rediseño Café sereno, FR-027)", () => {
     const html = render();
     expect(html).toContain("font-code");
     expect(html).toContain("uppercase");
-    expect(html).toContain("Latencia de respuesta");
-    expect(html).toContain("Monólogo sostenido");
-    expect(html).toContain("Densidad de error");
+    expect(html).toContain("Response latency");
+    expect(html).toContain("Sustained monologue");
+    expect(html).toContain("Error density");
     // Cada label lleva su icono lucide al lado.
     expect(html.match(/<svg/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
   });
 
   it("conserva la nota de las métricas que se autoevalúan", () => {
-    expect(render()).toContain("se autoevalúan manualmente");
+    expect(render()).toContain("self-assess them manually");
   });
 });

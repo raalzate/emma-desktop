@@ -19,27 +19,29 @@ const HINT_STYLE: Record<string, { chip: string; dot: string }> = {
   advanced: { chip: "bg-scaffold-hard-bg text-scaffold-hard", dot: "bg-scaffold-hard" },
 };
 
-// Globo de ayuda en español (andamiaje); la sugerencia en sí queda en inglés (inmersión).
-const HINT_TOOLTIP: Record<string, string> = {
-  easy: "Ejemplo de respuesta — nivel sencillo. Escríbela tú con tus palabras.",
-  mid: "Ejemplo de respuesta — nivel intermedio. Escríbela tú con tus palabras.",
-  advanced: "Ejemplo de respuesta — nivel avanzado. Escríbela tú con tus palabras.",
-};
-
 export function SuggestionChips({ suggestions }: { suggestions: ReplySuggestion[] }) {
   if (!suggestions.length) return null;
   const style = (hint: string) => HINT_STYLE[hint] ?? { chip: "", dot: "bg-border" };
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-2" aria-label="Ejemplos de respuesta">
-      {/* Tag del grupo: marca visible de que esto es andamiaje, en español (FR-020). */}
+    <div className="mb-2 flex flex-wrap items-center gap-2" aria-label="Example replies">
+      {/* Tag del grupo: marca visible de que esto es andamiaje (FR-020); el
+          globo (title) es el único texto en español. */}
       <span className="rounded-md border border-dashed border-border px-2 py-0.5 font-code text-[10px] tracking-[0.15em] text-muted-foreground">
-        ANDAMIAJE · ES
+        HINTS
       </span>
       {suggestions.map((s) => (
         <span
           key={s.levelHint}
           className={`flex select-text items-center gap-1.5 rounded-full px-3 py-1.5 text-left text-xs ${style(s.levelHint).chip}`}
-          title={HINT_TOOLTIP[s.levelHint]}
+          // Globo de ayuda en español (único andamiaje, Art. 9); la sugerencia
+          // en sí queda en inglés (inmersión). Vive inline en `title` a propósito.
+          title={
+            s.levelHint === "easy"
+              ? "Ejemplo de respuesta — nivel sencillo. Escríbela tú con tus palabras."
+              : s.levelHint === "advanced"
+                ? "Ejemplo de respuesta — nivel avanzado. Escríbela tú con tus palabras."
+                : "Ejemplo de respuesta — nivel intermedio. Escríbela tú con tus palabras."
+          }
         >
           <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style(s.levelHint).dot}`} aria-hidden />
           {s.text}

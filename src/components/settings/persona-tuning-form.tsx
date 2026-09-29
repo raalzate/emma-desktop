@@ -48,8 +48,8 @@ export function PersonaTuningForm() {
     try {
       await savePersonaTuning(selected, tuning);
       toast({
-        title: "Protopersona guardada",
-        description: `${persona.name} usará esta entrega en sus escenarios.`,
+        title: "Protopersona saved",
+        description: `${persona.name} will use this delivery in their scenes.`,
       });
     } finally {
       setSaving(false);
@@ -61,8 +61,8 @@ export function PersonaTuningForm() {
       <CardHeader>
         <CardTitle>Protopersonas</CardTitle>
         <CardDescription>
-          Los personajes con los que practicas en cada escenario. Su identidad y voz
-          son fijas; ajusta cómo se comportan.
+          The characters you practice with in each scene. Their identity and voice
+          are fixed; adjust how they behave.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -73,8 +73,8 @@ export function PersonaTuningForm() {
               size="sm"
               variant={key === selected ? "default" : "outline"}
               className="h-7 rounded-full px-3 text-xs"
+              title={"Elige a " + PROTOPERSONAS[key].name + " (" + PROTOPERSONAS[key].role + ") para ajustar cómo se comporta"}
               onClick={() => setSelected(key)}
-              title={`${PROTOPERSONAS[key].name} — ${PROTOPERSONAS[key].role}`}
             >
               {PROTOPERSONAS[key].name.split(" ")[0]}
             </Button>
@@ -86,7 +86,7 @@ export function PersonaTuningForm() {
             <p className="text-sm font-semibold">{persona.name}</p>
             <Badge variant="secondary" className="text-[10px]">{persona.role}</Badge>
             <Badge variant="outline" className="text-[10px]">
-              Voz {persona.voice === "feminine" ? "femenina" : "masculina"}
+              {persona.voice === "feminine" ? "Feminine" : "Masculine"} voice
             </Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">{persona.trait}</p>
@@ -106,8 +106,8 @@ export function PersonaTuningForm() {
           ))}
         </div>
 
-        <Button onClick={save} disabled={saving}>
-          {saving ? "Guardando…" : "Guardar protopersona"}
+        <Button title="Guarda los ajustes de comportamiento de este personaje" onClick={save} disabled={saving}>
+          {saving ? "Saving…" : "Save protopersona"}
         </Button>
       </CardContent>
     </Card>

@@ -60,12 +60,12 @@ interface Props {
   onTranslate: (text: string) => void;
 }
 
-/** Decisión metodológica de Emma en una línea legible (andamiaje: español). */
+/** Decisión metodológica de Emma en una línea legible. */
 function decisionLineOf(view: LessonView): string {
   const { promoted, passed, newLevel } = view.decision;
-  if (promoted) return `✅ Emma decide: subes de nivel a ${newLevel}. ¡Gran trabajo!`;
-  if (passed) return "✅ Emma decide: escenario superado — puedes avanzar en tu ruta.";
-  return "🔁 Emma decide: repite este escenario para consolidar antes de avanzar.";
+  if (promoted) return `✅ Emma’s call: you move up to ${newLevel}. Great work!`;
+  if (passed) return "✅ Emma’s call: scenario passed — you can move on in your path.";
+  return "🔁 Emma’s call: repeat this scenario to consolidate before moving on.";
 }
 
 /** Reto del libro para la unidad de esta sesión (tolerante a fallo: sin reto, sin sección). */
@@ -109,12 +109,13 @@ export function LessonKaraoke({
   return (
     <div className="mt-3">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="mr-auto text-sm font-semibold">📚 Lección de Emma</p>
+        <p className="mr-auto text-sm font-semibold">📚 Lesson from Emma</p>
         {speakable && (
           <Button
             variant="secondary"
             size="sm"
             className="gap-1"
+            title={karaoke.playing ? "Detén la lectura de la lección" : "Escucha la lección en voz alta con las palabras resaltadas"}
             disabled={!karaoke.available || karaoke.loading}
             onClick={() => (karaoke.playing ? karaoke.stop() : karaoke.play())}
           >
@@ -125,11 +126,11 @@ export function LessonKaraoke({
             ) : (
               <Play className="h-4 w-4" />
             )}
-            {karaoke.playing ? "Detener" : "Escuchar a Emma"}
+            {karaoke.playing ? "Stop" : "Listen to Emma"}
           </Button>
         )}
-        <Button variant="outline" size="sm" className="gap-1" onClick={onTranslate}>
-          <Languages className="h-4 w-4" /> Ayuda en español
+        <Button variant="outline" size="sm" className="gap-1" title="Traduce la lección al español si algo no quedó claro" onClick={onTranslate}>
+          <Languages className="h-4 w-4" /> Help in Spanish
         </Button>
       </div>
       <KaraokeTranscript
@@ -169,7 +170,7 @@ function AnotarButton({
       onClick={() => onAdd(draft)}
     >
       {added ? <Check className="h-3.5 w-3.5" /> : <ListPlus className="h-3.5 w-3.5" />}
-      {added ? "Anotada" : label}
+      {added ? "Saved" : label}
     </Button>
   );
 }
@@ -230,11 +231,11 @@ export function LessonDialog({
     <Dialog open={open} onOpenChange={(o) => !o && closeAnd()}>
       <DialogContent className="max-h-[85vh] max-w-2xl">
         <DialogHeader>
-          <DialogTitle>🎓 Tu lección con Emma</DialogTitle>
+          <DialogTitle>🎓 Your lesson with Emma</DialogTitle>
           <DialogDescription>
             {scenario.title}
-            {situation?.title ? ` · ${situation.title}` : ""} · nivel {level}
-            {view.stored ? " · guardada en tu histórico" : ""}
+            {situation?.title ? ` · ${situation.title}` : ""} · level {level}
+            {view.stored ? " · saved in your history" : ""}
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-2">
@@ -253,12 +254,12 @@ export function LessonDialog({
           {/* Componente 2 — Decisión de Emma: avanzar de nivel o repetir. */}
           <section className="rounded-lg border bg-muted/40 p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Decisión de Emma
+              Emma’s decision
             </p>
             <p className="mt-1 text-sm font-medium">{decisionLineOf(view)}</p>
             {view.next && !view.decision.promoted && (
               <p className="mt-1 text-xs text-muted-foreground">
-                Sugerencia de la ruta: {view.next.title}.
+                Path suggestion: {view.next.title}.
               </p>
             )}
           </section>
@@ -266,10 +267,10 @@ export function LessonDialog({
           {view.recommendations.length > 0 && (
             <section className="rounded-lg border bg-muted/40 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Próximos pasos
+                Next steps
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Anótalas y hazlas cuando quieras: quedan en «Mis lecciones».
+                Save them and do them whenever you like: they live in “My lessons”.
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {view.recommendations.map((rec, i) => (
@@ -288,10 +289,10 @@ export function LessonDialog({
           {sessionChallenge && (
             <section className="rounded-lg border bg-muted/40 p-4">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Tu reto de esta unidad
+                Your challenge for this unit
               </p>
               <p className="mt-1 text-sm font-medium">
-                Unidad {sessionChallenge.unit.number} · {sessionChallenge.unit.title}
+                Unit {sessionChallenge.unit.number} · {sessionChallenge.unit.title}
               </p>
               <p className="mt-1 text-sm">{sessionChallenge.challenge.instructionsEs}</p>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
@@ -301,7 +302,7 @@ export function LessonDialog({
               </ul>
               <div className="mt-2">
                 <AnotarButton
-                  label="Anotar el reto"
+                  label="Save the challenge"
                   draft={challengeDraft!}
                   onAdd={addTodo}
                   added={addedKeys.has(`challenge:${challengeDraft?.target}`)}
@@ -314,17 +315,18 @@ export function LessonDialog({
           <Button
             variant="outline"
             className="gap-1"
+            title="Repite esta misma escena para afianzar lo que acabas de aprender"
             onClick={() => closeAnd(() => onSelectScenario(scenario))}
           >
-            <RotateCcw className="h-4 w-4" /> Practicar de nuevo
+            <RotateCcw className="h-4 w-4" /> Practice again
           </Button>
           {nextScenario ? (
-            <Button className="gap-1" onClick={() => closeAnd(() => onSelectScenario(nextScenario))}>
-              Siguiente: {nextScenario.title} <ArrowRight className="h-4 w-4" />
+            <Button className="gap-1" title="Avanza a la siguiente escena de tu ruta" onClick={() => closeAnd(() => onSelectScenario(nextScenario))}>
+              Next: {nextScenario.title} <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
-            <Button className="gap-1" onClick={() => closeAnd()}>
-              Cerrar
+            <Button className="gap-1" title="Cierra la lección; queda guardada en tu historial" onClick={() => closeAnd()}>
+              Close
             </Button>
           )}
         </DialogFooter>

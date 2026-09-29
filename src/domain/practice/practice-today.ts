@@ -31,9 +31,9 @@ export interface PracticeToday {
 const HEAVY_DUE = 10;
 
 function headline(input: PracticeTodayInput): string {
-  if (input.dueCards >= HEAVY_DUE) return "Hoy toca repasar antes que nada: hay bastante vencido.";
-  if (input.dueCards > 0) return "Un repaso corto y luego a practicar.";
-  return "Sin repaso pendiente: día para avanzar.";
+  if (input.dueCards >= HEAVY_DUE) return "Review comes first today: a lot is overdue.";
+  if (input.dueCards > 0) return "A short review, then on to practice.";
+  return "Nothing to review: a day to move forward.";
 }
 
 export function buildPracticeToday(input: PracticeTodayInput): PracticeToday {
@@ -42,19 +42,19 @@ export function buildPracticeToday(input: PracticeTodayInput): PracticeToday {
   if (input.dueCards > 0) {
     steps.push({
       tab: "srs",
-      titleEs: "Repaso espaciado",
-      detailEs: `${input.dueCards} tarjeta(s) vencidas · 5 minutos`,
+      titleEs: "Spaced review",
+      detailEs: `${input.dueCards} card(s) due · 5 min`,
       count: input.dueCards,
     });
   }
 
   steps.push(
     input.activeUnit === null
-      ? { tab: "exercises", titleEs: "Ejercicios", detailEs: "Elige una unidad y corrige ítem a ítem." }
+      ? { tab: "exercises", titleEs: "Exercises", detailEs: "Pick a unit and check item by item." }
       : {
           tab: "exercises",
-          titleEs: `Ejercicios de la unidad ${input.activeUnit}`,
-          detailEs: "Estructuras de tu unidad activa, con pistas y reintento.",
+          titleEs: `Unit ${input.activeUnit} exercises`,
+          detailEs: "Structures from your active unit, with hints and a retry.",
           unit: input.activeUnit,
         },
   );
@@ -62,16 +62,16 @@ export function buildPracticeToday(input: PracticeTodayInput): PracticeToday {
   if (input.nextChallengeId !== null && input.challenges.done < input.challenges.total) {
     steps.push({
       tab: "challenges",
-      titleEs: `Reto ${input.nextChallengeId}`,
-      detailEs: `Output forzado · ${input.challenges.done}/${input.challenges.total} completados`,
+      titleEs: `Challenge ${input.nextChallengeId}`,
+      detailEs: `Forced output · ${input.challenges.done}/${input.challenges.total} completed`,
       unit: input.activeUnit ?? undefined,
     });
   }
 
   steps.push({
     tab: "pronunciation",
-    titleEs: "Laboratorio de sonidos",
-    detailEs: "Una ronda de pares mínimos y dictado.",
+    titleEs: "Sound lab",
+    detailEs: "One round of minimal pairs and dictation.",
   });
 
   return { headlineEs: headline(input), steps };

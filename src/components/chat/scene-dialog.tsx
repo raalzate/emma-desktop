@@ -7,8 +7,8 @@
  * es su misión. Este diálogo la devuelve sin tocar la conversación —no re-teclea
  * la narración, no dispara TTS, no cambia de turno.
  *
- * El contenido de la escena sigue en INGLÉS; el título del diálogo y el estado
- * de preparación van en español (Artículo 9).
+ * Todo va en INGLÉS: el contenido de la escena porque es la ficción, el título
+ * y el estado de preparación porque la UI habla inglés (Artículo 9).
  */
 
 import { Clapperboard, Loader2, Target, User } from "lucide-react";
@@ -56,13 +56,13 @@ export function SceneDialogBody({ scenario, situation, sceneReady, narrative }: 
       {!sceneReady && (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
-          Creando tu escena…
+          Setting up your scene…
         </p>
       )}
       {/* Franja de escena (FR-014): la misma banda ámbar que narró la entrada. */}
       <div className="space-y-2 rounded-[12px] bg-accent-soft px-4 py-3">
         <span className="block font-code text-[10px] font-medium tracking-[0.15em] text-accent">
-          ESCENA
+          SCENE
         </span>
         {rest.map((beat, i) => {
           const Icon = ICON_BY_KIND[beat.kind];
@@ -84,7 +84,7 @@ export function SceneDialogBody({ scenario, situation, sceneReady, narrative }: 
       {mission.length > 0 && (
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Tu objetivo en la escena (en inglés)
+            Your goal in this scene
           </p>
           <ul className="mt-1.5 space-y-1.5">
             {mission.map((beat, i) => (
@@ -110,7 +110,7 @@ export function SceneDialog({ open, onClose, ...body }: Props) {
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Tu escena</DialogTitle>
+          <DialogTitle>Your scene</DialogTitle>
         </DialogHeader>
         <SceneDialogBody {...body} />
       </DialogContent>
