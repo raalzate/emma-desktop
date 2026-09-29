@@ -16,6 +16,7 @@ import type {
   ReplySuggestion,
   VerbRole,
 } from "@/domain/english-teacher/teaching-models";
+import { isCoherentTrio } from "@/domain/english-teacher/grammar-trio-check";
 
 // Marcadores de lista que el modelo puede emitir en vez de `REPLY:`; separadores de nota.
 const LIST_MARKER = /^\s*(?:[-*•]|\d+[.)])\s+/;
@@ -106,8 +107,9 @@ function parseMarkedExample(form: GrammarForm, raw: string): GrammarExample | nu
 
 /**
  * Valida el trío en el borde: sólo se muestran las tres formas si llegaron las
- * TRES, cada una con sus verbos marcados. Cualquier hueco degrada la estructura
- * al formato de siempre en vez de pintar media tarjeta.
+ * TRES, cada una con sus verbos marcados, y el trío es inglés coherente (#193).
+ * Cualquier hueco o error degrada la estructura al formato de siempre en vez de
+ * pintar media tarjeta o enseñar una frase agramatical.
  */
 function completeExamples(rawForms: Map<GrammarForm, string>): GrammarExample[] | undefined {
   const examples: GrammarExample[] = [];
@@ -117,7 +119,7 @@ function completeExamples(rawForms: Map<GrammarForm, string>): GrammarExample[] 
     if (!example) return undefined;
     examples.push(example);
   }
-  return examples;
+  return isCoherentTrio(examples) ? examples : undefined;
 }
 
 /** Divide la salida de gramática en bloques (STRUCTURE: o headers Markdown). */
