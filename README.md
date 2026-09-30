@@ -11,8 +11,8 @@ Universidad del Valle — [página del programa](https://eisc.univalle.edu.co/in
 
 **Equipo**
 
-- Oscar Andrés Osorio — oscar.andres.osorio@correounivalle.edu.co
-- Raúl Alzate — raul.alzate@correounivalle.edu.co
+- Oscar Andrés Osorio — oscar.andres.osorio@correounivalle.edu.co · [@OscarOso28](https://github.com/OscarOso28)
+- Raúl Alzate — raul.alzate@correounivalle.edu.co · [@raalzate](https://github.com/raalzate)
 
 **Asesor**
 
