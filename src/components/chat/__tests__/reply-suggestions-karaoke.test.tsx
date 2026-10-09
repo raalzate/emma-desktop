@@ -26,7 +26,7 @@ vi.mock("@/components/chat/use-karaoke", () => ({
   }),
 }));
 
-import { ReplySuggestions } from "@/components/chat/teach-dialog";
+import { ReplySuggestions } from "@/components/chat/teach-panel";
 
 const REPLIES: ReplySuggestion[] = [
   { english: "I'll have a coffee.", note: "Casual" },
