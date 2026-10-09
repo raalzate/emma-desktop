@@ -43,3 +43,9 @@ next-env.d.ts
 /graphify-out/
 /.serena/
 /.git/gate-dirty
+
+# evals de promptfoo: bundle del dominio generado por Vite
+/evals/*/.build/
+
+# capturas y logs locales del MCP de Playwright
+/.playwright-mcp/
