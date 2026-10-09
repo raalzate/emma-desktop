@@ -17,19 +17,23 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1 sigue en BORRADOR con sus 3
   instaladores. Publicar un borrador sigue siendo gesto del humano.
 - **Pendiente de #195:** T7 (#203), vistas de PFA (requiere la app conectada).
-- **Rama feat/cierre-y-niveles (#206):** subir de nivel escribe `profile.englishLevel` y
-  archiva el historial del nivel superado («Archived», solo lectura); autoevaluación
-  retirada; la UI muestra «Level 1–5» (CEFR solo interno); prácticas con `motion` vía
-  `src/components/motion/`; el cierre asigna solo las lecciones y lleva a «My lessons» o
-  pregunta practicar/continuar. Instantánea «Ruta y progresión» reescrita; el lienzo de
-  PFA (esa vista y «Simulación y feedback») sigue pendiente de sincronizar.
+- **En `main` sin release (#206, PR #214, 2026-10-09):** subir de nivel escribe
+  `profile.englishLevel` y archiva el historial del nivel superado («Archived», solo
+  lectura); autoevaluación retirada; la UI muestra «Level 1–5» (CEFR solo interno);
+  prácticas con `motion` vía `src/components/motion/`; el cierre asigna solo las lecciones
+  y lleva a «My lessons» o pregunta practicar/continuar. Convive con la gamificación
+  (merge verificado: XP en los 6 puntos de cableado). Instantánea «Ruta y progresión»
+  reescrita; el lienzo de PFA (esa vista y «Simulación y feedback») sigue pendiente (#213).
+  `main` va por delante de v0.8.1: lo que se descarga hoy aún muestra autoevaluación y
+  niveles CEFR.
 - **Milestone v0.5.0 fusionado (2026-09-25):** lección en karaoke con audio al lado, escena
   visible en modal durante el chat, correcciones triviales fuera del feedback, gramática con
   tres formas y verbos resaltados, lista de lecciones («Mis lecciones» en Práctica), turnos
   con voz obligatoria y corrector ortográfico en inglés en todas las plataformas (issues
   #167–#174, #182; PRs #175–#179, #181, #185). Más **v0.6.0**: prácticas dinámicas (#183,
   PR #184).
-- **Vitrina pública** (capturas en inglés y sección de gamificación al día con v0.8.1, PR #224):
+- **Vitrina pública** (capturas en inglés y sección de gamificación al día con v0.8.1, PR #224;
+  describe la versión descargable, no `main` — se recaptura con el próximo release):
   https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
   botones de descarga apuntan a la última release publicada (la API de GitHub los
@@ -43,9 +47,9 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Link-check de docs | `node scripts/docs-linkcheck.mjs` | verde — enlaces, rutas citadas, scripts npm/pnpm citados y honestidad BLOCKING de la constitución |
 | Lint de convenciones | `node scripts/repo-lint.mjs` | verde — PUREZA (domain/application/infrastructure), ANY, SECRETO, CONSOLE, ONLY, INCIDENTE |
 | Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en issues de GitHub; sin `specs/` en el repo |
-| Diagramas sincronizados | `node scripts/diagrams-check.mjs` | verde — 4 vistas BPMN, 77 elementos; cajas en lenguaje de producto y anclas que apuntan a código que existe |
+| Diagramas sincronizados | `node scripts/diagrams-check.mjs` | verde — 4 vistas BPMN, 87 elementos; cajas en lenguaje de producto y anclas que apuntan a código que existe |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
-| Tests | `pnpm test` | verde — 1869 pruebas en 224 archivos |
+| Tests | `pnpm test` | verde — 1935 pruebas en 233 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
 | Smoke de producción | `pnpm smoke` | verde — Electron carga `app://-` con contenido (camino empaquetado); OMITIDA donde no hay binario de Electron (gate de CI) |
 
