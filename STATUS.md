@@ -8,16 +8,14 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.8.0 (2026-09-29, marcada Latest, 3 instaladores): UI
-  en inglés (v0.7.0), gramática correcta en Teach me (#193/#194) y la feature #195
-  «práctica guiada y conversación coherente» (coherencia del turno, prácticas que
-  desbloquean la ruta, Práctica en subpáginas, karaoke reutilizable, ondas en vivo, pares
-  mínimos en oraciones; PR #201). Antes, el mismo día: v0.7.0 (UI en inglés, #192) y
-  v0.6.0. v0.1.0 quedó retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1 sigue en
-  BORRADOR con sus 3 instaladores. Publicar un borrador sigue siendo gesto del humano.
-- **v0.8.1 (2026-10-09, BORRADOR):** gamificación visible #216 (XP, nivel de jugador,
-  racha diaria, meta del día, 15 logros, celebraciones animadas; PR #221) y evals A1 con
-  promptfoo fuera del gate (PR #222). Pendiente de #216: vistas de PFA (app no conectada).
+- **Último release publicado:** v0.8.1 (2026-10-09, marcada Latest, 3 instaladores):
+  gamificación visible #216 (XP, nivel de jugador, racha diaria, meta del día, 15 logros,
+  celebraciones animadas; PR #221) y evals A1 con promptfoo fuera del gate (PR #222).
+  Pendiente de #216: vistas de PFA (app no conectada). Antes: v0.8.0 (2026-09-29): gramática
+  correcta en Teach me (#193/#194) y la feature #195 «práctica guiada y conversación
+  coherente» (PR #201); el mismo día v0.7.0 (UI en inglés, #192) y v0.6.0. v0.1.0 quedó
+  retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1 sigue en BORRADOR con sus 3
+  instaladores. Publicar un borrador sigue siendo gesto del humano.
 - **Pendiente de #195:** T7 (#203), vistas de PFA (requiere la app conectada).
 - **Rama feat/cierre-y-niveles (#206):** subir de nivel escribe `profile.englishLevel` y
   archiva el historial del nivel superado («Archived», solo lectura); autoevaluación
@@ -31,7 +29,8 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   con voz obligatoria y corrector ortográfico en inglés en todas las plataformas (issues
   #167–#174, #182; PRs #175–#179, #181, #185). Más **v0.6.0**: prácticas dinámicas (#183,
   PR #184).
-- **Vitrina pública:** https://raalzate.github.io/emma-desktop/ — sitio estático en
+- **Vitrina pública** (capturas en inglés y sección de gamificación al día con v0.8.1, PR #224):
+  https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
   botones de descarga apuntan a la última release publicada (la API de GitHub los
   reescribe con el instalador de cada plataforma; sin red cae a `/releases/latest`).
