@@ -1,0 +1,123 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+# Evals de nivel A1: ¿la persona de la escena le habla a un principiante como
+# pide LEVEL_STYLE.A1? Corre el prompt y el caso de uso reales (emma-provider).
+# Uso: pnpm eval:a1 (ver evals/a1/README.md para proveedor y juez).
+description: EMMA — escenas para aprendiz A1
+
+prompts:
+  - "{{learner}}"
+
+providers:
+  - file://emma-provider.mjs
+
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://assertions.mjs
+      metric: a1-deterministic
+    - type: llm-rubric
+      metric: a1-comprehensible
+      value: >-
+        The reply is a line spoken by a coworker in a role-play to an English
+        learner at CEFR level A1 (absolute beginner). PASS only if a beginner
+        can understand it: very common words, short simple sentences, mostly
+        present tense, no idioms, no phrasal verbs, no slang or jargon beyond
+        basic tech words (bug, test, code, meeting). It must be English only.
+
+tests:
+  - description: apertura del standup — saludo corto por el nombre
+    vars:
+      scenario: daily_standup
+      learner: ""
+    assert:
+      - type: icontains
+        value: Laura
+      - type: llm-rubric
+        value: The reply greets the learner and asks one simple question to start the standup.
+
+  - description: inglés roto — reacciona sin corregir
+    vars:
+      scenario: daily_standup
+      history:
+        - { role: assistant, content: "Good morning, Laura! What did you do yesterday?" }
+      learner: "yesterday I working in login page. today I do the tests"
+    assert:
+      - type: llm-rubric
+        metric: no-correction
+        value: >-
+          The reply reacts to the content (login page and/or tests) and does
+          NOT correct or comment on the learner's grammar in any way.
+
+  - description: aprendiz perdido — reformula más simple, en inglés
+    vars:
+      scenario: daily_standup
+      history:
+        - { role: assistant, content: "Good morning, Laura! Do you have any blockers today?" }
+      learner: "sorry, I no understand"
+    assert:
+      - type: llm-rubric
+        metric: rephrase-simpler
+        value: >-
+          The learner did not understand the question about blockers. The reply
+          says the same idea again in simpler English words (for example
+          "a problem") and does not switch to Spanish.
+
+  - description: pide español — sigue en inglés
+    vars:
+      scenario: intro_yourself
+      history:
+        - { role: assistant, content: "Hi Laura, nice to meet you! What is your job?" }
+      learner: "no entiendo, puedes hablar en español?"
+    assert:
+      - type: not-icontains-any
+        value: ["español", "claro", "puedo", "hola"]
+
+  - description: respuesta de una palabra — seguimiento simple
+    vars:
+      scenario: coffee_break
+      history:
+        - { role: assistant, content: "Hi Laura! How are you today?" }
+      learner: "tired"
+    assert:
+      - type: llm-rubric
+        value: The reply acknowledges that the learner is tired and asks or says something simple and kind.
+
+  - description: "¿eres un robot? — no rompe personaje"
+    vars:
+      scenario: lunch_chat
+      history:
+        - { role: assistant, content: "Hi Laura! Do you want to have lunch with me?" }
+      learner: "yes. are you a robot?"
+    assert:
+      - type: not-icontains-any
+        value: ["language model", "artificial intelligence", "I am an AI", "I'm an AI"]
+
+  - description: saludo matutino — devuelve el saludo
+    vars:
+      scenario: morning_greeting
+      history:
+        - { role: assistant, content: "Good morning, Laura!" }
+      learner: "hi good morning. how are you?"
+    assert:
+      - type: llm-rubric
+        value: The reply answers how the speaker is (e.g. "I'm good") in simple words.
+
+  - description: presentación con errores típicos de A1
+    vars:
+      scenario: intro_yourself
+      history:
+        - { role: assistant, content: "Hi! I'm new here. What is your name?" }
+      learner: "My name is Laura. I am developer. I use Java."
+    assert:
+      - type: llm-rubric
+        value: The reply uses the name Laura or mentions Java/developer, and asks one simple follow-up question.
+
+  - description: pedir ayuda — vocabulario técnico básico
+    vars:
+      scenario: ask_for_help
+      history:
+        - { role: assistant, content: "Hi Laura, do you need something?" }
+      learner: "I have problem with the test. it fail."
+    assert:
+      - type: llm-rubric
+        value: The reply offers help with the failing test using simple words and asks one simple question about it.
