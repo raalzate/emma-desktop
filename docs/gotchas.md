@@ -21,6 +21,25 @@ Mecanismo: <el comando que ahora falla si alguien lo repite — o "ninguno ejecu
 
 ---
 
+### GOTCHA: subir de nivel no cambiaba nada en la app — la promoción se escribía donde nadie leía
+
+Síntoma: el aprendiz completaba la racha, el cierre decía «You moved up to …» y, al volver
+  al inicio, la ruta, las prácticas y la próxima escena seguían en el nivel anterior. Tests
+  y gate verdes.
+Causa:   `EvaluateProgressionUseCase` guardaba el nivel nuevo sólo en la colección
+  `progression`, pero toda la app lee el nivel de `profile.englishLevel`. Era una escritura
+  que nadie leía: dos fuentes de verdad para el mismo dato, y la prueba del caso de uso sólo
+  fijaba el `upsert` de la progresión, no que el nivel llegara a donde se consume.
+Regla:   el perfil es la única fuente de verdad del nivel. Al promover, el caso de uso
+  escribe el perfil a través del puerto `IProfileLevelRepository` (y archiva el historial del
+  nivel superado). Un dato que se escribe tiene que tener un lector: al agregar una
+  escritura, se busca quién la lee.
+Mecanismo: `pnpm test` — `src/application/progression/__tests__/evaluate-progression-use-case.test.ts`
+  («al promover escribe el nivel nuevo en el perfil con la fecha inyectada» y «sin promoción
+  no toca el perfil») falla si la promoción deja de escribir el perfil.
+
+---
+
 ### GOTCHA: el corrector ortográfico sugería en español aunque el diccionario fuera en-US
 
 Síntoma: en macOS (2026-09-25) el aprendiz escribía «I am a soluction» y el menú contextual

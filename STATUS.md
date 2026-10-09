@@ -16,6 +16,12 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   v0.6.0. v0.1.0 quedó retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1 sigue en
   BORRADOR con sus 3 instaladores. Publicar un borrador sigue siendo gesto del humano.
 - **Pendiente de #195:** T7 (#203), vistas de PFA (requiere la app conectada).
+- **Rama feat/cierre-y-niveles (#206):** subir de nivel escribe `profile.englishLevel` y
+  archiva el historial del nivel superado («Archived», solo lectura); autoevaluación
+  retirada; la UI muestra «Level 1–5» (CEFR solo interno); prácticas con `motion` vía
+  `src/components/motion/`; el cierre asigna solo las lecciones y lleva a «My lessons» o
+  pregunta practicar/continuar. Instantánea «Ruta y progresión» reescrita; el lienzo de
+  PFA (esa vista y «Simulación y feedback») sigue pendiente de sincronizar.
 - **Milestone v0.5.0 fusionado (2026-09-25):** lección en karaoke con audio al lado, escena
   visible en modal durante el chat, correcciones triviales fuera del feedback, gramática con
   tres formas y verbos resaltados, lista de lecciones («Mis lecciones» en Práctica), turnos

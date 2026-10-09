@@ -150,9 +150,9 @@ Implementación completa (todas las olas):
 
 1. **Datos** — 26 unidades (chunks, trampas, retos 1–72), fonética Parte 1,
    137 ejercicios con solucionario, apéndices A–K (~700 entradas).
-2. **Dominio** — currículo (ciclo 7 pasos, plan 24 semanas, checklists H,
-   reglas del método, unit-catalog), SRS Leitner + tarjetas, evaluación
-   determinista de ejercicios, drill perceptivo de pares mínimos.
+2. **Dominio** — currículo (ciclo 7 pasos, plan 24 semanas, reglas del método,
+   unit-catalog; los checklists H se retiraron en #208), SRS Leitner + tarjetas,
+   evaluación determinista de ejercicios, drill perceptivo de pares mínimos.
 3. **Integración** — bloque LANGUAGE FOCUS en el prompt de simulación por
    unidad de sesión; chips con chunks + banco G; lección con trampas +
    Apéndice E; tarjetas SRS generadas desde los errores al cerrar sesión;
@@ -166,8 +166,9 @@ Implementación completa (todas las olas):
    `buildTutorBriefing`) + `application/tutor/get-tutor-context-use-case.ts`.
    El agente conoce y decide en cada punto: bienvenida con briefing del plan
    (semana/unidad/pendientes), TUTOR AWARENESS en escena (débil en X →
-   provoca práctica sin romper personaje), cierre de sesión con «Próximos
-   pasos» clicables (deep-links a `/practice`), siguiente escenario con boost
+   provoca práctica sin romper personaje), cierre de sesión que asigna solo
+   las lecciones de remediación a «My lessons» (o, sin correcciones, pregunta
+   si practicar otra vez o continuar; #211), siguiente escenario con boost
    por semana del plan, tarjeta de plan en Progreso.
 
 6. **Naturalidad de la conversación** — la escena reacciona antes de preguntar,
