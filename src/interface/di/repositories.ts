@@ -8,10 +8,13 @@ import type { OnboardingRepository } from "@/domain/onboarding/i-onboarding-repo
 import type { IProgressionRepository } from "@/domain/progression/i-progression-repository";
 import type { IErrorStatsRepository } from "@/domain/progression/i-error-stats-repository";
 import type { IPathwayRepository } from "@/domain/pathway/i-pathway-repository";
+import type { IChatHistoryRepository } from "@/domain/chat/i-chat-history-repository";
+import type { IProfileLevelRepository } from "@/domain/profile/i-profile-level-repository";
 import type { IGoalRepository } from "@/domain/goals/i-goal-repository";
 import type { ISrsRepository } from "@/domain/srs/i-srs-repository";
 import type { ISelfAssessmentRepository } from "@/domain/curriculum/i-self-assessment-repository";
 import { createProfileRepository } from "@/infrastructure/persistence/profile-repository";
+import { createChatHistoryRepository } from "@/infrastructure/persistence/chat-history-repository";
 import { createProgressionRepository } from "@/infrastructure/persistence/progression-repository";
 import { createErrorStatsRepository } from "@/infrastructure/persistence/error-stats-repository";
 import { createPathwayRepository } from "@/infrastructure/persistence/pathway-repository";
@@ -24,6 +27,8 @@ export const USER_ID = 1;
 
 export interface Repositories {
   profile: OnboardingRepository;
+  profileLevel: IProfileLevelRepository;
+  chatHistory: IChatHistoryRepository;
   progression: IProgressionRepository;
   errorStats: IErrorStatsRepository;
   pathway: IPathwayRepository;
@@ -34,8 +39,11 @@ export interface Repositories {
 
 export async function createRepositories(): Promise<Repositories> {
   const goals = createGoalRepository(await loadGoals());
+  const profile = createProfileRepository();
   return {
-    profile: createProfileRepository(),
+    profile,
+    profileLevel: profile,
+    chatHistory: createChatHistoryRepository(),
     progression: createProgressionRepository(),
     errorStats: createErrorStatsRepository(),
     pathway: createPathwayRepository(),

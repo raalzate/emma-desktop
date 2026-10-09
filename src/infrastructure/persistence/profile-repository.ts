@@ -4,6 +4,7 @@
  */
 
 import type { OnboardingRepository } from "@/domain/onboarding/i-onboarding-repository";
+import type { IProfileLevelRepository } from "@/domain/profile/i-profile-level-repository";
 import { emptyProfile, type UserProfile } from "@/domain/profile/user-profile";
 import { LOCAL_USER, readOne, writeOne } from "./store-client";
 
@@ -28,8 +29,12 @@ const STEP_FIELD: Record<string, keyof UserProfile> = {
   skills: "skills",
 };
 
-export function createProfileRepository(): OnboardingRepository {
+export function createProfileRepository(): OnboardingRepository & IProfileLevelRepository {
   return {
+    async setEnglishLevel(level, at) {
+      const current = (await loadProfile()) ?? emptyProfile(LOCAL_USER);
+      await saveProfile({ ...current, englishLevel: level, englishLevelUpdatedAt: at });
+    },
     async getStatus() {
       return loadProfile();
     },

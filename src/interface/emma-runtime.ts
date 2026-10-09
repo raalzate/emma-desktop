@@ -32,6 +32,7 @@ import { completePartialReply } from "@/application/coaching/complete-partial-re
 import { translate } from "@/application/translation/translate-use-case";
 import { buildWelcome } from "@/application/welcome/welcome-use-case";
 import { checkGrammar } from "@/application/grammar/check-grammar-use-case";
+import { ArchiveHistoryOnLevelUpUseCase } from "@/application/chat/archive-history-on-level-up-use-case";
 import { EvaluateProgressionUseCase } from "@/application/progression/evaluate-progression-use-case";
 import { RecordSessionErrorsUseCase } from "@/application/progression/record-session-errors-use-case";
 import { BuildPathwayUseCase } from "@/application/pathway/build-pathway-use-case";
@@ -133,7 +134,12 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
   const llm = createLlmGenerate();
   const repos = await createRepositories();
 
-  const evaluate = new EvaluateProgressionUseCase(repos.progression);
+  const evaluate = new EvaluateProgressionUseCase(
+    repos.progression,
+    repos.profileLevel,
+    new ArchiveHistoryOnLevelUpUseCase(repos.chatHistory, () => new Date().toISOString()),
+    () => new Date().toISOString(),
+  );
   const record = new RecordSessionErrorsUseCase(repos.errorStats);
   const buildPathway = new BuildPathwayUseCase(repos.pathway);
   const roadmap = new BuildRoadmapUseCase(buildPathway);

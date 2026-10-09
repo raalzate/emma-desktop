@@ -39,7 +39,7 @@ function newId(): string {
 }
 
 export function ChatView({ runtime, profile, settings, initialScenarioType }: Props) {
-  const history = useChatHistory();
+  const history = useChatHistory(runtime.repos.chatHistory);
   const scenarios = useMemo(() => scenariosForLevel(profile.englishLevel), [profile.englishLevel]);
 
   const [scenario, setScenario] = useState<Scenario>(
@@ -79,7 +79,8 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
     (c: ChatConversation) => {
       const found = scenarios.find((s) => s.scenarioType === c.scenarioType) ?? scenarios[0];
       setScenario(found);
-      setRestore(c);
+      // Archivada = nivel superado: se abre en solo lectura (modo escena completada).
+      setRestore(c.archived ? { ...c, completed: true } : c);
       setSessionId(c.id);
       createdAt.current = c.createdAt;
     },
@@ -107,6 +108,8 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
         completed: snap.completed,
         lesson: snap.lesson,
         voiceOptOut: snap.voiceOptOut,
+        // El archivado lo decide la promoción: un guardado del panel no debe borrarlo.
+        archived: history.list.find((c) => c.id === sessionId)?.archived,
         createdAt: createdAt.current,
         updatedAt: Date.now(),
       };
