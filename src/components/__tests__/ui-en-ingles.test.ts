@@ -26,7 +26,6 @@ const CARPETAS_UI = ["src/components", "src/app", "src/interface"];
 const MODULOS_DE_PRODUCTO = [
   "src/domain/curriculum/study-plan.ts",
   "src/domain/curriculum/personal-study-plan.ts",
-  "src/domain/curriculum/self-assessment.ts",
   "src/domain/curriculum/method-rules.ts",
   "src/domain/curriculum/seven-step-cycle.ts",
   "src/domain/curriculum/challenge-readiness.ts",

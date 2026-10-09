@@ -100,6 +100,8 @@ describe("isLessonTodo — guarda del store JSON", () => {
     expect(isLessonTodo(null)).toBe(false);
     expect(isLessonTodo({ ...valida, status: "archivada" })).toBe(false);
     expect(isLessonTodo({ ...valida, kind: "inventada" })).toBe(false);
+    // La autoevaluación se retiró: una lección vieja de esa clase ya no es válida.
+    expect(isLessonTodo({ ...valida, kind: "checklist" })).toBe(false);
     expect(isLessonTodo({ ...valida, id: 7 })).toBe(false);
     expect(isLessonTodo({ ...valida, origin: undefined })).toBe(false);
   });

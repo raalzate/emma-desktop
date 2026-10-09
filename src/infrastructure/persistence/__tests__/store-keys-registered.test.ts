@@ -1,7 +1,7 @@
 /**
  * Guardia contra una clase de bug silencioso: un repositorio que usa una clave
  * no registrada en el almacén del main hace fallar `assertKey` en runtime y su
- * persistencia se pierde sin rastro (pasó con "srs" y "self-assessment").
+ * persistencia se pierde sin rastro (pasó con "srs").
  */
 
 import { readdirSync, readFileSync } from "node:fs";
@@ -35,6 +35,10 @@ describe("claves del almacén", () => {
   it("encuentra repositorios con clave declarada (la extracción no está vacía)", () => {
     const conClave = repositoryFiles().filter((f) => declaredKeys(f).length > 0);
     expect(conClave.length).toBeGreaterThan(5);
+  });
+
+  it("ya no registra la clave de la autoevaluación retirada", () => {
+    expect(STORE_KEYS as readonly string[]).not.toContain("selfAssessment");
   });
 
   it("no tiene claves duplicadas", () => {

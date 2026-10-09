@@ -35,7 +35,7 @@ export interface FinishOutcome {
   next: { scenarioType: string; title: string } | null;
   /** Decisión metodológica de Emma: avanzar de nivel, pasar o repetir. */
   decision: { promoted: boolean; newLevel: string; passed: boolean };
-  /** Próximos pasos sugeridos por EMMA (ejercicio, SRS, par mínimo, escenario, checklist). */
+  /** Próximos pasos sugeridos por EMMA (ejercicio, SRS, par mínimo, escenario). */
   recommendations: PracticeRecommendation[];
 }
 

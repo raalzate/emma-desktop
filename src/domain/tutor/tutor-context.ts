@@ -1,17 +1,13 @@
 /**
  * Estado consolidado que EMMA usa para decidir y redirigir al aprendiz: en
  * qué semana del plan está, qué unidad tiene activa, cuántas tarjetas SRS
- * vencen, en qué categorías de error es débil y qué huecos de checklist le
- * quedan. Función pura: TODO entra por argumento (nivel, tarjetas, "hoy",
- * conteos de error, ids de checklist marcados, escenario activo opcional).
+ * vencen, en qué categorías de error es débil y y qué prácticas le
+ * recomienda hacer. Función pura: TODO entra por argumento (nivel, tarjetas,
+ * "hoy", conteos de error, escenario activo opcional).
  * Ningún IO, ningún `Date.now()`.
  */
 
 import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
-import {
-  checklistProgress,
-  type CefrCheckLevel,
-} from "@/domain/curriculum/self-assessment";
 import {
   STUDY_PLAN_24_WEEKS,
   weekForUnit,
@@ -21,7 +17,6 @@ import { unitForSession } from "@/domain/curriculum/unit-catalog";
 import { dueCards, type LeitnerCard } from "@/domain/srs/leitner";
 import { recommendPractice, type PracticeRecommendation } from "./practice-recommender";
 
-const CHECK_LEVELS: readonly CefrCheckLevel[] = ["A1", "A2", "B1", "B2"];
 const WEAK_CATEGORIES_LIMIT = 3;
 
 export interface TutorContext {
@@ -30,7 +25,6 @@ export interface TutorContext {
   activeUnit: number | null;
   pendingSrsCards: number;
   weakErrorCategories: string[];
-  checklistGaps: { level: CefrLevel; done: number; total: number }[];
   recommendations: PracticeRecommendation[];
 }
 
@@ -40,7 +34,6 @@ export interface TutorContextInputs {
   today: number;
   // Conteo de ocurrencias por categoría de error (ver domain/chat/error-taxonomy).
   errorCounts: Record<string, number>;
-  checkedChecklistIds: Set<string> | readonly string[];
   // Unidad activa explícita (p. ej. la de la sesión en curso). Tiene prioridad
   // sobre activeScenarioType.
   activeUnit?: number;
@@ -91,29 +84,16 @@ function resolveCurrentWeek(activeUnit: number | null, level: CefrLevel): number
   return firstWeekForLevel(level);
 }
 
-/** Huecos de checklist (done < total) de los cuatro niveles A1-B2, en ese orden. */
-function checklistGapsFor(
-  checked: Set<string> | readonly string[],
-): { level: CefrLevel; done: number; total: number }[] {
-  const checkedSet = checked instanceof Set ? checked : [...checked];
-  return CHECK_LEVELS.map((level) => ({
-    level,
-    ...checklistProgress(level, checkedSet),
-  })).filter((gap) => gap.done < gap.total);
-}
-
 export function buildTutorContext(inputs: TutorContextInputs): TutorContext {
   const activeUnit = resolveActiveUnit(inputs);
   const currentWeek = resolveCurrentWeek(activeUnit, inputs.level);
   const pendingSrsCards = dueCards(inputs.cards, inputs.today).length;
   const weakErrorCategories = rankErrorCategories(inputs.errorCounts);
-  const checklistGaps = checklistGapsFor(inputs.checkedChecklistIds);
 
   const recommendations = recommendPractice({
     activeUnit,
     weakErrorCategories,
     pendingSrsCards,
-    checklistGaps,
   });
 
   return {
@@ -122,7 +102,6 @@ export function buildTutorContext(inputs: TutorContextInputs): TutorContext {
     activeUnit,
     pendingSrsCards,
     weakErrorCategories,
-    checklistGaps,
     recommendations,
   };
 }

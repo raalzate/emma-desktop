@@ -7,7 +7,6 @@ describe("recommendPractice", () => {
       activeUnit: null,
       weakErrorCategories: [],
       pendingSrsCards: 5,
-      checklistGaps: [],
     });
 
     expect(recomendaciones[0]).toEqual({
@@ -22,7 +21,6 @@ describe("recommendPractice", () => {
       activeUnit: null,
       weakErrorCategories: [],
       pendingSrsCards: 4,
-      checklistGaps: [],
     });
 
     expect(recomendaciones.some((r) => r.kind === "srs-review")).toBe(false);
@@ -33,7 +31,6 @@ describe("recommendPractice", () => {
       activeUnit: 1,
       weakErrorCategories: ["article"],
       pendingSrsCards: 0,
-      checklistGaps: [],
     });
 
     const sugerencia = recomendaciones.find((r) => r.kind === "exercise");
@@ -50,7 +47,6 @@ describe("recommendPractice", () => {
       activeUnit: null,
       weakErrorCategories: ["article"],
       pendingSrsCards: 0,
-      checklistGaps: [],
     });
 
     expect(recomendaciones.some((r) => r.kind === "exercise")).toBe(false);
@@ -62,7 +58,6 @@ describe("recommendPractice", () => {
       activeUnit: 3,
       weakErrorCategories: [],
       pendingSrsCards: 0,
-      checklistGaps: [],
     });
 
     const sugerencia = recomendaciones.find((r) => r.kind === "minimal-pair");
@@ -78,7 +73,6 @@ describe("recommendPractice", () => {
       activeUnit: null,
       weakErrorCategories: ["article"],
       pendingSrsCards: 0,
-      checklistGaps: [],
     });
 
     const sugerencia = recomendaciones.find((r) => r.kind === "scenario");
@@ -89,27 +83,21 @@ describe("recommendPractice", () => {
     });
   });
 
-  it("sugiere la checklist del nivel inferior incompleto cuando no hay otras señales", () => {
-    const recomendaciones = recommendPractice({
-      activeUnit: null,
-      weakErrorCategories: [],
-      pendingSrsCards: 0,
-      checklistGaps: [{ level: "A1", done: 5, total: 9 }],
-    });
-
-    expect(recomendaciones[0]).toEqual({
-      kind: "checklist",
-      level: "A1",
-      reasonEs: "A1 checklist incomplete (5/9)",
-    });
-  });
-
-  it("ordena las recomendaciones por prioridad: srs, ejercicio, par mínimo, escenario, checklist", () => {
+  it("nunca recomienda una autoevaluación: no existe ese tipo de recomendación", () => {
     const recomendaciones = recommendPractice({
       activeUnit: 3,
       weakErrorCategories: ["article"],
       pendingSrsCards: 6,
-      checklistGaps: [{ level: "A1", done: 5, total: 9 }],
+    });
+
+    expect(recomendaciones.map((r) => r.kind)).not.toContain("checklist");
+  });
+
+  it("ordena las recomendaciones por prioridad: srs, ejercicio, par mínimo, escenario", () => {
+    const recomendaciones = recommendPractice({
+      activeUnit: 3,
+      weakErrorCategories: ["article"],
+      pendingSrsCards: 6,
     });
 
     expect(recomendaciones.map((r) => r.kind)).toEqual([
@@ -117,7 +105,6 @@ describe("recommendPractice", () => {
       "exercise",
       "minimal-pair",
       "scenario",
-      "checklist",
     ]);
   });
 
@@ -126,7 +113,6 @@ describe("recommendPractice", () => {
       activeUnit: 3,
       weakErrorCategories: ["article"],
       pendingSrsCards: 6,
-      checklistGaps: [{ level: "A1", done: 5, total: 9 }],
       maxRecommendations: 2,
     });
 
@@ -139,7 +125,6 @@ describe("recommendPractice", () => {
       activeUnit: null,
       weakErrorCategories: [],
       pendingSrsCards: 0,
-      checklistGaps: [],
     });
 
     expect(recomendaciones).toEqual([]);

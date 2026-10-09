@@ -154,7 +154,6 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
     const level = profile && isCefrLevel(profile.englishLevel) ? profile.englishLevel : "A1";
     return getTutorContext({
       srsRepo: repos.srs,
-      selfAssessmentRepo: repos.selfAssessment,
       errorStatsRepo: repos.errorStats,
       level,
       today: todayAsDays(),

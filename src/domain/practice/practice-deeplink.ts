@@ -9,14 +9,10 @@ export const PRACTICE_TABS = [
   "srs",
   "pronunciation",
   "plan",
-  "self-assessment",
   "challenges",
 ] as const;
 
 export type PracticeTabValue = (typeof PRACTICE_TABS)[number];
-
-// Alias usado por las recomendaciones para la autoevaluación.
-const TAB_ALIASES: Record<string, PracticeTabValue> = { assessment: "self-assessment" };
 
 export interface PracticeTarget {
   tab: PracticeTabValue;
@@ -35,8 +31,7 @@ export function parsePracticeUnit(raw: string | null): number | undefined {
 
 export function practiceTargetFromSearch(params: URLSearchParams): PracticeTarget {
   const requested = params.get("tab") ?? "";
-  const aliased = TAB_ALIASES[requested] ?? requested;
-  const tab: PracticeTabValue = isTab(aliased) ? aliased : "exercises";
+  const tab: PracticeTabValue = isTab(requested) ? requested : "exercises";
   const unit = parsePracticeUnit(params.get("unit"));
   return { tab, unit };
 }
@@ -50,7 +45,6 @@ const PRACTICE_ROUTE: Record<PracticeTabValue, string> = {
   srs: "/practice/review",
   pronunciation: "/practice/pronunciation",
   plan: "/practice/plan",
-  "self-assessment": "/practice/self-check",
   challenges: "/practice/challenges",
 };
 

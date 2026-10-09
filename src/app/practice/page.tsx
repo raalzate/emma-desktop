@@ -3,8 +3,8 @@
 /**
  * Ruta "Práctica": dos pestañas nada más. «My lessons» (por defecto) es lo
  * que EMMA anotó al cerrar cada sesión; «Today» es el plan del día en el
- * orden del método. Las seis secciones que antes eran pestañas (ejercicios,
- * repaso, pronunciación, plan de estudio, autoevaluación, retos) dejaron de
+ * orden del método. Las cinco secciones que antes eran pestañas (ejercicios,
+ * repaso, pronunciación, plan de estudio, retos) dejaron de
  * vivir acá: son rutas propias bajo /practice/* (H6, #199), enlazadas desde
  * el submenú de la barra lateral y desde el panel «Hoy».
  *

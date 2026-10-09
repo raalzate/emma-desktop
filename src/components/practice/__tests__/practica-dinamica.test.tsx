@@ -289,7 +289,6 @@ describe("subrutas de Práctica (H6, #199)", () => {
     { file: "src/app/practice/review/page.tsx", component: "SrsReview", params: [] },
     { file: "src/app/practice/pronunciation/page.tsx", component: "MinimalPairLab", params: ["contrast"] },
     { file: "src/app/practice/plan/page.tsx", component: "StudyPlanView", params: [] },
-    { file: "src/app/practice/self-check/page.tsx", component: "SelfAssessmentView", params: ["level"] },
     { file: "src/app/practice/challenges/page.tsx", component: "ChallengeView", params: ["unit"] },
   ];
 
@@ -302,6 +301,12 @@ describe("subrutas de Práctica (H6, #199)", () => {
     for (const param of params) {
       expect(src).toContain(`"${param}"`);
     }
+  });
+});
+
+describe("autoevaluación retirada (#208)", () => {
+  it("no existe la ruta /practice/self-check", () => {
+    expect(fs.existsSync(path.join(process.cwd(), "src/app/practice/self-check"))).toBe(false);
   });
 });
 

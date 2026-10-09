@@ -20,7 +20,6 @@ export type LessonTodoKind =
   | "srs-review"
   | "minimal-pair"
   | "scenario"
-  | "checklist"
   | "challenge";
 
 export type LessonTodoStatus = "pending" | "done" | "dismissed";
@@ -30,7 +29,6 @@ const KINDS: readonly LessonTodoKind[] = [
   "srs-review",
   "minimal-pair",
   "scenario",
-  "checklist",
   "challenge",
 ];
 const STATUSES: readonly LessonTodoStatus[] = ["pending", "done", "dismissed"];

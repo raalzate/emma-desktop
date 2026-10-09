@@ -13,7 +13,6 @@ const TITLE_BY_KIND: Record<Exclude<LessonTodoKind, "challenge">, string> = {
   "srs-review": "Review your cards",
   "minimal-pair": "Pronunciation minimal pair",
   scenario: "Conversation scenario",
-  checklist: "Level self-check",
 };
 
 export function lessonTodoTitle(todo: Pick<LessonTodo, "kind" | "target" | "titleEs">): string {
@@ -27,7 +26,6 @@ export function lessonTodoTitle(todo: Pick<LessonTodo, "kind" | "target" | "titl
 /** Motivos que el recomendador escribía en español antes de v1.6.0. */
 const LEGACY_REASONS: readonly [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^(\d+) tarjetas pendientes de repaso$/, (m) => `${m[1]} cards due for review`],
-  [/^checklist de (\S+) incompleta \((\d+)\/(\d+)\)$/, (m) => `${m[1]} checklist incomplete (${m[2]}/${m[3]})`],
   [
     /^la unidad activa entrena (.+): practica el par mínimo$/,
     (m) => `your active unit trains ${m[1]}: practice the minimal pair`,

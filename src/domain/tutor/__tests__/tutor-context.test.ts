@@ -8,7 +8,6 @@ describe("buildTutorContext", () => {
       cards: [],
       today: 1,
       errorCounts: {},
-      checkedChecklistIds: [],
       activeUnit: 8, // semana 10 según STUDY_PLAN_24_WEEKS
     });
 
@@ -22,7 +21,6 @@ describe("buildTutorContext", () => {
       cards: [],
       today: 1,
       errorCounts: {},
-      checkedChecklistIds: [],
       activeScenarioType: "intro_yourself",
     });
 
@@ -36,7 +34,6 @@ describe("buildTutorContext", () => {
       cards: [],
       today: 1,
       errorCounts: {},
-      checkedChecklistIds: [],
     });
 
     expect(ctx.activeUnit).toBeNull();
@@ -52,7 +49,6 @@ describe("buildTutorContext", () => {
       ],
       today: 5,
       errorCounts: {},
-      checkedChecklistIds: [],
     });
 
     expect(ctx.pendingSrsCards).toBe(1);
@@ -64,24 +60,16 @@ describe("buildTutorContext", () => {
       cards: [],
       today: 1,
       errorCounts: { article: 2, preposition: 5, grammar: 3 },
-      checkedChecklistIds: [],
     });
 
     expect(ctx.weakErrorCategories).toEqual(["preposition", "grammar", "article"]);
   });
 
-  it("reporta los huecos de checklist de los niveles incompletos", () => {
-    const ctx = buildTutorContext({
-      level: "A1",
-      cards: [],
-      today: 1,
-      errorCounts: {},
-      checkedChecklistIds: ["A1-1", "A1-2"],
-    });
+  it("el contexto no trae huecos de checklist ni recomienda autoevaluación", () => {
+    const ctx = buildTutorContext({ level: "A1", cards: [], today: 1, errorCounts: {} });
 
-    const a1Gap = ctx.checklistGaps.find((g) => g.level === "A1");
-    expect(a1Gap).toEqual({ level: "A1", done: 2, total: 9 });
-    expect(ctx.checklistGaps.every((g) => g.done < g.total)).toBe(true);
+    expect("checklistGaps" in ctx).toBe(false);
+    expect(ctx.recommendations.map((r) => r.kind)).not.toContain("checklist");
   });
 
   it("incluye recomendaciones derivadas del contexto consolidado", () => {
@@ -90,7 +78,6 @@ describe("buildTutorContext", () => {
       cards: [{ id: "c1", box: 1, lastReviewedDay: 0 }],
       today: 5,
       errorCounts: {},
-      checkedChecklistIds: [],
       activeUnit: 1,
     });
 

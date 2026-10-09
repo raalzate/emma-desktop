@@ -28,7 +28,6 @@ describe("lessonTodoTitle", () => {
     expect(lessonTodoTitle({ ...base, kind: "minimal-pair", titleEs: "Par mínimo de pronunciación" })).toBe(
       "Pronunciation minimal pair",
     );
-    expect(lessonTodoTitle({ ...base, kind: "checklist", titleEs: "Autoevaluación del nivel" })).toBe("Level self-check");
     expect(lessonTodoTitle({ ...base, kind: "exercise", titleEs: "Ejercicio de la unidad" })).toBe("Unit exercise");
     expect(lessonTodoTitle({ ...base, kind: "scenario", titleEs: "Escenario de conversación" })).toBe(
       "Conversation scenario",
@@ -44,9 +43,6 @@ describe("lessonTodoTitle", () => {
 describe("lessonTodoReason", () => {
   it("traduce los motivos que el recomendador escribía en español", () => {
     expect(lessonTodoReason(base)).toBe("16 cards due for review");
-    expect(lessonTodoReason({ ...base, reasonEs: "checklist de A1 incompleta (0/9)" })).toBe(
-      "A1 checklist incomplete (0/9)",
-    );
     expect(
       lessonTodoReason({ ...base, reasonEs: "la unidad activa entrena /ɪ/ vs /iː/: practica el par mínimo" }),
     ).toBe("your active unit trains /ɪ/ vs /iː/: practice the minimal pair");

@@ -95,7 +95,7 @@ export function MetricsCardView({ averages }: { averages: SessionAverages }) {
       </ul>
       <p className="text-xs text-muted-foreground">
         The other two metrics of the method (reading speed and listening comprehension) are
-        not computed here: you self-assess them manually.
+        not tracked here.
       </p>
     </section>
   );

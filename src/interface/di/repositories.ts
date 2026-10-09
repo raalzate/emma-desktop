@@ -12,7 +12,6 @@ import type { IChatHistoryRepository } from "@/domain/chat/i-chat-history-reposi
 import type { IProfileLevelRepository } from "@/domain/profile/i-profile-level-repository";
 import type { IGoalRepository } from "@/domain/goals/i-goal-repository";
 import type { ISrsRepository } from "@/domain/srs/i-srs-repository";
-import type { ISelfAssessmentRepository } from "@/domain/curriculum/i-self-assessment-repository";
 import { createProfileRepository } from "@/infrastructure/persistence/profile-repository";
 import { createChatHistoryRepository } from "@/infrastructure/persistence/chat-history-repository";
 import { createProgressionRepository } from "@/infrastructure/persistence/progression-repository";
@@ -20,7 +19,6 @@ import { createErrorStatsRepository } from "@/infrastructure/persistence/error-s
 import { createPathwayRepository } from "@/infrastructure/persistence/pathway-repository";
 import { createGoalRepository, loadGoals } from "@/infrastructure/persistence/goal-repository";
 import { createSrsRepository } from "@/infrastructure/persistence/srs-repository";
-import { createSelfAssessmentRepository } from "@/infrastructure/persistence/self-assessment-repository";
 
 /** Usuario local único de la app de escritorio. */
 export const USER_ID = 1;
@@ -34,7 +32,6 @@ export interface Repositories {
   pathway: IPathwayRepository;
   goals: IGoalRepository;
   srs: ISrsRepository;
-  selfAssessment: ISelfAssessmentRepository;
 }
 
 export async function createRepositories(): Promise<Repositories> {
@@ -49,6 +46,5 @@ export async function createRepositories(): Promise<Repositories> {
     pathway: createPathwayRepository(),
     goals,
     srs: createSrsRepository(),
-    selfAssessment: createSelfAssessmentRepository(),
   };
 }

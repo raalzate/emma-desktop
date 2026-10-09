@@ -1,20 +1,18 @@
 /**
- * Orquesta la construcción del TutorContext real: hidrata tarjetas SRS,
- * checklist marcado y conteos de error por categoría desde sus repos (DI por
+ * Orquesta la construcción del TutorContext real: hidrata tarjetas SRS
+ * y conteos de error por categoría desde sus repos (DI por
  * argumento) y arma el contexto + el briefing en español para EMMA. `today`
  * se inyecta (sin `Date.now()` oculto) para que la orquestación sea testeable.
  */
 
 import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { ISrsRepository } from "@/domain/srs/i-srs-repository";
-import type { ISelfAssessmentRepository } from "@/domain/curriculum/i-self-assessment-repository";
 import type { IErrorStatsRepository } from "@/domain/progression/i-error-stats-repository";
 import { buildTutorContext, type TutorContext } from "@/domain/tutor/tutor-context";
 import { buildTutorBriefing } from "@/domain/tutor/system-map";
 
 export interface GetTutorContextArgs {
   srsRepo: ISrsRepository;
-  selfAssessmentRepo: ISelfAssessmentRepository;
   errorStatsRepo: IErrorStatsRepository;
   level: CefrLevel;
   today: number;
@@ -38,9 +36,8 @@ function toErrorCounts(stats: { errorType: string; count: number }[]): Record<st
 }
 
 export async function getTutorContext(args: GetTutorContextArgs): Promise<GetTutorContextResult> {
-  const [cards, checkedChecklistIds, stats] = await Promise.all([
+  const [cards, stats] = await Promise.all([
     args.srsRepo.loadCards(),
-    args.selfAssessmentRepo.loadChecked(),
     args.errorStatsRepo.getRecentStats(args.userId),
   ]);
 
@@ -49,7 +46,6 @@ export async function getTutorContext(args: GetTutorContextArgs): Promise<GetTut
     cards,
     today: args.today,
     errorCounts: toErrorCounts(stats),
-    checkedChecklistIds,
     activeUnit: args.activeUnit,
     activeScenarioType: args.activeScenarioType,
   });

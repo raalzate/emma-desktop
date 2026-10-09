@@ -20,7 +20,6 @@ export type StoreKey =
   | 'chatConversations'
   | 'personaTunings'
   | 'srs'
-  | 'selfAssessment'
   | 'challenges'
   | 'sessionMetrics'
   | 'lessonTodos';
@@ -28,6 +27,6 @@ export type StoreKey =
 export const STORE_KEYS: StoreKey[] = [
   'profiles', 'chatSettings', 'progression', 'errorStats',
   'pathway', 'goals', 'welcomeEvents', 'sessions', 'preferences',
-  'chatConversations', 'personaTunings', 'srs', 'selfAssessment',
+  'chatConversations', 'personaTunings', 'srs',
   'challenges', 'sessionMetrics', 'lessonTodos',
 ];

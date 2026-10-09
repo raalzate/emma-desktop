@@ -117,7 +117,7 @@ grammarFocus de U1.
 | E | 50 errores del hispanohablante | `src/lib/reference-data/common-errors.ts` → enriquece `error-taxonomy` y lección post-sesión | ✅ |
 | F | Glosario técnico ES→EN + IPA | `src/lib/reference-data/glossary.ts` → «Teach me»/pronunciación | ✅ |
 | G | Banco de frases por situación | `src/lib/reference-data/phrase-bank.ts` → chips de sugerencia por escenario | ✅ |
-| H | Checklists autoevaluación A1→B2 (13/15 + bases) | `domain/curriculum/self-assessment.ts` (`certifiesB2`) + vista persistida en `/practice?tab=assessment` | ✅ |
+| H | Checklists autoevaluación A1→B2 (13/15 + bases) | Retirada (#208): no influía en la progresión ni en el nivel | ❌ retirada |
 | I | Solucionario | `src/lib/exercise-data/` (137 ejercicios con respuestas) + `domain/exercises/evaluate-exercise.ts` (corrección determinista) | ✅ |
 | J | Plan 24 semanas detallado (45 min/día, hitos) | `domain/curriculum/study-plan.ts` + tarjeta de plan en Progreso | ✅ |
 | K | Recursos | `src/lib/reference-data/resources.ts` (24 recursos, 10 categorías) | ✅ |
@@ -135,7 +135,7 @@ entregarlo y marcarlo (progreso N/72).
 métricas medibles — latencia de respuesta (mediana), monólogo sostenido y
 densidad de error — las persiste y las muestra en Progreso con su nivel MCER.
 Las otras dos del libro (velocidad de lectura y comprensión auditiva) quedan
-como autoevaluación manual, y la UI lo dice.
+sin medir, y la UI lo dice.
 
 ### Bucle de pronunciación (0.5 · Reto B)
 
@@ -159,8 +159,7 @@ Implementación completa (todas las olas):
    7 escenarios nuevos con 24 situaciones.
 4. **UI** — sección «Práctica» (`/practice`): drills de ejercicios, repaso
    SRS, laboratorio de pares mínimos + shadowing (TTS), plan de estudio y
-   ciclo/reglas del método, autoevaluación A1→B2 persistida con criterio de
-   certificación B2.
+   ciclo/reglas del método.
 
 5. **Capa tutora (el agente como cabeza del sistema)** —
    `domain/tutor/` (`TutorContext`, `recommendPractice`, `SYSTEM_MAP_ES`,

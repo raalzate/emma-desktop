@@ -21,10 +21,6 @@ describe("draftFromRecommendation — cada recomendación sabe su destino", () =
       "/practice/pronunciation/?contrast=i-vs-ii",
     ],
     [
-      { kind: "checklist", level: "B1", reasonEs: "checklist" },
-      "/practice/self-check/?level=B1",
-    ],
-    [
       { kind: "scenario", scenarioType: "sprint_planning", reasonEs: "escenario" },
       "/chat?scenario=sprint_planning",
     ],
