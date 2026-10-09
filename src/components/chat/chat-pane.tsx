@@ -78,7 +78,7 @@ export function ChatPane({
   const reviewLabel = end.hasStoredLesson ? "See your lesson" : "Finish and see your lesson";
 
   return (
-    <div className="flex h-full min-h-0 flex-1">
+    <div className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden">
       <main className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background">
         <div className="flex items-center gap-2 pr-4">
           <div className="flex-1">

@@ -24,7 +24,7 @@ export function SidePanel({ title, onClose, children }: Props) {
   }, [onClose]);
 
   return (
-    <aside className="flex h-full min-h-0 w-[min(44rem,48%)] shrink-0 flex-col border-l bg-background duration-300 animate-in fade-in slide-in-from-right-8">
+    <aside className="flex h-full min-h-0 w-[26rem] shrink-0 flex-col overflow-hidden border-l bg-background duration-300 animate-in fade-in slide-in-from-right-8 xl:w-[34rem] 2xl:w-[40rem]">
       <header className="flex items-center justify-between gap-2 border-b px-5 py-4">
         <h2 className="flex items-center gap-2 text-lg font-semibold">{title}</h2>
         <Button variant="ghost" size="icon" title="Cerrar el panel" aria-label="Close panel" onClick={onClose}>
