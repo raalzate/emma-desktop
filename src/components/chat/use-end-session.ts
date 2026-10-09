@@ -19,6 +19,7 @@ import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
 import type { PracticeRecommendation } from "@/domain/tutor/practice-recommender";
 import type { LessonDecision, SessionLesson } from "@/domain/feedback/session-lesson";
+import type { XpLine } from "@/domain/gamification/xp-rules";
 import { useFinishSession } from "./use-finish-session";
 
 /** Pausa antes del cierre automático: da tiempo a leer la despedida del personaje. */
@@ -38,6 +39,8 @@ export interface LessonView {
   recommendations: PracticeRecommendation[];
   /** La lección se leyó del histórico (no se gastó una generación). */
   stored: boolean;
+  /** XP de la sesión recién cerrada; ausente al revisar una lección guardada. */
+  xp?: { total: number; lines: XpLine[] } | null;
 }
 
 interface Args {

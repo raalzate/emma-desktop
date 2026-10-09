@@ -14,6 +14,8 @@ import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
 import { isPass } from "@/domain/progression/promotion-policy";
 import type { PracticeRecommendation } from "@/domain/tutor/practice-recommender";
+import { sessionActivities, type XpLine } from "@/domain/gamification/xp-rules";
+import { awardActivities } from "@/components/gamification/award-activity";
 
 interface Args {
   runtime: EmmaRuntime;
@@ -37,6 +39,8 @@ export interface FinishOutcome {
   decision: { promoted: boolean; newLevel: string; passed: boolean };
   /** Próximos pasos sugeridos por EMMA (ejercicio, SRS, par mínimo, escenario, checklist). */
   recommendations: PracticeRecommendation[];
+  /** XP ganado en la sesión (#216, H6); null si no se pudo otorgar. */
+  xp: { total: number; lines: XpLine[] } | null;
 }
 
 // Traduce el resultado de progresión a un mensaje breve para el toast.
@@ -63,6 +67,9 @@ export function useFinishSession(a: Args) {
     const prog = await a.runtime.evaluateProgression(a.level, metric);
     if (passed || prog.promoted) await a.runtime.markPassed(a.level, a.scenario.scenarioType);
     const next = await a.runtime.recommendNext(a.level);
+    const award = await awardActivities(
+      sessionActivities({ turns: a.turns, errors: a.errors.length, passed, promoted: prog.promoted }),
+    );
     setOutcome({
       report,
       verdict: verdictOf(prog.promoted, prog.newLevel, passed, next?.title),
@@ -70,6 +77,7 @@ export function useFinishSession(a: Args) {
       next: next ? { scenarioType: next.scenarioType, title: next.title } : null,
       decision: { promoted: prog.promoted, newLevel: prog.newLevel, passed },
       recommendations,
+      xp: award ? { total: award.xp, lines: award.lines } : null,
     });
     setRunning(false);
   };

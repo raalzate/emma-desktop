@@ -54,6 +54,12 @@ El dominio define **puertos** (interfaces); afuera viven los **adaptadores**.
 - Repos de persistencia (perfil, progresión, errores…) → interfaz en `domain`,
   adaptador en `infrastructure/persistence` sobre el store JSON del main vía IPC
   (`store-client.ts` → handlers `store-get`/`store-set`).
+- Gamificación (#216) → `src/domain/gamification/i-gamification-repository.ts`.
+  Sólo se persisten eventos de XP (colección `gamification`); nivel de jugador,
+  racha diaria, meta del día y logros se derivan en el dominio. El renderer
+  otorga XP por una sola puerta (`components/gamification/award-activity.ts`),
+  que anuncia el premio con el evento de ventana `emma:xp-awarded`: la capa de
+  celebración y la tarjeta de la barra lateral lo escuchan sin store global.
 
 **Inyección:** los casos de uso reciben el puerto por argumento, nunca lo importan
 concreto. Ejemplo canónico: `application/english-teacher/teach-use-case.ts`

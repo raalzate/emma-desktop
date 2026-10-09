@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
+import { awardActivities } from "@/components/gamification/award-activity";
 import {
   Select,
   SelectContent,
@@ -293,6 +294,7 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
         runtime={runtime}
         onSubmitted={() => {
           void refresh();
+          void awardActivities([{ kind: "challenge" }]);
           // Reto entregado ⇒ la lección «Unit N challenge» se cierra sola.
           void lessons.completeByKind("challenge", `unit-${unit}`);
           onChange?.();

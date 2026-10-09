@@ -14,6 +14,7 @@ import { StudyPlanCard } from "./study-plan-card";
 import { MetricsCard } from "./metrics-card";
 import { ResetLevelButton } from "./reset-level-button";
 import { ProgressSkeleton } from "./progress-skeleton";
+import { GamificationPanel } from "@/components/gamification/gamification-panel";
 
 export function ProgressView({ runtime, level }: { runtime: EmmaRuntime; level: string }) {
   const { roadmap, recommendation, loading, reload } = useProgressData(runtime, level);
@@ -22,6 +23,7 @@ export function ProgressView({ runtime, level }: { runtime: EmmaRuntime; level: 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
       <CurrentLevelHeader level={level} />
+      <GamificationPanel />
       <StudyPlanCard runtime={runtime} />
       <MetricsCard runtime={runtime} />
       <PathwayProgress pathway={pathway} level={level} />
