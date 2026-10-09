@@ -7,6 +7,7 @@ import { MapPin, Target, BarChart3, Settings, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandWordmark } from "./brand-wordmark";
 import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
+import { PlayerCard } from "@/components/gamification/player-card";
 
 /**
  * Shell persistente del rediseño «Café sereno»: sidebar fija con wordmark,
@@ -131,6 +132,7 @@ export function AppShell({ extra, children }: { extra?: ReactNode; children: Rea
             </div>
           ))}
         </nav>
+        <PlayerCard />
         {extra ? <div className="min-h-0 flex-1 overflow-y-auto">{extra}</div> : null}
         <div className={cn("flex items-center gap-2 rounded-[10px] bg-background px-3 py-2.5", extra ? "" : "mt-auto")}>
           <ShieldCheck className="h-4 w-4 shrink-0 text-scaffold-easy" aria-hidden />

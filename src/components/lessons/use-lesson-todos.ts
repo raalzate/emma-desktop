@@ -18,7 +18,13 @@ import {
 } from "@/application/lessons/lesson-todo-use-cases";
 import type { LessonTodoKind } from "@/domain/lessons/lesson-todo";
 import { createLessonTodoRepository } from "@/infrastructure/persistence/lesson-todo-repository";
-import { pendingLessonTodos, type LessonTodo, type LessonTodoDraft } from "@/domain/lessons/lesson-todo";
+import {
+  newlyDoneCount,
+  pendingLessonTodos,
+  type LessonTodo,
+  type LessonTodoDraft,
+} from "@/domain/lessons/lesson-todo";
+import { awardActivities } from "@/components/gamification/award-activity";
 
 export const LESSON_TODOS_CHANGED = "emma:lesson-todos-changed";
 
@@ -47,12 +53,16 @@ export function useLessonTodos() {
 
   const apply = useCallback(
     async (run: () => Promise<LessonTodo[]>) => {
+      const before = await repo.loadAll().catch(() => []);
       const next = await run();
       setTodos(next);
       announce();
+      // Cada lección que se cierra hecha (a mano o sola) suma XP (#216).
+      const done = newlyDoneCount(before, next);
+      if (done > 0) void awardActivities(Array.from({ length: done }, () => ({ kind: "lesson" as const })));
       return next;
     },
-    [],
+    [repo],
   );
 
   return {

@@ -24,6 +24,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown, Loader2, Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { awardActivities } from "@/components/gamification/award-activity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -355,7 +356,9 @@ function PerceptionRound({ contrastId, level }: { contrastId: string; level: Cef
   /** Registra la respuesta elegida y muestra el acierto/fallo. */
   function choose(optionIndex: number) {
     if (feedback !== null) return;
-    setFeedback(checkPerception(item, optionIndex));
+    const correct = checkPerception(item, optionIndex);
+    setFeedback(correct);
+    void awardActivities([{ kind: "pronunciation", correct }]);
     setAnswers((prev) => [...prev, optionIndex]);
   }
 
