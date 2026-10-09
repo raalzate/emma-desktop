@@ -62,14 +62,18 @@ export function useSuggestions({
 
   useEffect(() => {
     let alive = true;
+    // Un AbortController por efecto: las sugerencias viejas no deben seguir
+    // ocupando el motor local cuando ya hay otras (o el aprendiz espera algo).
+    const controller = new AbortController();
     setSuggestions([]);
     if (busy || !agentLine) return;
     runtime
-      .suggest(context, level, debouncedDraft || undefined, scenarioType, agentLine)
+      .suggest(context, level, debouncedDraft || undefined, scenarioType, agentLine, controller.signal)
       .then((s) => alive && setSuggestions(s))
       .catch(() => {});
     return () => {
       alive = false;
+      controller.abort();
     };
   }, [runtime, context, agentLine, level, busy, debouncedDraft, scenarioType]);
 

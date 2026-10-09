@@ -87,6 +87,8 @@ export interface EmmaRuntime {
     scenarioType?: string,
     /** Última línea del agente para el filtro anti-eco (ver suggestReplies). */
     agentLine?: string,
+    /** Se aborta cuando las sugerencias quedan obsoletas (cleanup del efecto). */
+    signal?: AbortSignal,
   ): ReturnType<typeof suggestReplies>;
   complete(context: string, partial: string): Promise<string>;
   translate(text: string, targetLang: string): ReturnType<typeof translate>;
@@ -188,8 +190,8 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
     observeTurn: (a) => observeTurn({ llm, ...a }),
     sceneContract: (a) => createSceneContract({ llm, ...a }),
     teach: (a) => teach({ llm, ...a }),
-    suggest: (context, level, draft, scenarioType, agentLine) =>
-      suggestReplies({ llm, context, level, draft, scenarioType, agentLine }),
+    suggest: (context, level, draft, scenarioType, agentLine, signal) =>
+      suggestReplies({ llm, context, level, draft, scenarioType, agentLine, signal }),
     complete: (context, partial) => completePartialReply({ llm, context, partial }),
     translate: (text, targetLang) => translate({ llm, text, targetLang }),
     async welcome(profile) {

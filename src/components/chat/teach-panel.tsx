@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { BookOpen, GraduationCap, Lightbulb, Volume2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useEmma } from "@/interface/emma-context";
@@ -107,24 +108,50 @@ export function ReplySuggestions({ replies }: { replies: ReplySuggestion[] }) {
   );
 }
 
+/** Error de la lección: el texto de siempre + «Try again» para volver a pedirla. */
+export function TeachError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-sm text-muted-foreground">
+        The explanation couldn’t be generated. Please try again.
+      </p>
+      <Button variant="outline" size="sm" title="Volver a pedir la explicación" onClick={onRetry}>
+        Try again
+      </Button>
+    </div>
+  );
+}
+
 export function TeachPanel({ text, onClose }: Props) {
   const { runtime } = useEmma();
   const [result, setResult] = useState<TeachingResult | null>(null);
   const [loading, setLoading] = useState(false);
+  // Cada «Try again» incrementa el intento y relanza el efecto.
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!text || !runtime) return;
     let alive = true;
+    // Cerrar el panel o cambiar de texto cancela la llamada en curso (libera la GPU).
+    const controller = new AbortController();
     setResult(null);
     setLoading(true);
     runtime
-      .teach({ text, responseId: `teach-${Date.now()}`, userId: 1, explainLanguage: "es" })
+      .teach({
+        text,
+        responseId: `teach-${Date.now()}`,
+        userId: 1,
+        explainLanguage: "es",
+        signal: controller.signal,
+      })
       .then((r) => alive && setResult(r))
+      .catch(() => {})
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
+      controller.abort();
     };
-  }, [text, runtime]);
+  }, [text, runtime, attempt]);
 
   const s = result?.sections;
 
@@ -205,11 +232,7 @@ export function TeachPanel({ text, onClose }: Props) {
             </Section>
           )}
 
-          {result?.status === "error" && (
-            <p className="text-sm text-muted-foreground">
-              The explanation couldn’t be generated. Please try again.
-            </p>
-          )}
+          {result?.status === "error" && <TeachError onRetry={() => setAttempt((n) => n + 1)} />}
         </div>
       )}
     </SidePanel>

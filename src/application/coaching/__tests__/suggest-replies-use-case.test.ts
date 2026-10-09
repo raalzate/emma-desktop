@@ -149,3 +149,18 @@ describe("suggestReplies — anti-eco del agente (BUG-001)", () => {
     expect(calls[0].system).toMatch(/never echo/i);
   });
 });
+
+describe("suggestReplies — prioridad y cancelación", () => {
+  it("marca la llamada como background: ceder ante lo que el aprendiz espera", async () => {
+    const { llm, calls } = fakeLlm('["a","b","c"]');
+    await suggestReplies({ llm, context: "ctx", level: "B1" });
+    expect(calls[0].priority).toBe("background");
+  });
+
+  it("pasa el signal recibido al LLM", async () => {
+    const { llm, calls } = fakeLlm('["a","b","c"]');
+    const ctrl = new AbortController();
+    await suggestReplies({ llm, context: "ctx", level: "B1", signal: ctrl.signal });
+    expect(calls[0].signal).toBe(ctrl.signal);
+  });
+});

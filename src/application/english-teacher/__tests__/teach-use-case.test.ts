@@ -113,6 +113,58 @@ describe("teach — caché", () => {
   });
 });
 
+describe("teach — tope de tiempo", () => {
+  it("si el LLM nunca responde, devuelve error al vencer el tope en vez de colgarse", async () => {
+    const colgado: LlmGenerate = () => new Promise<string>(() => {});
+    const res = await teach(args({ llm: colgado, text: "This call never comes back.", timeoutMs: 20 }));
+    expect(res.status).toBe("error");
+    expect(res.errorCode).toBe("TEACHING_SERVICE_UNAVAILABLE");
+  });
+
+  it("dentro del tope, el resultado llega normal", async () => {
+    const { llm } = makeFakeLlm();
+    const res = await teach(args({ llm, text: "This call answers in time.", timeoutMs: 1_000 }));
+    expect(res.status).toBe("success");
+  });
+});
+
+describe("teach — cancelación", () => {
+  it("al vencer el tope aborta el signal que recibió el LLM", async () => {
+    const signals: (AbortSignal | undefined)[] = [];
+    const colgado: LlmGenerate = (a) => {
+      signals.push(a.signal);
+      return new Promise<string>(() => {});
+    };
+    await teach(args({ llm: colgado, text: "Abort me when time is up.", timeoutMs: 20 }));
+    expect(signals[0]).toBeDefined();
+    expect(signals[0]?.aborted).toBe(true);
+  });
+
+  it("si el llamador aborta, devuelve error y propaga el aborto al LLM", async () => {
+    const signals: (AbortSignal | undefined)[] = [];
+    const colgado: LlmGenerate = (a) => {
+      signals.push(a.signal);
+      return new Promise<string>(() => {});
+    };
+    const ctrl = new AbortController();
+    const p = teach(args({ llm: colgado, text: "The panel was closed.", signal: ctrl.signal }));
+    await new Promise((r) => setTimeout(r, 5));
+    ctrl.abort();
+    await expect(p).resolves.toMatchObject({ status: "error" });
+    expect(signals[0]?.aborted).toBe(true);
+  });
+
+  it("el error por tope no se cachea: el reintento vuelve a llamar al LLM", async () => {
+    const colgado: LlmGenerate = () => new Promise<string>(() => {});
+    const texto = "Do not cache a timeout.";
+    await teach(args({ llm: colgado, text: texto, timeoutMs: 10 }));
+    const { llm, calls } = makeFakeLlm();
+    const res = await teach(args({ llm, text: texto }));
+    expect(res.status).toBe("success");
+    expect(calls.length).toBeGreaterThan(0);
+  });
+});
+
 describe("teach — camino de error", () => {
   it("devuelve errorResult cuando una sección del LLM falla", async () => {
     const failing: LlmGenerate = async () => {
