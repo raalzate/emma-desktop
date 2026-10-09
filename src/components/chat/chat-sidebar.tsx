@@ -12,12 +12,12 @@ import { Check, MessageSquarePlus, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
+import { levelLabel, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import { groupArchivedByLevel, type ChatConversation } from "@/domain/chat/chat-conversation";
 
-/** Único lugar donde se rotula el nivel de un grupo archivado (T1 lo cambiará a «Level N»). */
+/** Único lugar donde se rotula el nivel de un grupo archivado («Level N»). */
 export function archivedGroupLabel(level: CefrLevel): string {
-  return level;
+  return levelLabel(level);
 }
 
 interface Props {

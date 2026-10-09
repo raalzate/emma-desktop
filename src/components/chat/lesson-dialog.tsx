@@ -28,7 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Markdown } from "@/components/ui/markdown";
-import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
+import { levelLabel, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { LessonView } from "./use-end-session";
@@ -63,7 +63,7 @@ interface Props {
 /** Decisión metodológica de Emma en una línea legible. */
 function decisionLineOf(view: LessonView): string {
   const { promoted, passed, newLevel } = view.decision;
-  if (promoted) return `✅ Emma’s call: you move up to ${newLevel}. Great work!`;
+  if (promoted) return `✅ Emma’s call: you move up to ${levelLabel(newLevel) || newLevel}. Great work!`;
   if (passed) return "✅ Emma’s call: scenario passed — you can move on in your path.";
   return "🔁 Emma’s call: repeat this scenario to consolidate before moving on.";
 }
@@ -234,7 +234,7 @@ export function LessonDialog({
           <DialogTitle>🎓 Your lesson with Emma</DialogTitle>
           <DialogDescription>
             {scenario.title}
-            {situation?.title ? ` · ${situation.title}` : ""} · level {level}
+            {situation?.title ? ` · ${situation.title}` : ""} · {levelLabel(level)}
             {view.stored ? " · saved in your history" : ""}
           </DialogDescription>
         </DialogHeader>

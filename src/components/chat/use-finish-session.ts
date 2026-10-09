@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
-import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
+import { levelLabel, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
@@ -42,7 +42,7 @@ export interface FinishOutcome {
 // Traduce el resultado de progresión a un mensaje breve para el toast.
 function verdictOf(promoted: boolean, newLevel: string, passed: boolean, next?: string): string {
   const tail = next ? ` Suggestion: ${next}.` : "";
-  if (promoted) return `You moved up to ${newLevel}!${tail}`;
+  if (promoted) return `You moved up to ${levelLabel(newLevel) || newLevel}!${tail}`;
   if (passed) return `Scenario passed!${tail}`;
   return `Keep practicing.${tail}`;
 }

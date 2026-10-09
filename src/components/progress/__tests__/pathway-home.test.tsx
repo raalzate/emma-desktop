@@ -57,18 +57,18 @@ describe("PathwayHome (rediseño Café sereno, FR-023/FR-024)", () => {
 
   it("el subtítulo apunta al siguiente nivel de la escalera", () => {
     // El apóstrofo sale escapado (&#x27;) en el markup estático.
-    expect(render()).toContain("on your way to B2");
+    expect(render()).toContain("on your way to Level 4");
   });
 
   it("agrupa el trazado en una tarjeta bg-card con esquinas bubble", () => {
     const html = render();
     expect(html).toContain("rounded-bubble");
     expect(html).toContain("bg-card");
-    expect(html).toContain("Your path · Level B1");
+    expect(html).toContain("Your path · Level 3");
     expect(html).toContain("1 of 3 scenes completed");
   });
 
-  it("muestra la escalera CEFR con el porcentaje del nivel en curso", () => {
+  it("muestra la escalera de niveles con el porcentaje del nivel en curso", () => {
     expect(render()).toContain("33%");
   });
 

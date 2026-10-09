@@ -59,7 +59,7 @@ export const STUDY_PLAN_24_WEEKS: readonly StudyWeek[] = [
   },
   {
     week: 8,
-    content: "Unit 6 + A1 checklist",
+    content: "Unit 6 + Level 1 checklist",
     milestone: "Narrate your day yesterday in 90 s with 10 irregular verbs",
     units: [6],
   },
@@ -95,7 +95,7 @@ export const STUDY_PLAN_24_WEEKS: readonly StudyWeek[] = [
   },
   {
     week: 14,
-    content: "Unit 12 + A2 checklist",
+    content: "Unit 12 + Level 2 checklist",
     milestone: "Narrate a real bug in 2 min",
     units: [12],
   },
@@ -131,7 +131,7 @@ export const STUDY_PLAN_24_WEEKS: readonly StudyWeek[] = [
   },
   {
     week: 20,
-    content: "Unit 18 + B1 checklist",
+    content: "Unit 18 + Level 3 checklist",
     milestone: "Describe a system in 3 min using relative clauses",
     units: [18],
   },
@@ -155,7 +155,7 @@ export const STUDY_PLAN_24_WEEKS: readonly StudyWeek[] = [
   },
   {
     week: 24,
-    content: "Units 25-26 + B2 checklist",
+    content: "Units 25-26 + Level 4 checklist",
     milestone: "Challenge 72: the full package in five registers",
     units: [25, 26],
   },

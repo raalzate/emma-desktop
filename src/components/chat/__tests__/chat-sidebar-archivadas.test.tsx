@@ -37,6 +37,9 @@ describe("ChatSidebar — archivadas", () => {
     const html = render([archivada("2", "Vieja dos", "A1"), archivada("3", "Vieja tres", "A2")]);
     expect(html).toContain("<details");
     expect(html).toContain("Archived");
+    expect(html).toContain("Level 1");
+    expect(html).toContain("Level 2");
+    expect(html).not.toMatch(/\b(A1|A2)\b/);
     expect(html).toContain(archivedGroupLabel("A1"));
     expect(html).toContain(archivedGroupLabel("A2"));
     expect(html).toContain("Vieja dos");
@@ -56,6 +59,6 @@ describe("ChatSidebar — archivadas", () => {
   });
 
   it("el rótulo del grupo pasa por una única función", () => {
-    expect(archivedGroupLabel("B1")).toBe("B1");
+    expect(archivedGroupLabel("B1")).toBe("Level 3");
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { nextLevel, isCefrLevel, INITIAL_LEVEL, CEFR_LADDER } from "../cefr-ladder";
+import { nextLevel, isCefrLevel, INITIAL_LEVEL, CEFR_LADDER, levelNumber, levelLabel } from "../cefr-ladder";
 
 describe("cefr-ladder", () => {
   it("empieza en A1", () => {
@@ -17,5 +17,21 @@ describe("cefr-ladder", () => {
     expect(nextLevel("Z9")).toBeNull();
     expect(isCefrLevel("B1")).toBe(true);
     expect(isCefrLevel("zz")).toBe(false);
+  });
+});
+
+describe("niveles propios (FR-005)", () => {
+  it("numera la escala: A1→1 … C1→5", () => {
+    expect(CEFR_LADDER.map((c) => levelNumber(c))).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("levelLabel devuelve «Level N»", () => {
+    expect(levelLabel("A1")).toBe("Level 1");
+    expect(levelLabel("C1")).toBe("Level 5");
+  });
+
+  it("un valor desconocido no inventa nivel: levelNumber null y etiqueta vacía", () => {
+    expect(levelNumber("zz")).toBeNull();
+    expect(levelLabel("zz")).toBe("");
   });
 });
