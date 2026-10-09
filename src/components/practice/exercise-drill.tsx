@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { Flame, Lightbulb, RotateCcw, BookmarkPlus, Check, X, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AnswerFeedback, ItemTransition, Stagger, StaggerItem } from "@/components/motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -170,18 +171,19 @@ function FeedbackPanel({ state, runtime }: { state: DrillState; runtime: EmmaRun
 
   if (state.phase === "retrying") {
     return (
-      <div className="space-y-2 rounded-bubble border border-scaffold-mid/40 bg-scaffold-mid-bg p-3 text-sm">
+      <AnswerFeedback state="error" className="space-y-2 rounded-bubble border border-scaffold-mid/40 bg-scaffold-mid-bg p-3 text-sm">
         <p className="font-medium text-scaffold-mid">Almost. One detail to fix.</p>
         <SlotVerdicts diagnosis={diagnosis} reveal={false} />
         <p className="text-muted-foreground">
           Check the form and try again: you get a second try before seeing the answer.
         </p>
-      </div>
+      </AnswerFeedback>
     );
   }
 
   return (
-    <div
+    <AnswerFeedback
+      state={closedCorrect ? "success" : "error"}
       className={`space-y-2 rounded-bubble border p-3 text-sm ${
         closedCorrect
           ? "border-scaffold-easy/40 bg-scaffold-easy-bg"
@@ -203,7 +205,7 @@ function FeedbackPanel({ state, runtime }: { state: DrillState; runtime: EmmaRun
       )}
       {item.noteEs && <p className="text-muted-foreground">{item.noteEs}</p>}
       <ExplainWithEmma state={state} runtime={runtime} />
-    </div>
+    </AnswerFeedback>
   );
 }
 
@@ -421,6 +423,7 @@ function ExerciseRunner({ exercise, runtime, onExit, onChange }: RunnerProps) {
   const revealedExpected = state.phase === "reviewing" ? (state.lastDiagnosis?.expected ?? null) : null;
 
   return (
+    <ItemTransition itemKey={state.index}>
     <Card className="rounded-bubble">
       <CardHeader className="space-y-3">
         <div className="flex items-center justify-between gap-2">
@@ -513,6 +516,7 @@ function ExerciseRunner({ exercise, runtime, onExit, onChange }: RunnerProps) {
         </div>
       </CardContent>
     </Card>
+    </ItemTransition>
   );
 }
 
@@ -570,10 +574,10 @@ export function ExerciseDrill({ runtime, initialUnit, initialExerciseId, onChang
           : `${exercisesOfUnit.length} exercises in this unit. Tap one to start.`}
       </p>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      <Stagger className="grid gap-2 sm:grid-cols-2">
         {exercisesOfUnit.map((exercise) => (
+          <StaggerItem key={exercise.id}>
           <button
-            key={exercise.id}
             type="button"
             title="Abre este ejercicio"
             onClick={() => setSelected(exercise)}
@@ -588,11 +592,12 @@ export function ExerciseDrill({ runtime, initialUnit, initialExerciseId, onChang
             </div>
             <p className="text-sm">{exercise.promptEs}</p>
           </button>
+          </StaggerItem>
         ))}
         {exercisesOfUnit.length === 0 && (
           <p className="text-sm text-muted-foreground">No exercises for this unit yet.</p>
         )}
-      </div>
+      </Stagger>
     </div>
   );
 }

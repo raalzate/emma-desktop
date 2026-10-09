@@ -9,6 +9,7 @@
  */
 
 import { Check, Circle, MapPin } from "lucide-react";
+import { Stagger, StaggerItem } from "@/components/motion";
 import {
   Accordion,
   AccordionContent,
@@ -96,14 +97,14 @@ export function StudyPlanView({ activeUnit, completedChallengeIds }: Props) {
             <MapPin className="h-4 w-4 shrink-0 text-primary" />
             Week {plan.current.week} of 24 · {plan.current.focusEs}
           </p>
-          <ul className="space-y-1">
+          <Stagger as="ul" className="space-y-1">
             {plan.thisWeekEs.map((task) => (
-              <li key={task} className="flex items-start gap-2">
+              <StaggerItem as="li" key={task} className="flex items-start gap-2">
                 <Circle className="mt-1 h-3 w-3 shrink-0 text-primary" />
                 <span>{task}</span>
-              </li>
+              </StaggerItem>
             ))}
-          </ul>
+          </Stagger>
           <p className="text-xs text-muted-foreground">
             {done === 0 ? "Just getting started: no week closed yet." : `${done} week(s) closed.`}
           </p>
@@ -131,18 +132,18 @@ export function StudyPlanView({ activeUnit, completedChallengeIds }: Props) {
 
       <section className="space-y-2">
         <h3 className="text-sm font-semibold">Your daily routine (45 minutes)</h3>
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <Stagger as="ul" className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {Object.entries(DAILY_DISTRIBUTION).map(([key, minutes]) => {
             const k = key as keyof typeof DAILY_DISTRIBUTION;
             return (
-              <li key={key} className="rounded-md border p-3 text-center text-sm">
+              <StaggerItem as="li" key={key} className="rounded-md border p-3 text-center text-sm">
                 <p className="font-medium">{DAILY_LABELS[k]}</p>
                 <p className="text-muted-foreground">{minutes} min</p>
                 <p className="mt-1 text-xs text-muted-foreground">{DAILY_HELP[k]}</p>
-              </li>
+              </StaggerItem>
             );
           })}
-        </ul>
+        </Stagger>
       </section>
 
       <section className="space-y-2">
