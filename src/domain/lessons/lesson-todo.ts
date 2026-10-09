@@ -40,6 +40,8 @@ export interface LessonTodoOrigin {
   scenarioType: string;
   scenarioTitle: string;
   situationTitle?: string;
+  /** Conversación que la generó: clave de idempotencia de la asignación automática (#211). */
+  conversationId?: string;
 }
 
 export interface LessonTodo {

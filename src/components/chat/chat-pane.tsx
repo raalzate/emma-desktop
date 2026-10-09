@@ -33,6 +33,8 @@ import { TeachDialog } from "./teach-dialog";
 import { TranslateDialog } from "./translate-dialog";
 
 interface Props {
+  /** Id de la conversación: ata las lecciones asignadas al cierre (#211). */
+  conversationId: string;
   runtime: EmmaRuntime;
   profile: UserProfile;
   settings: ChatSettings;
@@ -44,7 +46,7 @@ interface Props {
 }
 
 export function ChatPane({
-  runtime, profile, settings, scenario, scenarios, onSelectScenario, restore, onSnapshot,
+  conversationId, runtime, profile, settings, scenario, scenarios, onSelectScenario, restore, onSnapshot,
 }: Props) {
   const s = useChatSession({ runtime, profile, settings, scenario, restore, onSnapshot });
   const { toast } = useToast();
@@ -54,6 +56,7 @@ export function ChatPane({
   const [sceneOpen, setSceneOpen] = useState(false);
 
   const end = useEndSession({
+    conversationId,
     runtime,
     scenario,
     situation: s.situation,

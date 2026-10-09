@@ -159,6 +159,7 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
         )}
         <ChatPane
           key={sessionId}
+          conversationId={sessionId}
           runtime={runtime}
           profile={profile}
           settings={settings}

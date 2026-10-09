@@ -6,6 +6,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import {
+  assignSessionLessons,
   addLessonTodoUseCase,
   completeLessonTodoUseCase,
   dismissLessonTodoUseCase,
@@ -73,5 +74,44 @@ describe("cerrar una lección", () => {
     const [todo] = await addLessonTodoUseCase({ repo: f.repo, draft, now: 100 });
     await dismissLessonTodoUseCase({ repo: f.repo, id: todo.id, now: 500 });
     expect(f.list[0].status).toBe("dismissed");
+  });
+});
+
+describe("assignSessionLessons (#211)", () => {
+  const drafts: LessonTodoDraft[] = [
+    draft,
+    { ...draft, kind: "exercise", target: "u1-e1", href: "/practice/exercises/" },
+  ];
+
+  it("asigna todas las lecciones del cierre y las ata a la conversación", async () => {
+    const f = fakeRepo();
+    const next = await assignSessionLessons({ repo: f.repo, drafts, conversationId: "c1", now: 5 });
+    expect(next.map((t) => t.kind)).toEqual(["srs-review", "exercise"]);
+    expect(next.every((t) => t.origin.conversationId === "c1" && t.status === "pending")).toBe(true);
+  });
+
+  it("es idempotente: reabrir o re-ejecutar el cierre no duplica ni reescribe", async () => {
+    const f = fakeRepo();
+    await assignSessionLessons({ repo: f.repo, drafts, conversationId: "c1", now: 5 });
+    const spy = vi.spyOn(f.repo, "saveAll");
+    const again = await assignSessionLessons({ repo: f.repo, drafts, conversationId: "c1", now: 9 });
+    expect(again).toHaveLength(2);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("no reasigna una lección ya completada de la misma conversación", async () => {
+    const f = fakeRepo();
+    const first = await assignSessionLessons({ repo: f.repo, drafts, conversationId: "c1", now: 5 });
+    await completeLessonTodoUseCase({ repo: f.repo, id: first[0].id, now: 6 });
+    const again = await assignSessionLessons({ repo: f.repo, drafts, conversationId: "c1", now: 9 });
+    expect(again).toHaveLength(2);
+    expect(again.filter((t) => t.status === "pending")).toHaveLength(1);
+  });
+
+  it("otra conversación con el mismo objetivo pendiente no lo duplica", async () => {
+    const f = fakeRepo();
+    await assignSessionLessons({ repo: f.repo, drafts, conversationId: "c1", now: 5 });
+    const other = await assignSessionLessons({ repo: f.repo, drafts, conversationId: "c2", now: 9 });
+    expect(other).toHaveLength(2);
   });
 });

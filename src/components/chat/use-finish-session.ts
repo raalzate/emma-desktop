@@ -37,6 +37,8 @@ export interface FinishOutcome {
   decision: { promoted: boolean; newLevel: string; passed: boolean };
   /** Próximos pasos sugeridos por EMMA (ejercicio, SRS, par mínimo, escenario). */
   recommendations: PracticeRecommendation[];
+  /** Correcciones reportables: sin ellas el cierre pregunta en vez de asignar (#211). */
+  correctionsCount: number;
 }
 
 // Traduce el resultado de progresión a un mensaje breve para el toast.
@@ -54,7 +56,7 @@ export function useFinishSession(a: Args) {
   const finish = async () => {
     setRunning(true);
     const metric = { turns: a.turns, errors: a.errors.length };
-    const { report, lesson, recommendations } = await a.runtime.finishSession({
+    const { report, lesson, recommendations, correctionsCount } = await a.runtime.finishSession({
       scenario: a.scenario, metric, errors: a.errors, level: a.level,
       situation: a.situation, situationTitle: a.situation?.title,
       messages: a.messages,
@@ -70,6 +72,7 @@ export function useFinishSession(a: Args) {
       next: next ? { scenarioType: next.scenarioType, title: next.title } : null,
       decision: { promoted: prog.promoted, newLevel: prog.newLevel, passed },
       recommendations,
+      correctionsCount,
     });
     setRunning(false);
   };

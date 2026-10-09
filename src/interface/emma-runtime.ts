@@ -105,7 +105,13 @@ export interface EmmaRuntime {
      * olvidara registraría métricas en cero sin que nada avisara.
      */
     messages: ChatTurn[];
-  }): Promise<{ report: string; lesson: string | null; recommendations: PracticeRecommendation[] }>;
+  }): Promise<{
+    report: string;
+    lesson: string | null;
+    recommendations: PracticeRecommendation[];
+    /** Correcciones reportables de la sesión: decide si el cierre asigna lecciones (#211). */
+    correctionsCount: number;
+  }>;
   evaluateProgression(level: string, metric: SessionMetric): ReturnType<EvaluateProgressionUseCase["execute"]>;
   /** Últimas métricas de progreso de sesión (latencia, monólogo, densidad de error) y su promedio. */
   metricsTrend(last?: number): ReturnType<typeof getMetricsTrend>;
@@ -247,7 +253,7 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
       )
         .then((r) => r.context.recommendations)
         .catch(() => []);
-      return { report, lesson, recommendations };
+      return { report, lesson, recommendations, correctionsCount: errors.length };
     },
     evaluateProgression: (level, metric) => evaluate.execute(USER_ID, level, metric),
     metricsTrend: (last = 5) => getMetricsTrend({ repo: sessionMetricsRepo, last }),
