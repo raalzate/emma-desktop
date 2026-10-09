@@ -4,7 +4,7 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-09-29
+- **Fecha del último gate completo:** 2026-10-09
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
@@ -15,6 +15,9 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   mínimos en oraciones; PR #201). Antes, el mismo día: v0.7.0 (UI en inglés, #192) y
   v0.6.0. v0.1.0 quedó retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1 sigue en
   BORRADOR con sus 3 instaladores. Publicar un borrador sigue siendo gesto del humano.
+- **v0.8.1 (2026-10-09, BORRADOR):** gamificación visible #216 (XP, nivel de jugador,
+  racha diaria, meta del día, 15 logros, celebraciones animadas; PR #221) y evals A1 con
+  promptfoo fuera del gate (PR #222). Pendiente de #216: vistas de PFA (app no conectada).
 - **Pendiente de #195:** T7 (#203), vistas de PFA (requiere la app conectada).
 - **Milestone v0.5.0 fusionado (2026-09-25):** lección en karaoke con audio al lado, escena
   visible en modal durante el chat, correcciones triviales fuera del feedback, gramática con
@@ -37,7 +40,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en issues de GitHub; sin `specs/` en el repo |
 | Diagramas sincronizados | `node scripts/diagrams-check.mjs` | verde — 4 vistas BPMN, 77 elementos; cajas en lenguaje de producto y anclas que apuntan a código que existe |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
-| Tests | `pnpm test` | verde — 1378 pruebas en 183 archivos |
+| Tests | `pnpm test` | verde — 1869 pruebas en 224 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
 | Smoke de producción | `pnpm smoke` | verde — Electron carga `app://-` con contenido (camino empaquetado); OMITIDA donde no hay binario de Electron (gate de CI) |
 
