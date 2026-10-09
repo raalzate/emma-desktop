@@ -31,6 +31,19 @@ describe("composeSessionSummary — resumen rediseñado (BUG-001)", () => {
     expect(md).not.toMatch(/Your wording|Recurring patterns|Practice lesson/);
   });
 
+  it("rotula el nivel como «Level N», nunca con código CEFR (FR-006)", () => {
+    const md = composeSessionSummary({
+      scenarioTitle: "Daily Standup",
+      level: "B1",
+      turns: 3,
+      errors,
+      lesson: null,
+    });
+    expect(md).toContain("**Level 3** · **Turns:**");
+    expect(md).toContain("Current level: **Level 3**");
+    expect(md).not.toMatch(/\bB1\b/);
+  });
+
   it("sin lección LLM usa el consejo determinista del tipo de error dominante", () => {
     const md = composeSessionSummary({
       scenarioTitle: "Daily Standup",

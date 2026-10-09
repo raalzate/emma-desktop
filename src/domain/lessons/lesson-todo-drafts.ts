@@ -20,8 +20,6 @@ export function practiceHrefFor(rec: PracticeRecommendation): string | null {
       return routeHrefFor("srs");
     case "minimal-pair":
       return routeHrefFor("pronunciation", { contrast: rec.contrastId });
-    case "checklist":
-      return routeHrefFor("self-assessment", { level: rec.level });
     case "scenario":
       return null;
   }
@@ -36,8 +34,6 @@ function targetOf(rec: PracticeRecommendation): string {
       return "due";
     case "minimal-pair":
       return rec.contrastId;
-    case "checklist":
-      return rec.level;
     case "scenario":
       return rec.scenarioType;
   }
@@ -48,7 +44,6 @@ const TITLE_BY_KIND: Record<PracticeRecommendation["kind"], string> = {
   "srs-review": "Review your cards",
   "minimal-pair": "Pronunciation minimal pair",
   scenario: "Conversation scenario",
-  checklist: "Level self-check",
 };
 
 export function draftFromRecommendation(

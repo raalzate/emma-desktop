@@ -40,7 +40,9 @@ describe("MetricsCardView (rediseño Café sereno, FR-027)", () => {
     expect(html.match(/<svg/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
   });
 
-  it("conserva la nota de las métricas que se autoevalúan", () => {
-    expect(render()).toContain("self-assess them manually");
+  it("aclara que las otras dos métricas no se calculan, sin hablar de autoevaluación", () => {
+    const html = render();
+    expect(html).toContain("are not tracked here");
+    expect(html).not.toMatch(/self-assess/i);
   });
 });

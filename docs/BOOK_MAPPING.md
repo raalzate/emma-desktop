@@ -117,7 +117,7 @@ grammarFocus de U1.
 | E | 50 errores del hispanohablante | `src/lib/reference-data/common-errors.ts` → enriquece `error-taxonomy` y lección post-sesión | ✅ |
 | F | Glosario técnico ES→EN + IPA | `src/lib/reference-data/glossary.ts` → «Teach me»/pronunciación | ✅ |
 | G | Banco de frases por situación | `src/lib/reference-data/phrase-bank.ts` → chips de sugerencia por escenario | ✅ |
-| H | Checklists autoevaluación A1→B2 (13/15 + bases) | `domain/curriculum/self-assessment.ts` (`certifiesB2`) + vista persistida en `/practice?tab=assessment` | ✅ |
+| H | Checklists autoevaluación A1→B2 (13/15 + bases) | Retirada (#208): no influía en la progresión ni en el nivel | ❌ retirada |
 | I | Solucionario | `src/lib/exercise-data/` (137 ejercicios con respuestas) + `domain/exercises/evaluate-exercise.ts` (corrección determinista) | ✅ |
 | J | Plan 24 semanas detallado (45 min/día, hitos) | `domain/curriculum/study-plan.ts` + tarjeta de plan en Progreso | ✅ |
 | K | Recursos | `src/lib/reference-data/resources.ts` (24 recursos, 10 categorías) | ✅ |
@@ -135,7 +135,7 @@ entregarlo y marcarlo (progreso N/72).
 métricas medibles — latencia de respuesta (mediana), monólogo sostenido y
 densidad de error — las persiste y las muestra en Progreso con su nivel MCER.
 Las otras dos del libro (velocidad de lectura y comprensión auditiva) quedan
-como autoevaluación manual, y la UI lo dice.
+sin medir, y la UI lo dice.
 
 ### Bucle de pronunciación (0.5 · Reto B)
 
@@ -150,25 +150,25 @@ Implementación completa (todas las olas):
 
 1. **Datos** — 26 unidades (chunks, trampas, retos 1–72), fonética Parte 1,
    137 ejercicios con solucionario, apéndices A–K (~700 entradas).
-2. **Dominio** — currículo (ciclo 7 pasos, plan 24 semanas, checklists H,
-   reglas del método, unit-catalog), SRS Leitner + tarjetas, evaluación
-   determinista de ejercicios, drill perceptivo de pares mínimos.
+2. **Dominio** — currículo (ciclo 7 pasos, plan 24 semanas, reglas del método,
+   unit-catalog; los checklists H se retiraron en #208), SRS Leitner + tarjetas,
+   evaluación determinista de ejercicios, drill perceptivo de pares mínimos.
 3. **Integración** — bloque LANGUAGE FOCUS en el prompt de simulación por
    unidad de sesión; chips con chunks + banco G; lección con trampas +
    Apéndice E; tarjetas SRS generadas desde los errores al cerrar sesión;
    7 escenarios nuevos con 24 situaciones.
 4. **UI** — sección «Práctica» (`/practice`): drills de ejercicios, repaso
    SRS, laboratorio de pares mínimos + shadowing (TTS), plan de estudio y
-   ciclo/reglas del método, autoevaluación A1→B2 persistida con criterio de
-   certificación B2.
+   ciclo/reglas del método.
 
 5. **Capa tutora (el agente como cabeza del sistema)** —
    `domain/tutor/` (`TutorContext`, `recommendPractice`, `SYSTEM_MAP_ES`,
    `buildTutorBriefing`) + `application/tutor/get-tutor-context-use-case.ts`.
    El agente conoce y decide en cada punto: bienvenida con briefing del plan
    (semana/unidad/pendientes), TUTOR AWARENESS en escena (débil en X →
-   provoca práctica sin romper personaje), cierre de sesión con «Próximos
-   pasos» clicables (deep-links a `/practice`), siguiente escenario con boost
+   provoca práctica sin romper personaje), cierre de sesión que asigna solo
+   las lecciones de remediación a «My lessons» (o, sin correcciones, pregunta
+   si practicar otra vez o continuar; #211), siguiente escenario con boost
    por semana del plan, tarjeta de plan en Progreso.
 
 6. **Naturalidad de la conversación** — la escena reacciona antes de preguntar,

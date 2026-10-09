@@ -4,45 +4,34 @@
  * Lección de Emma al cerrar la escena. Aquí el búfer silencioso de errores por
  * fin se revela, ya fuera del turno de chat. La lección llega EN INGLÉS y con
  * AUDIO (directriz: Emma siempre habla inglés; la ayuda en español es un botón
- * aparte), y el diálogo SIEMPRE ofrece acciones de ruta: repetir el escenario o
- * saltar al siguiente recomendado del pathway.
+ * aparte). El cierre (#211) lo gobierna el plan: lecciones asignadas solas o elegir
+ * entre repetir la escena y continuar.
  *
  * Presentacional: la decisión de generar o leer del histórico vive en
  * `use-end-session`; aquí sólo se pinta lo que llega.
  */
 
-import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Languages, ListPlus, Loader2, Play, RotateCcw, Square } from "lucide-react";
+import { Languages, Loader2, Play, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { PracticeRecommendation } from "@/domain/tutor/practice-recommender";
-import type { SessionChallenge } from "@/domain/curriculum/challenge-selection";
-import { getSessionChallenge } from "@/application/challenges/complete-challenge-use-case";
-import { createChallengeRepository } from "@/infrastructure/persistence/challenge-repository";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Markdown } from "@/components/ui/markdown";
-import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
+import { levelLabel, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { LessonView } from "./use-end-session";
 import { XpBreakdown } from "@/components/gamification/xp-breakdown";
 import { useKaraoke, type Karaoke } from "./use-karaoke";
 import { KaraokeTranscript } from "./karaoke-transcript";
+import { ClosingPlanPanel } from "./closing-plan-panel";
 import { hasSpeakableContent } from "@/domain/tts/speakable-text";
 import { splitReportAtLesson } from "@/domain/feedback/report-sections";
-import {
-  draftFromChallenge,
-  draftFromRecommendation,
-} from "@/domain/lessons/lesson-todo-drafts";
-import type { LessonTodoDraft, LessonTodoOrigin } from "@/domain/lessons/lesson-todo";
-import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
 
 /** Voz reservada de Emma (tutora): siempre femenina, en-US-EmmaNeural. */
 const EMMA_VOICE = "en-US-EmmaNeural";
@@ -64,31 +53,9 @@ interface Props {
 /** Decisión metodológica de Emma en una línea legible. */
 function decisionLineOf(view: LessonView): string {
   const { promoted, passed, newLevel } = view.decision;
-  if (promoted) return `✅ Emma’s call: you move up to ${newLevel}. Great work!`;
+  if (promoted) return `✅ Emma’s call: you move up to ${levelLabel(newLevel) || newLevel}. Great work!`;
   if (passed) return "✅ Emma’s call: scenario passed — you can move on in your path.";
   return "🔁 Emma’s call: repeat this scenario to consolidate before moving on.";
-}
-
-/** Reto del libro para la unidad de esta sesión (tolerante a fallo: sin reto, sin sección). */
-function useSessionChallenge(active: boolean, scenarioType: string, level: CefrLevel) {
-  const repo = useMemo(() => createChallengeRepository(), []);
-  const [challenge, setChallenge] = useState<SessionChallenge | null>(null);
-  useEffect(() => {
-    if (!active) return;
-    let alive = true;
-    void (async () => {
-      try {
-        const result = await getSessionChallenge({ repo, scenarioType, level });
-        if (alive) setChallenge(result);
-      } catch {
-        if (alive) setChallenge(null);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [active, repo, scenarioType, level]);
-  return challenge;
 }
 
 /**
@@ -145,69 +112,14 @@ export function LessonKaraoke({
   );
 }
 
-/**
- * «Anotar» en vez de «ir»: el diálogo NO se cierra al pulsar, así que el
- * aprendiz sigue leyendo su feedback y la recomendación deja de perderse si no
- * la atiende en ese momento (#172).
- */
-function AnotarButton({
-  label,
-  draft,
-  added,
-  onAdd,
-}: {
-  label: string;
-  draft: LessonTodoDraft;
-  added: boolean;
-  onAdd: (draft: LessonTodoDraft) => void;
-}) {
-  return (
-    <Button
-      variant={added ? "secondary" : "outline"}
-      size="sm"
-      className="gap-1"
-      title={added ? "Ya está en tu lista de lecciones" : "Agregar a mis lecciones"}
-      disabled={added}
-      onClick={() => onAdd(draft)}
-    >
-      {added ? <Check className="h-3.5 w-3.5" /> : <ListPlus className="h-3.5 w-3.5" />}
-      {added ? "Saved" : label}
-    </Button>
-  );
-}
-
 export function LessonDialog({
   view, open, onClose, scenario, situation, level, scenarios, onSelectScenario, onTranslate,
 }: Props) {
   const router = useRouter();
   // Audio de la lección con la voz de Emma (mismo motor que las burbujas).
   const karaoke = useKaraoke(view?.lesson ?? "", "feminine", EMMA_VOICE);
-  const sessionChallenge = useSessionChallenge(open && !!view, scenario.scenarioType, level);
   // La lección sale del markdown del reporte: se renderiza en karaoke, no plana.
   const reportParts = splitReportAtLesson(view?.report ?? "");
-  const { add } = useLessonTodos();
-  // Marcar lo anotado sin recargar la lista entera: el diálogo sólo necesita
-  // saber qué botones ya se pulsaron en esta lectura del feedback.
-  const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
-  const lessonOrigin: LessonTodoOrigin = {
-    sessionAt: Date.now(),
-    scenarioType: scenario.scenarioType,
-    scenarioTitle: scenario.title,
-    situationTitle: situation?.title,
-  };
-  const challengeDraft = sessionChallenge
-    ? draftFromChallenge(
-        {
-          unit: sessionChallenge.unit.number,
-          instructionsEs: sessionChallenge.challenge.instructionsEs,
-        },
-        lessonOrigin,
-      )
-    : null;
-  const addTodo = (draft: LessonTodoDraft): void => {
-    void add(draft);
-    setAddedKeys((prev) => new Set(prev).add(`${draft.kind}:${draft.target}`));
-  };
 
   // Siguiente paso de la ruta: nunca el escenario que se acaba de jugar —
   // si la recomendación coincide, rota al siguiente del catálogo del nivel.
@@ -235,7 +147,7 @@ export function LessonDialog({
           <DialogTitle>🎓 Your lesson with Emma</DialogTitle>
           <DialogDescription>
             {scenario.title}
-            {situation?.title ? ` · ${situation.title}` : ""} · level {level}
+            {situation?.title ? ` · ${situation.title}` : ""} · {levelLabel(level)}
             {view.stored ? " · saved in your history" : ""}
           </DialogDescription>
         </DialogHeader>
@@ -266,73 +178,16 @@ export function LessonDialog({
               </p>
             )}
           </section>
-          {/* Componente 3 — Próximos pasos: redirección de Emma hacia dónde seguir. */}
-          {view.recommendations.length > 0 && (
-            <section className="rounded-lg border bg-muted/40 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Next steps
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Save them and do them whenever you like: they live in “My lessons”.
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {view.recommendations.map((rec, i) => (
-                  <AnotarButton
-                    key={`${rec.kind}-${i}`}
-                    label={rec.reasonEs}
-                    draft={draftFromRecommendation(rec, lessonOrigin)}
-                    onAdd={addTodo}
-                    added={addedKeys.has(`${rec.kind}:${draftFromRecommendation(rec, lessonOrigin).target}`)}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-          {/* Componente 4 — Reto de la unidad: output forzado (paso 7 del libro). */}
-          {sessionChallenge && (
-            <section className="rounded-lg border bg-muted/40 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Your challenge for this unit
-              </p>
-              <p className="mt-1 text-sm font-medium">
-                Unit {sessionChallenge.unit.number} · {sessionChallenge.unit.title}
-              </p>
-              <p className="mt-1 text-sm">{sessionChallenge.challenge.instructionsEs}</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-muted-foreground">
-                {sessionChallenge.challenge.criteria.map((c, i) => (
-                  <li key={i}>{c}</li>
-                ))}
-              </ul>
-              <div className="mt-2">
-                <AnotarButton
-                  label="Save the challenge"
-                  draft={challengeDraft!}
-                  onAdd={addTodo}
-                  added={addedKeys.has(`challenge:${challengeDraft?.target}`)}
-                />
-              </div>
-            </section>
-          )}
         </div>
-        <DialogFooter className="flex-wrap gap-2 sm:justify-between">
-          <Button
-            variant="outline"
-            className="gap-1"
-            title="Repite esta misma escena para afianzar lo que acabas de aprender"
-            onClick={() => closeAnd(() => onSelectScenario(scenario))}
-          >
-            <RotateCcw className="h-4 w-4" /> Practice again
-          </Button>
-          {nextScenario ? (
-            <Button className="gap-1" title="Avanza a la siguiente escena de tu ruta" onClick={() => closeAnd(() => onSelectScenario(nextScenario))}>
-              Next: {nextScenario.title} <ArrowRight className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button className="gap-1" title="Cierra la lección; queda guardada en tu historial" onClick={() => closeAnd()}>
-              Close
-            </Button>
-          )}
-        </DialogFooter>
+        {/* Componente 3 — Cierre: lecciones asignadas solas o elegir practicar/continuar. */}
+        <ClosingPlanPanel
+          plan={view.plan}
+          onStartLessons={() => closeAnd(() => router.push("/practice/"))}
+          onPracticeAgain={() => closeAnd(() => onSelectScenario(scenario))}
+          onContinue={() =>
+            closeAnd(() => (nextScenario ? onSelectScenario(nextScenario) : router.push("/")))
+          }
+        />
       </DialogContent>
     </Dialog>
   );

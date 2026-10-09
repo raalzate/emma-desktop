@@ -17,6 +17,7 @@ import Link from "next/link";
 import { Check, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PresenceList, Stagger, StaggerItem } from "@/components/motion";
 import { useLessonTodos } from "./use-lesson-todos";
 import { lessonTodoReason, lessonTodoTitle } from "@/domain/lessons/lesson-todo-copy";
 import type { LessonTodo } from "@/domain/lessons/lesson-todo";
@@ -34,7 +35,7 @@ function TodoRow({
   onComplete: () => void;
 }) {
   return (
-    <li className="flex flex-col rounded-lg border p-4">
+    <StaggerItem as="li" className="flex flex-col rounded-lg border p-4">
       <div className="flex flex-wrap items-baseline gap-2">
         <span className="font-medium">{lessonTodoTitle(todo)}</span>
         <Badge variant="secondary" className="shrink-0">
@@ -56,7 +57,7 @@ function TodoRow({
           <Check className="h-3.5 w-3.5" /> Done
         </Button>
       </div>
-    </li>
+    </StaggerItem>
   );
 }
 
@@ -74,11 +75,13 @@ export function LessonTodoList() {
           practice next.
         </p>
       ) : (
-        <ul className="grid gap-3 md:grid-cols-2">
-          {pending.map((todo) => (
-            <TodoRow key={todo.id} todo={todo} onComplete={() => void complete(todo.id)} />
-          ))}
-        </ul>
+        <Stagger as="ul" className="grid gap-3 md:grid-cols-2">
+          <PresenceList>
+            {pending.map((todo) => (
+              <TodoRow key={todo.id} todo={todo} onComplete={() => void complete(todo.id)} />
+            ))}
+          </PresenceList>
+        </Stagger>
       )}
       {closed.length > 0 && (
         <section>

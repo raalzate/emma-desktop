@@ -20,7 +20,6 @@ export const SYSTEM_MAP_ES = `Soy EMMA, tutora de inglés conversacional. Mis di
 - Laboratorio de pares mínimos para entrenar contrastes fonéticos.
 - Shadowing para practicar ritmo, enlace y entonación.
 - Plan de 24 semanas que ordena las 26 unidades del curso.
-- Autoevaluación A1→B2 con la regla 13/15 de B2 (bases A1-B1 completas).
 - Progreso por número de errores por turno y racha de 3 sin errores.`;
 
 const RECOMMENDATIONS_IN_BRIEFING = 2;

@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { Gauge, MessageSquareText, SpellCheck, Timer, type LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
+import { levelLabel } from "@/domain/cefr/cefr-ladder";
 import type { ProgressCefrLevel } from "@/domain/progression/progress-metrics";
 import { metricLevels, type SessionMetrics } from "@/domain/progression/session-metrics";
 
@@ -85,7 +86,7 @@ export function MetricsCardView({ averages }: { averages: SessionAverages }) {
                 <span className="font-headline text-3xl font-bold">{row.value}</span>
                 <span className="text-sm text-muted-foreground">{row.unit}</span>
                 <Badge variant="outline" className="ml-auto">
-                  {row.level}
+                  {levelLabel(row.level)}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">{row.note}</p>
@@ -95,7 +96,7 @@ export function MetricsCardView({ averages }: { averages: SessionAverages }) {
       </ul>
       <p className="text-xs text-muted-foreground">
         The other two metrics of the method (reading speed and listening comprehension) are
-        not computed here: you self-assess them manually.
+        not tracked here.
       </p>
     </section>
   );

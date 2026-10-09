@@ -20,7 +20,6 @@ export type LessonTodoKind =
   | "srs-review"
   | "minimal-pair"
   | "scenario"
-  | "checklist"
   | "challenge";
 
 export type LessonTodoStatus = "pending" | "done" | "dismissed";
@@ -30,7 +29,6 @@ const KINDS: readonly LessonTodoKind[] = [
   "srs-review",
   "minimal-pair",
   "scenario",
-  "checklist",
   "challenge",
 ];
 const STATUSES: readonly LessonTodoStatus[] = ["pending", "done", "dismissed"];
@@ -42,6 +40,8 @@ export interface LessonTodoOrigin {
   scenarioType: string;
   scenarioTitle: string;
   situationTitle?: string;
+  /** Conversación que la generó: clave de idempotencia de la asignación automática (#211). */
+  conversationId?: string;
 }
 
 export interface LessonTodo {

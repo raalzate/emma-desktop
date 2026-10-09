@@ -10,6 +10,9 @@
  * `webpackIgnore` para que webpack/Next NO intente bundlearlo (rompería).
  */
 
+import type { GenerationPriority } from "@/domain/ai/llm-port";
+import { abortError, createGenerationQueue } from "./generation-queue";
+
 // Mensaje de chat para LiteRT.
 export type LitertRole = "system" | "user" | "assistant";
 export interface LitertMessage {
@@ -125,7 +128,8 @@ export async function getEngine(modelFile: string): Promise<any> {
  * que es el mayor costo de prefill con el modelo local en WebGPU.
  */
 export interface LitertConversation {
-  send(userText: string, onToken?: (chunk: string) => void): Promise<string>;
+  /** Con `signal`: al abortarse llama a `conversation.cancel()` y rechaza con AbortError. */
+  send(userText: string, onToken?: (chunk: string) => void, signal?: AbortSignal): Promise<string>;
   /** Libera el KV-cache de la conversación en la GPU. Idempotente. */
   close(): void;
 }
@@ -144,20 +148,39 @@ export async function createLitertConversation(
     sessionConfig: { samplerParams: LITERT_SAMPLER_PARAMS },
   });
   return {
-    async send(userText, onToken) {
+    async send(userText, onToken, signal) {
+      if (signal?.aborted) throw abortError();
       let full = "";
-      const stream = conversation.sendMessageStreaming(userText);
-      for await (const chunk of stream) {
-        for (const item of chunk?.content ?? []) {
-          if (item?.type === "text" && item.text) {
-            full += item.text;
-            onToken?.(item.text);
-          }
+      const cancel = () => {
+        try {
+          conversation?.cancel?.();
+        } catch {
+          /* cancelar es best-effort */
         }
-        // Cortacircuitos: si el modelo degenera en un bucle, aborta ya (no esperes
-        // al tope de 60s ni sigas quemando tokens en basura repetida).
-        if (isDegenerating(full)) break;
+      };
+      signal?.addEventListener("abort", cancel);
+      try {
+        const stream = conversation.sendMessageStreaming(userText);
+        for await (const chunk of stream) {
+          if (signal?.aborted) break;
+          for (const item of chunk?.content ?? []) {
+            if (item?.type === "text" && item.text) {
+              full += item.text;
+              onToken?.(item.text);
+            }
+          }
+          // Cortacircuitos: si el modelo degenera en un bucle, aborta ya (no esperes
+          // al tope de 60s ni sigas quemando tokens en basura repetida).
+          if (isDegenerating(full)) break;
+        }
+      } catch (err) {
+        // Al cancelar, el stream puede lanzar su propio error: lo normalizamos.
+        if (signal?.aborted) throw abortError();
+        throw err;
+      } finally {
+        signal?.removeEventListener("abort", cancel);
       }
+      if (signal?.aborted) throw abortError();
       return full.trim();
     },
     close() {
@@ -193,21 +216,36 @@ function isDegenerating(text: string): boolean {
  * prompt. Para varios turnos encadenados usa `createLitertConversation` y reutiliza
  * la conversación (evita re-prefill del system en cada turno).
  */
-export async function litertGenerate(
+export interface LitertGenerateOptions {
+  priority?: GenerationPriority;
+  signal?: AbortSignal;
+}
+
+/** Una sola cola para todo el renderer: la GPU atiende de a una generación. */
+const generationQueue = createGenerationQueue();
+
+export function litertGenerate(
   modelFile: string,
   messages: LitertMessage[],
-  onToken?: (chunk: string) => void
+  onToken?: (chunk: string) => void,
+  options: LitertGenerateOptions = {}
 ): Promise<string> {
   const system = messages.find((m) => m.role === "system")?.content;
   const turns = messages.filter((m) => m.role !== "system");
   const lastUser = [...turns].reverse().find((m) => m.role === "user")?.content ?? "";
 
-  const convo = await createLitertConversation(modelFile, system);
-  try {
-    return await convo.send(lastUser, onToken);
-  } finally {
-    // BUG-001: sin liberar, cada turno deja su KV-cache vivo en la GPU y el
-    // motor degenera progresivamente hasta colapsar a los pocos turnos.
-    convo.close();
-  }
+  return generationQueue.enqueue({
+    priority: options.priority ?? "interactive",
+    signal: options.signal,
+    run: async (signal) => {
+      const convo = await createLitertConversation(modelFile, system);
+      try {
+        return await convo.send(lastUser, onToken, signal);
+      } finally {
+        // BUG-001: sin liberar, cada turno deja su KV-cache vivo en la GPU y el
+        // motor degenera progresivamente hasta colapsar a los pocos turnos.
+        convo.close();
+      }
+    },
+  });
 }

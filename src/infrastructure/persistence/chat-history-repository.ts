@@ -3,7 +3,8 @@
  * conversaciones del aprendiz en un bucket bajo LOCAL_USER y expone CRUD simple.
  */
 
-import type { ChatConversation } from "@/domain/chat/chat-conversation";
+import { sanitizeConversation, type ChatConversation } from "@/domain/chat/chat-conversation";
+import type { IChatHistoryRepository } from "@/domain/chat/i-chat-history-repository";
 import { readCollection, writeOne, LOCAL_USER } from "./store-client";
 
 const KEY = "chatConversations";
@@ -17,18 +18,11 @@ async function loadBucket(): Promise<Bucket> {
   return all[LOCAL_USER] ?? { conversations: [] };
 }
 
-export interface ChatHistoryRepository {
-  list(): Promise<ChatConversation[]>;
-  save(conversation: ChatConversation): Promise<void>;
-  remove(id: string): Promise<void>;
-  rename(id: string, title: string): Promise<void>;
-}
-
-export function createChatHistoryRepository(): ChatHistoryRepository {
+export function createChatHistoryRepository(): IChatHistoryRepository {
   return {
     async list() {
       const { conversations } = await loadBucket();
-      return [...conversations].sort((a, b) => b.updatedAt - a.updatedAt);
+      return conversations.map(sanitizeConversation).sort((a, b) => b.updatedAt - a.updatedAt);
     },
     async save(conversation) {
       const bucket = await loadBucket();

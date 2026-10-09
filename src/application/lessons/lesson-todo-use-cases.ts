@@ -56,3 +56,29 @@ export async function dismissLessonTodoUseCase(
   await args.repo.saveAll(next);
   return next;
 }
+
+/**
+ * Asigna las lecciones del cierre de una simulación (#211). Idempotente: una
+ * lección ya asignada por esa conversación —aunque ya se haya hecho o
+ * descartado— no se vuelve a crear al reabrirla o re-ejecutar el cierre.
+ */
+export async function assignSessionLessons(
+  args: RepoArgs & { drafts: readonly LessonTodoDraft[]; conversationId: string },
+): Promise<LessonTodo[]> {
+  const list = await args.repo.loadAll();
+  const now = args.now ?? Date.now();
+  const alreadyAssigned = (d: LessonTodoDraft): boolean =>
+    list.some(
+      (t) =>
+        t.kind === d.kind && t.target === d.target && t.origin.conversationId === args.conversationId,
+    );
+  const next = args.drafts
+    .filter((d) => !alreadyAssigned(d))
+    .reduce<LessonTodo[]>(
+      (acc, d) =>
+        addLessonTodo(acc, { ...d, origin: { ...d.origin, conversationId: args.conversationId } }, now),
+      [...list],
+    );
+  if (next.length !== list.length) await args.repo.saveAll(next);
+  return next;
+}

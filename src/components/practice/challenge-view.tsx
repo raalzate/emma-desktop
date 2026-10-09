@@ -11,6 +11,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Check, Loader2, Sparkles, Trophy } from "lucide-react";
+import { CardEnter, Stagger, StaggerItem } from "@/components/motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -149,6 +150,7 @@ function ChallengeDetail({ challenge, completed, previous, runtime, onSubmitted,
   }
 
   return (
+    <CardEnter>
     <Card className="rounded-bubble">
       <CardHeader className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -240,6 +242,7 @@ function ChallengeDetail({ challenge, completed, previous, runtime, onSubmitted,
         </div>
       </CardContent>
     </Card>
+    </CardEnter>
   );
 }
 
@@ -338,12 +341,12 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
         </p>
       )}
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      <Stagger className="grid gap-2 sm:grid-cols-2">
         {challenges.map((challenge) => {
           const done = completed.has(challenge.id);
           return (
+            <StaggerItem key={challenge.id}>
             <button
-              key={challenge.id}
               type="button"
               title={done ? "Reto completado: abrilo para enviar una nueva versión" : "Abre el reto para escribir tu respuesta"}
               onClick={() => setSelected(challenge)}
@@ -360,12 +363,13 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
               </div>
               <p className="line-clamp-2 text-xs text-muted-foreground">{challenge.instructionsEs}</p>
             </button>
+            </StaggerItem>
           );
         })}
         {challenges.length === 0 && (
           <p className="text-sm text-muted-foreground">This unit has no challenges.</p>
         )}
-      </div>
+      </Stagger>
     </div>
   );
 }

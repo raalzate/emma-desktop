@@ -24,7 +24,6 @@ const PRACTICE_SECTIONS = [
   { href: "/practice/review", label: "Review" },
   { href: "/practice/pronunciation", label: "Pronunciation" },
   { href: "/practice/plan", label: "Study plan" },
-  { href: "/practice/self-check", label: "Self-check" },
   { href: "/practice/challenges", label: "Challenges" },
 ] as const;
 
@@ -42,7 +41,7 @@ function esActivo(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Submenú de las seis secciones de Práctica, visible sólo bajo /practice. */
+/** Submenú de las cinco secciones de Práctica, visible sólo bajo /practice. */
 function PracticeSubNav({ pathname }: { pathname: string }) {
   if (!esActivo(pathname, "/practice")) return null;
   return (
@@ -60,9 +59,7 @@ function PracticeSubNav({ pathname }: { pathname: string }) {
                     ? "Pares mínimos y shadowing: escuchá, distinguí y repetí"
                     : href === "/practice/plan"
                       ? "Tu plan de estudio semana a semana"
-                      : href === "/practice/self-check"
-                        ? "Autoevaluación: marcá lo que ya dominás"
-                        : "Retos de escritura para cerrar cada unidad"
+                      : "Retos de escritura para cerrar cada unidad"
             }
             className={cn(
               "block rounded-md px-2 py-1 text-sm transition-colors",

@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
-import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
+import { levelLabel, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
@@ -37,8 +37,10 @@ export interface FinishOutcome {
   next: { scenarioType: string; title: string } | null;
   /** Decisión metodológica de Emma: avanzar de nivel, pasar o repetir. */
   decision: { promoted: boolean; newLevel: string; passed: boolean };
-  /** Próximos pasos sugeridos por EMMA (ejercicio, SRS, par mínimo, escenario, checklist). */
+  /** Próximos pasos sugeridos por EMMA (ejercicio, SRS, par mínimo, escenario). */
   recommendations: PracticeRecommendation[];
+  /** Correcciones reportables: sin ellas el cierre pregunta en vez de asignar (#211). */
+  correctionsCount: number;
   /** XP ganado en la sesión (#216, H6); null si no se pudo otorgar. */
   xp: { total: number; lines: XpLine[] } | null;
 }
@@ -46,7 +48,7 @@ export interface FinishOutcome {
 // Traduce el resultado de progresión a un mensaje breve para el toast.
 function verdictOf(promoted: boolean, newLevel: string, passed: boolean, next?: string): string {
   const tail = next ? ` Suggestion: ${next}.` : "";
-  if (promoted) return `You moved up to ${newLevel}!${tail}`;
+  if (promoted) return `You moved up to ${levelLabel(newLevel) || newLevel}!${tail}`;
   if (passed) return `Scenario passed!${tail}`;
   return `Keep practicing.${tail}`;
 }
@@ -58,7 +60,7 @@ export function useFinishSession(a: Args) {
   const finish = async () => {
     setRunning(true);
     const metric = { turns: a.turns, errors: a.errors.length };
-    const { report, lesson, recommendations } = await a.runtime.finishSession({
+    const { report, lesson, recommendations, correctionsCount } = await a.runtime.finishSession({
       scenario: a.scenario, metric, errors: a.errors, level: a.level,
       situation: a.situation, situationTitle: a.situation?.title,
       messages: a.messages,
@@ -77,6 +79,7 @@ export function useFinishSession(a: Args) {
       next: next ? { scenarioType: next.scenarioType, title: next.title } : null,
       decision: { promoted: prog.promoted, newLevel: prog.newLevel, passed },
       recommendations,
+      correctionsCount,
       xp: award ? { total: award.xp, lines: award.lines } : null,
     });
     setRunning(false);

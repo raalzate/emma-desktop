@@ -5,6 +5,7 @@ import { EmmaProvider } from "./emma-context";
 import { AiGate } from "./ai-gate";
 import { useMenuNavigation } from "@/hooks/use-menu-navigation";
 import { Toaster } from "@/components/ui/toaster";
+import { MotionProvider } from "@/components/motion";
 import { CelebrationLayer } from "@/components/gamification/celebration-layer";
 
 function MenuNav() {
@@ -15,11 +16,13 @@ function MenuNav() {
 /** Providers de cliente montados una vez en el layout raíz. */
 export function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <EmmaProvider>
-      <MenuNav />
-      <AiGate>{children}</AiGate>
-      <Toaster />
-      <CelebrationLayer />
-    </EmmaProvider>
+    <MotionProvider>
+      <EmmaProvider>
+        <MenuNav />
+        <AiGate>{children}</AiGate>
+        <Toaster />
+        <CelebrationLayer />
+      </EmmaProvider>
+    </MotionProvider>
   );
 }

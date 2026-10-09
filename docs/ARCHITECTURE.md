@@ -54,12 +54,21 @@ El dominio define **puertos** (interfaces); afuera viven los **adaptadores**.
 - Repos de persistencia (perfil, progresión, errores…) → interfaz en `domain`,
   adaptador en `infrastructure/persistence` sobre el store JSON del main vía IPC
   (`store-client.ts` → handlers `store-get`/`store-set`).
+- `src/domain/profile/i-profile-level-repository.ts` → `IProfileLevelRepository`
+  (`setEnglishLevel`): escribe `profile.englishLevel`, la fuente de verdad del nivel
+  que lee toda la app. Adaptador: `src/infrastructure/persistence/profile-repository.ts`.
+- `src/domain/chat/i-chat-history-repository.ts` → `IChatHistoryRepository`
+  (`list`/`save`/`remove`/`rename`): historial de conversaciones. Adaptador:
+  `src/infrastructure/persistence/chat-history-repository.ts`.
 - Gamificación (#216) → `src/domain/gamification/i-gamification-repository.ts`.
   Sólo se persisten eventos de XP (colección `gamification`); nivel de jugador,
   racha diaria, meta del día y logros se derivan en el dominio. El renderer
   otorga XP por una sola puerta (`components/gamification/award-activity.ts`),
   que anuncia el premio con el evento de ventana `emma:xp-awarded`: la capa de
   celebración y la tarjeta de la barra lateral lo escuchan sin store global.
+
+El perfil de nivel y el historial se cablean en `src/interface/di/repositories.ts`
+(`profileLevel`, `chatHistory`).
 
 **Inyección:** los casos de uso reciben el puerto por argumento, nunca lo importan
 concreto. Ejemplo canónico: `application/english-teacher/teach-use-case.ts`
@@ -71,6 +80,43 @@ recibe `llm: LlmGenerate` en `TeachArgs`.
 `litert-engine.ts` (WebGPU), `remote-settings.ts` (modo local/hybrid/remote).
 El dominio solo ve `LlmGenerate`. Cada llamada respeta su presupuesto de tokens
 (`domain/shared/token-budgets.ts`).
+
+## Niveles: CEFR por dentro, «Level 1–5» por fuera
+
+La escala CEFR (A1…C1) sigue siendo el modelo interno: tipos, reglas de
+progresión, prompts al LLM y claves del almacén. La UI **nunca** la muestra:
+pinta «Level N» con `levelLabel`/`levelNumber` de `src/domain/cefr/cefr-ladder.ts`.
+Freno: `src/components/__tests__/niveles-propios.test.ts` (falla si un código CEFR
+o la palabra CEFR aparece en texto visible).
+
+## Cierre de sesión y promoción
+
+Al terminar una simulación (`src/components/chat/use-end-session.ts`, que usa
+`src/components/chat/use-finish-session.ts`):
+
+1. `EmmaRuntime.finishSession` corrige, enseña, deja repaso, mide y recomienda
+   (en secuencia; ningún guardado bloquea el cierre) y devuelve cuántas
+   correcciones reportables hubo.
+2. `EvaluateProgressionUseCase` actualiza racha y nivel en `progression`. **Si
+   promueve**, escribe el nivel nuevo en el perfil (`IProfileLevelRepository`) y
+   archiva las conversaciones del nivel superado con
+   `src/application/chat/archive-history-on-level-up-use-case.ts`
+   (`IChatHistoryRepository`). La barra lateral las muestra en «Archived»,
+   agrupadas por nivel y de solo lectura.
+3. `closingPlanFor` (`src/domain/lessons/closing-plan.ts`, puro) decide el
+   cierre: con correcciones, las lecciones de remediación se **asignan solas**
+   con `assignSessionLessons` (idempotente por conversación) y el diálogo lleva a
+   «My lessons»; sin correcciones, pregunta «Practice again» o «Continue».
+
+La autoevaluación (checklists de «can-do») se retiró: no influía en el nivel.
+
+## Movimiento (animaciones)
+
+Las prácticas y la lista de lecciones animan con `motion` **solo** a través de
+`src/components/motion/` (envoltorios + presets, cada uno con su variante reducida
+para `prefers-reduced-motion`). Freno:
+`src/components/__tests__/movimiento-centralizado.test.ts` (falla si un componente
+animado importa `motion/react` directo).
 
 ## Procesos Electron
 

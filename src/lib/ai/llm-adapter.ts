@@ -11,6 +11,7 @@
 
 import type { LlmGenerate, LlmGenerateArgs } from "@/domain/ai/llm-port";
 import { litertGenerate } from "./litert-engine";
+import { isAbortError } from "./generation-queue";
 import { getSelectedLitertModelFile } from "@/lib/litert-models";
 import { localAvailable, remoteAvailable, remoteGenerateText } from "./providers";
 import { loadAiSettings, modelFor, type AiMode } from "./remote-settings";
@@ -33,7 +34,8 @@ async function runLocalTurn(
       ...(args.system ? [{ role: "system" as const, content: args.system }] : []),
       { role: "user" as const, content: args.prompt },
     ],
-    onToken
+    onToken,
+    { priority: args.priority, signal: args.signal }
   );
 }
 
@@ -62,7 +64,8 @@ export function createLlmGenerate(modeOverride?: AiMode): LlmGenerate {
       try {
         return (await runLocalTurn(args, onToken)).trim();
       } catch (err) {
-        if (!remoteAvailable()) throw err;
+        // Cancelada o preemptada: no se reintenta en la nube.
+        if (isAbortError(err) || !remoteAvailable()) throw err;
       }
     }
     if (remoteAvailable()) return (await runRemoteTurn(system, prompt)).trim();

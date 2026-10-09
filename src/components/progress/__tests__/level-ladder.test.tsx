@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LevelLadder } from "@/components/progress/level-ladder";
+import { levelLabel } from "@/domain/cefr/cefr-ladder";
 
 // Render en servidor (sin DOM) vía createElement, igual que el resto de
 // pruebas de componentes del repo.
@@ -10,17 +11,20 @@ function render(current: string, percent?: number): string {
 }
 
 /** Devuelve el <li> del peldaño cuyo texto contiene el nivel dado. */
-function peldanoDe(html: string, nivel: string): string {
+function peldanoDe(html: string, cefr: string): string {
+  const nivel = levelLabel(cefr);
   const items = html.match(/<li\b[\s\S]*?<\/li>/g) ?? [];
   return items.find((li) => li.includes(`>${nivel}<`) || li.includes(`>${nivel}</`)) ?? "";
 }
 
 describe("LevelLadder (rediseño Café sereno, FR-025)", () => {
-  it("pinta los cinco niveles CEFR como pills font-code", () => {
+  it("pinta los cinco niveles como «Level 1»…«Level 5» en pills font-code, sin códigos CEFR", () => {
     const html = render("B1");
     for (const nivel of ["A1", "A2", "B1", "B2", "C1"]) {
       expect(peldanoDe(html, nivel)).not.toBe("");
     }
+    for (const n of [1, 2, 3, 4, 5]) expect(html).toContain(`Level ${n}`);
+    expect(html).not.toMatch(/\b(A1|A2|B1|B2|C1|CEFR)\b/);
     expect(html).toContain("font-code");
   });
 

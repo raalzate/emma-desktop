@@ -5,6 +5,7 @@
  * Dominio puro: solo texto.
  */
 
+import { levelLabel } from "@/domain/cefr/cefr-ladder";
 import type { ErrorLabel } from "@/domain/chat/error-taxonomy";
 import type { SilentError } from "@/domain/chat/silent-error";
 import { LESSON_TIPS } from "@/domain/feedback/lesson-tips";
@@ -60,7 +61,7 @@ function nextStepSection(errors: SilentError[], level: string): string {
   const practice = scenario
     ? `Recommended practice: **${titleCase(scenario.replaceAll("_", " "))}**.`
     : "Continue with the next scenario on your path.";
-  return `### 🎯 Next step\n${practice} Current level: **${level}**.\n`;
+  return `### 🎯 Next step\n${practice} Current level: **${levelLabel(level) || level}**.\n`;
 }
 
 /** Compone el resumen completo de la sesión en markdown (inglés). */
@@ -69,7 +70,7 @@ export function composeSessionSummary(input: SessionSummaryInput): string {
   const scene = situationTitle ? `${scenarioTitle} · ${situationTitle}` : scenarioTitle;
   const header =
     `## 🏁 ${scene} — session complete\n` +
-    `**Level:** ${level} · **Turns:** ${turns} · **Corrections:** ${errors.length}\n`;
+    `**${levelLabel(level) || level}** · **Turns:** ${turns} · **Corrections:** ${errors.length}\n`;
   if (errors.length === 0) {
     return (
       header +

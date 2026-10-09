@@ -42,11 +42,12 @@ describe("ChatHeader (rediseño Café sereno, FR-013)", () => {
     expect(render()).toContain("font-headline");
   });
 
-  it("pinta el badge CEFR en mono sobre azul suave", () => {
+  it("pinta el badge de nivel («Level 3») en mono sobre azul suave", () => {
     const html = render();
-    // El elemento cuyo contenido es «B1» lleva las tres clases del token.
-    const badge = html.match(/<span[^>]*>B1<\/span>/)?.[0] ?? "";
+    // El elemento cuyo contenido es «Level 3» lleva las tres clases del token.
+    const badge = html.match(/<span[^>]*>Level 3<\/span>/)?.[0] ?? "";
     expect(badge).toContain("font-code");
+    expect(render()).not.toMatch(/\bB1\b/);
     expect(badge).toContain("bg-primary-soft");
     expect(badge).toContain("text-primary-deep");
   });

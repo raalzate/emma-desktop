@@ -84,6 +84,8 @@ export async function suggestReplies(args: {
    * por solaparse con las palabras del propio aprendiz.
    */
   agentLine?: string;
+  /** Cancela la petición (en cola o en curso) cuando las sugerencias ya no importan. */
+  signal?: AbortSignal;
 }): Promise<ReplySuggestion[]> {
   const hasDraft = Boolean(args.draft?.trim());
   const base = SUGGEST_REPLIES_SYSTEM_PROMPT + SUGGEST_REPLIES_ANSWER_RULES;
@@ -94,6 +96,9 @@ export async function suggestReplies(args: {
     prompt: focusHint ? `${prompt}\n${focusHint}` : prompt,
     system,
     maxTokens: REPLIES_MAX_TOKENS,
+    // Trabajo oportunista: cede la GPU a lo que el aprendiz está esperando.
+    priority: "background",
+    signal: args.signal,
   });
   // El filtro anti-eco descarta chips que solo repiten al agente (BUG-001).
   const agentLine = args.agentLine ?? args.context;

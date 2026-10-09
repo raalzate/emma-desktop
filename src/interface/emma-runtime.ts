@@ -32,6 +32,7 @@ import { completePartialReply } from "@/application/coaching/complete-partial-re
 import { translate } from "@/application/translation/translate-use-case";
 import { buildWelcome } from "@/application/welcome/welcome-use-case";
 import { checkGrammar } from "@/application/grammar/check-grammar-use-case";
+import { ArchiveHistoryOnLevelUpUseCase } from "@/application/chat/archive-history-on-level-up-use-case";
 import { EvaluateProgressionUseCase } from "@/application/progression/evaluate-progression-use-case";
 import { RecordSessionErrorsUseCase } from "@/application/progression/record-session-errors-use-case";
 import { BuildPathwayUseCase } from "@/application/pathway/build-pathway-use-case";
@@ -86,6 +87,8 @@ export interface EmmaRuntime {
     scenarioType?: string,
     /** Última línea del agente para el filtro anti-eco (ver suggestReplies). */
     agentLine?: string,
+    /** Se aborta cuando las sugerencias quedan obsoletas (cleanup del efecto). */
+    signal?: AbortSignal,
   ): ReturnType<typeof suggestReplies>;
   complete(context: string, partial: string): Promise<string>;
   translate(text: string, targetLang: string): ReturnType<typeof translate>;
@@ -104,7 +107,13 @@ export interface EmmaRuntime {
      * olvidara registraría métricas en cero sin que nada avisara.
      */
     messages: ChatTurn[];
-  }): Promise<{ report: string; lesson: string | null; recommendations: PracticeRecommendation[] }>;
+  }): Promise<{
+    report: string;
+    lesson: string | null;
+    recommendations: PracticeRecommendation[];
+    /** Correcciones reportables de la sesión: decide si el cierre asigna lecciones (#211). */
+    correctionsCount: number;
+  }>;
   evaluateProgression(level: string, metric: SessionMetric): ReturnType<EvaluateProgressionUseCase["execute"]>;
   /** Últimas métricas de progreso de sesión (latencia, monólogo, densidad de error) y su promedio. */
   metricsTrend(last?: number): ReturnType<typeof getMetricsTrend>;
@@ -133,7 +142,12 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
   const llm = createLlmGenerate();
   const repos = await createRepositories();
 
-  const evaluate = new EvaluateProgressionUseCase(repos.progression);
+  const evaluate = new EvaluateProgressionUseCase(
+    repos.progression,
+    repos.profileLevel,
+    new ArchiveHistoryOnLevelUpUseCase(repos.chatHistory, () => new Date().toISOString()),
+    () => new Date().toISOString(),
+  );
   const record = new RecordSessionErrorsUseCase(repos.errorStats);
   const buildPathway = new BuildPathwayUseCase(repos.pathway);
   const roadmap = new BuildRoadmapUseCase(buildPathway);
@@ -148,7 +162,6 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
     const level = profile && isCefrLevel(profile.englishLevel) ? profile.englishLevel : "A1";
     return getTutorContext({
       srsRepo: repos.srs,
-      selfAssessmentRepo: repos.selfAssessment,
       errorStatsRepo: repos.errorStats,
       level,
       today: todayAsDays(),
@@ -177,8 +190,8 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
     observeTurn: (a) => observeTurn({ llm, ...a }),
     sceneContract: (a) => createSceneContract({ llm, ...a }),
     teach: (a) => teach({ llm, ...a }),
-    suggest: (context, level, draft, scenarioType, agentLine) =>
-      suggestReplies({ llm, context, level, draft, scenarioType, agentLine }),
+    suggest: (context, level, draft, scenarioType, agentLine, signal) =>
+      suggestReplies({ llm, context, level, draft, scenarioType, agentLine, signal }),
     complete: (context, partial) => completePartialReply({ llm, context, partial }),
     translate: (text, targetLang) => translate({ llm, text, targetLang }),
     async welcome(profile) {
@@ -242,7 +255,7 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
       )
         .then((r) => r.context.recommendations)
         .catch(() => []);
-      return { report, lesson, recommendations };
+      return { report, lesson, recommendations, correctionsCount: errors.length };
     },
     evaluateProgression: (level, metric) => evaluate.execute(USER_ID, level, metric),
     metricsTrend: (last = 5) => getMetricsTrend({ repo: sessionMetricsRepo, last }),

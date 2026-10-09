@@ -57,7 +57,7 @@ describe("contraste sobre ámbar claro (#187)", () => {
     "scene-narration.tsx",
     "scene-intro.tsx",
     "composer.tsx",
-    "teach-dialog.tsx",
+    "teach-panel.tsx",
   ];
   for (const file of files) {
     it(`${file} no usa text-accent-foreground (blanco) sobre bg-accent-soft`, () => {

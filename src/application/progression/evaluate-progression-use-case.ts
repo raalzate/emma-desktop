@@ -1,6 +1,7 @@
 /** Evalúa la métrica de sesión, actualiza la racha y promueve CEFR al alcanzar el umbral. */
 
-import { nextLevel } from "@/domain/cefr/cefr-ladder";
+import { isCefrLevel, nextLevel } from "@/domain/cefr/cefr-ladder";
+import type { IProfileLevelRepository } from "@/domain/profile/i-profile-level-repository";
 import type { IProgressionRepository } from "@/domain/progression/i-progression-repository";
 import type { ProgressionState } from "@/domain/progression/progression-state";
 import { isPass, isPromotionReady } from "@/domain/progression/promotion-policy";
@@ -28,9 +29,19 @@ function nextState(
   return [state, promotedLevel !== null];
 }
 
+/** Archivador del historial al superar un nivel (lo cumple ArchiveHistoryOnLevelUpUseCase). */
+export interface LevelUpArchiver {
+  execute(fromLevel: string): Promise<unknown>;
+}
+
 /** Puntúa una sesión, persiste racha/nivel nuevos y devuelve el resultado de promoción. */
 export class EvaluateProgressionUseCase {
-  constructor(private readonly repo: IProgressionRepository) {}
+  constructor(
+    private readonly repo: IProgressionRepository,
+    private readonly profile: IProfileLevelRepository,
+    private readonly archive: LevelUpArchiver,
+    private readonly now: () => string,
+  ) {}
 
   async execute(
     userId: number,
@@ -46,6 +57,13 @@ export class EvaluateProgressionUseCase {
       isPass(metric, currentLevel),
     );
     await this.repo.upsert(state);
+    if (promoted) await this.applyPromotion(currentLevel, state.level);
     return { promoted, oldLevel: currentLevel, newLevel: state.level, streak: state.streak };
+  }
+
+  /** El perfil es la fuente de verdad del nivel; el historial del nivel superado se archiva. */
+  private async applyPromotion(oldLevel: string, newLevel: string): Promise<void> {
+    if (isCefrLevel(newLevel)) await this.profile.setEnglishLevel(newLevel, this.now());
+    await this.archive.execute(oldLevel);
   }
 }

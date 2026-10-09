@@ -16,6 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { levelLabel } from "@/domain/cefr/cefr-ladder";
 import { ResetLevelUseCase } from "@/application/pathway/reset-level-use-case";
 import { USER_ID } from "@/interface/di/repositories";
 import type { IPathwayRepository } from "@/domain/pathway/i-pathway-repository";
@@ -43,9 +44,9 @@ export function ResetLevelButton({ repo, level, onReset }: Props) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Reset level {level}?</AlertDialogTitle>
+          <AlertDialogTitle>Reset {levelLabel(level)}?</AlertDialogTitle>
           <AlertDialogDescription>
-            Your scenario progress in {level} will be erased. This action cannot be undone.
+            Your scenario progress in {levelLabel(level)} will be erased. This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

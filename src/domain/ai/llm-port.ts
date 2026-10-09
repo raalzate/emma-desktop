@@ -5,6 +5,12 @@
  * IA (src/lib/ai/router.ts) que decide local/remoto según la tarea.
  */
 
+/**
+ * Prioridad de una generación local: `interactive` = alguien espera la respuesta;
+ * `background` = trabajo oportunista (p.ej. sugerencias) que cede ante una interactiva.
+ */
+export type GenerationPriority = "interactive" | "background";
+
 export interface LlmGenerateArgs {
   /** Prompt completo y auto-contenido (para proveedores SIN estado, p.ej. nube). */
   prompt: string;
@@ -20,6 +26,10 @@ export interface LlmGenerateArgs {
   sessionId?: string;
   /** Solo el mensaje nuevo del turno (válido únicamente junto a sessionId). */
   turnMessage?: string;
+  /** Por defecto "interactive". Las background pueden ser canceladas por una interactiva. */
+  priority?: GenerationPriority;
+  /** Cancela la generación (en cola o en curso); rechaza con AbortError. */
+  signal?: AbortSignal;
 }
 
 /** Genera texto a partir de un prompt. Devuelve la respuesta completa. */

@@ -7,7 +7,7 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { GrammarForms } from "@/components/chat/teach-dialog";
+import { GrammarForms } from "@/components/chat/teach-panel";
 import { parseGrammarPoints } from "@/domain/english-teacher/teaching-parsers";
 
 const RAW = `STRUCTURE: Present continuous

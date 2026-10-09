@@ -9,7 +9,7 @@
 import { CheckCircle2, Clapperboard, Loader2, Play, Sparkles, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
+import { levelLabel, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import { personaFor } from "@/domain/personas/protopersona";
 import { buildSceneBriefing } from "@/domain/situations/scene-briefing";
@@ -122,7 +122,7 @@ export function SceneIntro({ scenario, situation, level, maxTurns, starting, nar
             <SituationBriefing situation={situation} narrative={narrative} sceneReady={sceneReady} />
           )}
           <div className="flex items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
-            <Badge variant="secondary">{level}</Badge>
+            <Badge variant="secondary">{levelLabel(level)}</Badge>
             <span>English-only conversation · up to {maxTurns} turns · no live corrections</span>
           </div>
         </div>

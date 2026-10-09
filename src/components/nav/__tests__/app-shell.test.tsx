@@ -85,7 +85,7 @@ describe("submenú de Práctica", () => {
     expect(html).not.toContain("/practice/exercises");
   });
 
-  it("lista las seis secciones cuando la ruta empieza con /practice", () => {
+  it("lista las cinco secciones cuando la ruta empieza con /practice", () => {
     ruta.pathname = "/practice";
     const html = render();
     for (const href of [
@@ -93,14 +93,15 @@ describe("submenú de Práctica", () => {
       "/practice/review",
       "/practice/pronunciation",
       "/practice/plan",
-      "/practice/self-check",
       "/practice/challenges",
     ]) {
       expect(anclaDe(html, href), href).not.toBe("");
     }
-    for (const label of ["Exercises", "Review", "Pronunciation", "Study plan", "Self-check", "Challenges"]) {
+    for (const label of ["Exercises", "Review", "Pronunciation", "Study plan", "Challenges"]) {
       expect(html).toContain(label);
     }
+    expect(html).not.toContain("Self-check");
+    expect(html).not.toContain("/practice/self-check");
   });
 
   it("marca como activa la sección de la subruta actual", () => {

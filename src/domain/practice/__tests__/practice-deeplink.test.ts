@@ -15,11 +15,13 @@ describe("practiceTargetFromSearch", () => {
   it("sin parámetros abre Ejercicios sin unidad", () => {
     expect(practiceTargetFromSearch(new URLSearchParams(""))).toEqual({ tab: "exercises", unit: undefined });
   });
-  it("resuelve el alias assessment y la unidad numérica", () => {
+  it("ya no existe la pestaña de autoevaluación: el alias assessment cae a Ejercicios", () => {
     expect(practiceTargetFromSearch(new URLSearchParams("tab=assessment"))).toEqual({
-      tab: "self-assessment",
+      tab: "exercises",
       unit: undefined,
     });
+  });
+  it("resuelve la unidad numérica", () => {
     expect(practiceTargetFromSearch(new URLSearchParams("tab=challenges&unit=4"))).toEqual({
       tab: "challenges",
       unit: 4,
@@ -40,7 +42,6 @@ describe("practiceHrefFor", () => {
     expect(practiceHrefFor("srs")).toBe("/practice/review/");
     expect(practiceHrefFor("pronunciation")).toBe("/practice/pronunciation/");
     expect(practiceHrefFor("plan")).toBe("/practice/plan/");
-    expect(practiceHrefFor("self-assessment")).toBe("/practice/self-check/");
     expect(practiceHrefFor("challenges")).toBe("/practice/challenges/");
   });
 
@@ -71,9 +72,6 @@ describe("legacyPracticeRedirect", () => {
   it("?tab=X redirige a la ruta nueva conservando los demás parámetros", () => {
     expect(legacyPracticeRedirect(new URLSearchParams("tab=exercises&unit=13&exercise=u13-fill"))).toBe(
       "/practice/exercises/?exercise=u13-fill&unit=13",
-    );
-    expect(legacyPracticeRedirect(new URLSearchParams("tab=assessment&level=B1"))).toBe(
-      "/practice/self-check/?level=B1",
     );
     expect(legacyPracticeRedirect(new URLSearchParams("tab=srs"))).toBe("/practice/review/");
   });

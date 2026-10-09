@@ -2,15 +2,14 @@
 
 /**
  * Gestiona la lista de conversaciones persistidas: carga, upsert (persist),
- * renombrar y eliminar. El repositorio vive sobre el almacén JSON local.
+ * renombrar y eliminar. El repositorio entra por el puerto (se cablea en la raíz de composición).
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { createChatHistoryRepository } from "@/infrastructure/persistence/chat-history-repository";
+import { useCallback, useEffect, useState } from "react";
+import type { IChatHistoryRepository } from "@/domain/chat/i-chat-history-repository";
 import type { ChatConversation } from "@/domain/chat/chat-conversation";
 
-export function useChatHistory() {
-  const repo = useMemo(() => createChatHistoryRepository(), []);
+export function useChatHistory(repo: IChatHistoryRepository) {
   const [list, setList] = useState<ChatConversation[]>([]);
 
   const refresh = useCallback(async () => {

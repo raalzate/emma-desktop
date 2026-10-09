@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
+import { levelLabel, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import { personaFor } from "@/domain/personas/protopersona";
 
@@ -109,7 +109,7 @@ export function ChatHeader({
             </DropdownMenuContent>
           </DropdownMenu>
           <span className="rounded-md bg-primary-soft px-1.5 py-0.5 font-code text-xs font-medium text-primary-deep">
-            {level}
+            {levelLabel(level)}
           </span>
         </div>
         <p className="truncate text-xs text-muted-foreground">

@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowRight, Layers, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FlipReveal, ItemTransition } from "@/components/motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -221,6 +222,7 @@ export function SrsReview({ runtime, onChange }: Props) {
   const showAnswer = phase === "graded" || revealed;
 
   return (
+    <ItemTransition itemKey={index}>
     <Card className="rounded-bubble">
       <CardHeader className="space-y-3">
         <div className="flex items-center justify-between gap-2">
@@ -267,12 +269,15 @@ export function SrsReview({ runtime, onChange }: Props) {
           />
         ) : null}
 
-        {showAnswer &&
-          (typedMode && graded && !graded.correct ? (
-            <CorrectionLine expected={recallTarget(current, typed)} given={typed} />
-          ) : (
-            <p className="rounded-md bg-primary-soft p-2 text-primary">{current.back}</p>
-          ))}
+        {showAnswer && (
+          <FlipReveal>
+            {typedMode && graded && !graded.correct ? (
+              <CorrectionLine expected={recallTarget(current, typed)} given={typed} />
+            ) : (
+              <p className="rounded-md bg-primary-soft p-2 text-primary">{current.back}</p>
+            )}
+          </FlipReveal>
+        )}
 
         {graded && (
           <div className={`rounded-bubble border p-3 text-sm ${verdictStyle}`}>
@@ -327,5 +332,6 @@ export function SrsReview({ runtime, onChange }: Props) {
         </div>
       </CardContent>
     </Card>
+    </ItemTransition>
   );
 }

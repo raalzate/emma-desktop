@@ -60,7 +60,8 @@ async function render(): Promise<string> {
   return renderToStaticMarkup(createElement(ChatPage));
 }
 
-describe("ChatPage — gate de la entrada por deep-link (FR-006, #198)", () => {
+// Import dinámico tras vi.resetModules: en frío y con la suite en paralelo pasa de 5 s.
+describe("ChatPage — gate de la entrada por deep-link (FR-006, #198)", { timeout: 20_000 }, () => {
   it("sin lecciones pendientes, abre el chat con la escena pedida", async () => {
     mockPendingTodos = [];
     const html = await render();

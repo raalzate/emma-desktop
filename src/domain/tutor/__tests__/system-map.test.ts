@@ -8,7 +8,6 @@ const BASE_CONTEXT: TutorContext = {
   activeUnit: 8,
   pendingSrsCards: 12,
   weakErrorCategories: ["article"],
-  checklistGaps: [{ level: "A1", done: 5, total: 9 }],
   recommendations: [
     { kind: "exercise", exerciseId: "3B", unit: 3, reasonEs: 'débil en article → ejercicio 3B de la unidad 3' },
   ],
@@ -59,7 +58,6 @@ describe("buildTutorBriefing", () => {
       activeUnit: null,
       pendingSrsCards: 0,
       weakErrorCategories: [],
-      checklistGaps: [],
       recommendations: [],
     });
 

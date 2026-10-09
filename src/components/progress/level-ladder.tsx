@@ -6,13 +6,13 @@
  * del pathway si la vista lo conoce) y los futuros quedan apagados.
  */
 
-import { CEFR_LADDER } from "@/domain/cefr/cefr-ladder";
+import { CEFR_LADDER, levelLabel } from "@/domain/cefr/cefr-ladder";
 import { levelState, LevelState } from "@/domain/pathway/roadmap";
 import { cn } from "@/lib/utils";
 
 export function LevelLadder({ current, percent }: { current: string; percent?: number }) {
   return (
-    <ol className="flex items-center" aria-label="CEFR ladder">
+    <ol className="flex items-center" aria-label="Level ladder">
       {CEFR_LADDER.map((level, i) => (
         <LadderStep
           key={level}
@@ -55,7 +55,7 @@ function LadderStep({
         <span className={cn("h-0.5 w-4 sm:w-8", done || active ? "bg-primary" : "bg-border")} />
       )}
       <span className={pillClass(done, active)} aria-current={active ? "step" : undefined}>
-        {level}
+        {levelLabel(level)}
         {active && typeof percent === "number" && (
           <span className="ml-1.5 font-normal">· {percent}%</span>
         )}

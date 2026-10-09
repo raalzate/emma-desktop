@@ -1,11 +1,10 @@
 /**
  * Política de redirección de práctica: decide qué sugerir a continuación a
  * partir del estado consolidado del aprendiz (categorías de error débiles,
- * unidad activa, tarjetas SRS pendientes, huecos de checklist). Determinista
+ * unidad activa, tarjetas SRS pendientes). Determinista
  * y sin IO: cada regla se evalúa en orden de prioridad hasta llenar el cupo.
  */
 
-import type { CefrLevel } from "@/domain/cefr/cefr-ladder";
 import { getUnit } from "@/domain/curriculum/unit-catalog";
 import type { ExerciseKind, UnitExercise } from "@/domain/exercises/exercise";
 import { scenarioForError } from "@/domain/pathway/error-scenario-mapping";
@@ -18,15 +17,13 @@ export type PracticeRecommendation =
   | { kind: "exercise"; exerciseId: string; unit: number; reasonEs: string }
   | { kind: "srs-review"; due: number; reasonEs: string }
   | { kind: "minimal-pair"; contrastId: string; reasonEs: string }
-  | { kind: "scenario"; scenarioType: string; reasonEs: string }
-  | { kind: "checklist"; level: CefrLevel; reasonEs: string };
+  | { kind: "scenario"; scenarioType: string; reasonEs: string };
 
 export interface RecommendPracticeArgs {
   activeUnit: number | null;
   // Ordenadas de la más a la menos débil (mismo orden que TutorContext.weakErrorCategories).
   weakErrorCategories: string[];
   pendingSrsCards: number;
-  checklistGaps: { level: CefrLevel; done: number; total: number }[];
   maxRecommendations?: number;
 }
 
@@ -118,26 +115,14 @@ function scenarioRule(args: RecommendPracticeArgs): PracticeRecommendation | nul
   return null;
 }
 
-function checklistRule(args: RecommendPracticeArgs): PracticeRecommendation | null {
-  // checklistGaps ya viene ordenado del nivel más bajo al más alto (ver buildTutorContext).
-  const gap = args.checklistGaps[0];
-  if (!gap) return null;
-  return {
-    kind: "checklist",
-    level: gap.level,
-    reasonEs: `${gap.level} checklist incomplete (${gap.done}/${gap.total})`,
-  };
-}
-
-const RULES = [srsRule, exerciseRule, minimalPairRule, scenarioRule, checklistRule];
+const RULES = [srsRule, exerciseRule, minimalPairRule, scenarioRule];
 
 /**
  * Produce hasta *maxRecommendations* sugerencias, en orden de prioridad:
  * 1) repaso SRS si hay ≥5 tarjetas vencidas;
  * 2) ejercicio de la unidad activa que ataca la categoría de error más débil;
  * 3) par mínimo si la unidad activa entrena un contraste fonético reconocido;
- * 4) escenario que ejercita la categoría de error más débil;
- * 5) checklist del nivel inferior incompleto.
+ * 4) escenario que ejercita la categoría de error más débil.
  */
 export function recommendPractice(args: RecommendPracticeArgs): PracticeRecommendation[] {
   const max = args.maxRecommendations ?? DEFAULT_MAX_RECOMMENDATIONS;

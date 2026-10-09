@@ -41,6 +41,9 @@ import {
   type Sections,
 } from "@/application/english-teacher/teach-result";
 
+/** Tope por defecto de toda la cadena: mejor un error con «Try again» que cargar minutos. */
+export const TEACH_TIMEOUT_MS = 90_000;
+
 export interface TeachArgs {
   llm: LlmGenerate;
   text: string;
@@ -49,6 +52,10 @@ export interface TeachArgs {
   explainLanguage?: string;
   contextHistory?: TeachingRequest["contextHistory"];
   onProgress?: ProgressCallback;
+  /** Tope de tiempo de toda la cadena (por defecto `TEACH_TIMEOUT_MS`). */
+  timeoutMs?: number;
+  /** Cancelación externa (cierre del panel / cambio de texto). */
+  signal?: AbortSignal;
 }
 
 export async function teach(args: TeachArgs): Promise<TeachingResult> {
@@ -57,7 +64,7 @@ export async function teach(args: TeachArgs): Promise<TeachingResult> {
   if (cached) {
     return cached;
   }
-  const result = await runChain(args.llm, request, args.onProgress);
+  const result = await runChainWithin(args, request);
   if (result.status === "success") {
     writeCache(request, result);
   }
@@ -80,14 +87,47 @@ function buildRequest(args: TeachArgs): TeachingRequest {
   };
 }
 
+/**
+ * Corre la cadena con tope. Al vencer (o al abortar desde afuera) cancela la
+ * llamada en curso para que no siga ocupando la GPU, y devuelve error.
+ */
+async function runChainWithin(args: TeachArgs, request: TeachingRequest): Promise<TeachingResult> {
+  const start = Date.now();
+  const controller = new AbortController();
+  if (args.signal?.aborted) return errorResult(request, start);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let forward: () => void = () => {};
+  // Vence por tiempo o porque el llamador abortó: en ambos casos se corta la espera.
+  const expired = new Promise<"timeout">((resolve) => {
+    timer = setTimeout(() => resolve("timeout"), args.timeoutMs ?? TEACH_TIMEOUT_MS);
+    forward = () => resolve("timeout");
+    args.signal?.addEventListener("abort", forward);
+  });
+  try {
+    const outcome = await Promise.race([
+      runChain(args.llm, request, args.onProgress, controller.signal),
+      expired,
+    ]);
+    if (outcome === "timeout") {
+      controller.abort();
+      return errorResult(request, start);
+    }
+    return outcome;
+  } finally {
+    clearTimeout(timer);
+    args.signal?.removeEventListener("abort", forward);
+  }
+}
+
 async function runChain(
   llm: LlmGenerate,
   request: TeachingRequest,
-  onProgress?: ProgressCallback,
+  onProgress: ProgressCallback | undefined,
+  signal: AbortSignal,
 ): Promise<TeachingResult> {
   const start = Date.now();
   try {
-    const sections = await generateSections(llm, request, onProgress);
+    const sections = await generateSections((a) => llm({ ...a, signal }), request, onProgress);
     return successResult(request, sections, start);
   } catch {
     // Una llamada de sección falló → resultado de error: la lección se muestra

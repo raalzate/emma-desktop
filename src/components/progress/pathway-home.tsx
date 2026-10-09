@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
 import { pathwayPassedCount, pathwayTotal } from "@/domain/pathway/pathway";
 import { isPathwayItemPassed } from "@/domain/pathway/pathway-item";
-import { nextLevel } from "@/domain/cefr/cefr-ladder";
+import { levelLabel, nextLevel } from "@/domain/cefr/cefr-ladder";
 import { canStartScenario } from "@/domain/lessons/scenario-gate";
 import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
 import { useProgressData } from "./use-progress-data";
@@ -53,8 +53,8 @@ export function PathwayHome({ runtime, level }: { runtime: EmmaRuntime; level: s
         <h1 className="font-headline text-[32px] font-bold leading-tight">Welcome back!</h1>
         <p className="text-muted-foreground">
           {goal
-            ? `You're on your way to ${goal}. Pick a scene on the path to practice it.`
-            : `You're at ${level}, the last level on the path. Pick a scene to keep sharpening.`}
+            ? `You're on your way to ${levelLabel(goal)}. Pick a scene on the path to practice it.`
+            : `You're at ${levelLabel(level)}, the last level on the path. Pick a scene to keep sharpening.`}
         </p>
       </header>
 
@@ -62,7 +62,7 @@ export function PathwayHome({ runtime, level }: { runtime: EmmaRuntime; level: s
 
       <section className="space-y-5 rounded-bubble border border-border bg-card p-6">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h2 className="text-lg font-semibold">Your path · Level {level}</h2>
+          <h2 className="text-lg font-semibold">Your path · {levelLabel(level)}</h2>
           <span className="text-sm text-muted-foreground">
             {passed} of {total} scenes completed
           </span>
