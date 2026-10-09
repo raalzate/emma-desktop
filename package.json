@@ -1,6 +1,6 @@
 {
   "name": "emma-desktop",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": true,
   "license": "Apache-2.0",
   "description": "EMMA Desktop — tutora de inglés conversacional local-first (Electron + Next.js) con IA local (Gemma/LiteRT-LM en WebGPU) e híbrida (nube opcional).",
@@ -32,6 +32,10 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "smoke": "node scripts/package-smoke.mjs",
+    "eval:a1:build": "vite build --config evals/a1/vite.config.mjs",
+    "eval:a1": "pnpm eval:a1:build && npx -y promptfoo@0.123.1 eval -c evals/a1/promptfooconfig.yaml",
+    "eval:a1:claude": "pnpm eval:a1:build && EMMA_EVAL_BASE_URL=anthropic npx -y promptfoo@0.123.1 eval -c evals/a1/promptfooconfig.yaml --grader anthropic:messages:claude-opus-5",
+    "eval:a1:selftest": "pnpm eval:a1:build && EMMA_EVAL_BASE_URL=fixture npx -y promptfoo@0.123.1 eval -c evals/a1/promptfooconfig.selftest.yaml --no-cache",
     "rebuild": "electron-rebuild",
     "sdd:new": "node scripts/sdd-github.mjs new",
     "sdd:tasks": "node scripts/sdd-github.mjs tasks",
@@ -78,6 +82,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.129.0",
     "@electron/notarize": "^3.1.1",
     "@electron/rebuild": "^3.2.9",
     "@tailwindcss/typography": "^0.5.20",

@@ -6,6 +6,7 @@ import { AiGate } from "./ai-gate";
 import { useMenuNavigation } from "@/hooks/use-menu-navigation";
 import { Toaster } from "@/components/ui/toaster";
 import { MotionProvider } from "@/components/motion";
+import { CelebrationLayer } from "@/components/gamification/celebration-layer";
 
 function MenuNav() {
   useMenuNavigation();
@@ -20,6 +21,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <MenuNav />
         <AiGate>{children}</AiGate>
         <Toaster />
+        <CelebrationLayer />
       </EmmaProvider>
     </MotionProvider>
   );

@@ -60,8 +60,15 @@ El dominio define **puertos** (interfaces); afuera viven los **adaptadores**.
 - `src/domain/chat/i-chat-history-repository.ts` → `IChatHistoryRepository`
   (`list`/`save`/`remove`/`rename`): historial de conversaciones. Adaptador:
   `src/infrastructure/persistence/chat-history-repository.ts`.
+- Gamificación (#216) → `src/domain/gamification/i-gamification-repository.ts`.
+  Sólo se persisten eventos de XP (colección `gamification`); nivel de jugador,
+  racha diaria, meta del día y logros se derivan en el dominio. El renderer
+  otorga XP por una sola puerta (`components/gamification/award-activity.ts`),
+  que anuncia el premio con el evento de ventana `emma:xp-awarded`: la capa de
+  celebración y la tarjeta de la barra lateral lo escuchan sin store global.
 
-Ambos se cablean en `src/interface/di/repositories.ts` (`profileLevel`, `chatHistory`).
+El perfil de nivel y el historial se cablean en `src/interface/di/repositories.ts`
+(`profileLevel`, `chatHistory`).
 
 **Inyección:** los casos de uso reciben el puerto por argumento, nunca lo importan
 concreto. Ejemplo canónico: `application/english-teacher/teach-use-case.ts`

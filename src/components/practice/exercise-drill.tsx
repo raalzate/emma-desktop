@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { Flame, Lightbulb, RotateCcw, BookmarkPlus, Check, X, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnswerFeedback, ItemTransition, Stagger, StaggerItem } from "@/components/motion";
+import { awardActivities } from "@/components/gamification/award-activity";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -375,6 +376,15 @@ function ExerciseRunner({ exercise, runtime, onExit, onChange }: RunnerProps) {
   useEffect(() => {
     if (answering && !optionMode) inputRef.current?.focus();
   }, [answering, optionMode, state.index]);
+
+  // Cada ítem cerrado suma XP (#216). Repetir los fallados reinicia los resultados.
+  const awardedResults = useRef(0);
+  useEffect(() => {
+    const fresh = state.results.slice(awardedResults.current);
+    awardedResults.current = state.results.length;
+    if (fresh.length === 0) return;
+    void awardActivities(fresh.map((r) => ({ kind: "exercise", correct: r.verdict === "correct" })));
+  }, [state.results]);
 
   function submit() {
     setState((s) => submitDraft(s, draft));

@@ -19,6 +19,7 @@ import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
 import type { PracticeRecommendation } from "@/domain/tutor/practice-recommender";
 import type { LessonDecision, SessionLesson } from "@/domain/feedback/session-lesson";
+import type { XpLine } from "@/domain/gamification/xp-rules";
 import { closingPlanFor, type ClosingPlan } from "@/domain/lessons/closing-plan";
 import type { LessonTodoOrigin } from "@/domain/lessons/lesson-todo";
 import { assignSessionLessons } from "@/application/lessons/lesson-todo-use-cases";
@@ -47,6 +48,8 @@ export interface LessonView {
   stored: boolean;
   /** Cierre (#211): lecciones asignadas solas o elegir; null mientras se resuelve. */
   plan: ClosingPlan | null;
+  /** XP de la sesión recién cerrada; ausente al revisar una lección guardada. */
+  xp?: { total: number; lines: XpLine[] } | null;
 }
 
 interface Args {

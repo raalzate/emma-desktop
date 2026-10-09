@@ -74,6 +74,12 @@ export function pendingLessonTodos(list: readonly LessonTodo[]): LessonTodo[] {
   return list.filter((t) => t.status === "pending");
 }
 
+/** Lecciones que estaban pendientes en `before` y quedaron hechas en `after` (XP, #216). */
+export function newlyDoneCount(before: readonly LessonTodo[], after: readonly LessonTodo[]): number {
+  const wasPending = new Set(pendingLessonTodos(before).map((t) => t.id));
+  return after.filter((t) => t.status === "done" && wasPending.has(t.id)).length;
+}
+
 /**
  * Anota la lección si no está ya pendiente. Una lección ya cerrada no bloquea:
  * si EMMA vuelve a recomendarla en otra sesión es porque el error volvió.

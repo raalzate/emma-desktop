@@ -26,6 +26,7 @@ import { levelLabel, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import type { LessonView } from "./use-end-session";
+import { XpBreakdown } from "@/components/gamification/xp-breakdown";
 import { useKaraoke, type Karaoke } from "./use-karaoke";
 import { KaraokeTranscript } from "./karaoke-transcript";
 import { ClosingPlanPanel } from "./closing-plan-panel";
@@ -163,6 +164,8 @@ export function LessonDialog({
             )}
             {reportParts.after && <Markdown>{reportParts.after}</Markdown>}
           </section>
+          {/* XP ganado en la sesión (#216): la recompensa se ve junto a la decisión. */}
+          {view.xp && <XpBreakdown lines={view.xp.lines} total={view.xp.total} />}
           {/* Componente 2 — Decisión de Emma: avanzar de nivel o repetir. */}
           <section className="rounded-lg border bg-muted/40 p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

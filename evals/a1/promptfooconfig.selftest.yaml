@@ -1,0 +1,55 @@
+# Self-test SIN red: el "modelo" devuelve vars.fixture (EMMA_EVAL_BASE_URL=fixture).
+# Prueba el cableado provider → runChatTurn → aserción, y que la aserción A1
+# muerde: las respuestas buenas pasan y las malas fallan (not-javascript).
+description: EMMA A1 — self-test del cableado (sin LLM)
+
+prompts:
+  - "{{learner}}"
+
+providers:
+  - file://emma-provider.mjs
+
+tests:
+  - description: buena — corta, simple, con pregunta
+    vars:
+      scenario: daily_standup
+      history:
+        - { role: assistant, content: "Good morning, Laura! What did you do yesterday?" }
+      learner: "I work in the login page."
+      fixture: "Nice, the login page is important. What do you do today?"
+    assert:
+      - type: javascript
+        value: file://assertions.mjs
+
+  - description: mala — modismos y phrasal verbs
+    vars:
+      scenario: daily_standup
+      history:
+        - { role: assistant, content: "Good morning, Laura! What did you do yesterday?" }
+      learner: "I work in the login page."
+      fixture: "Cool, let's circle back on that later. Did you figure out the bug?"
+    assert:
+      - type: not-javascript
+        value: file://assertions.mjs
+
+  - description: mala — responde en español
+    vars:
+      scenario: intro_yourself
+      history:
+        - { role: assistant, content: "Hi Laura! What is your job?" }
+      learner: "no entiendo"
+      fixture: "Claro, te explico. ¿Cuál es tu trabajo?"
+    assert:
+      - type: not-javascript
+        value: file://assertions.mjs
+
+  - description: mala — oración larguísima
+    vars:
+      scenario: lunch_chat
+      history:
+        - { role: assistant, content: "Hi Laura! Do you want lunch?" }
+      learner: "yes"
+      fixture: "Great, I was thinking that maybe we could try the new Italian place downtown that everybody keeps talking about?"
+    assert:
+      - type: not-javascript
+        value: file://assertions.mjs

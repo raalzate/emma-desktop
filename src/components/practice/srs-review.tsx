@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
+import { awardActivities } from "@/components/gamification/award-activity";
 import { Badge } from "@/components/ui/badge";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
 import { todayAsDays } from "@/interface/today";
@@ -184,6 +185,7 @@ export function SrsReview({ runtime, onChange }: Props) {
     await answerCard({ repo: runtime.repos.srs, cardId: current.id, correct, today: todayAsDays() });
     onChange?.();
     setResults((prev) => [...prev, { cardId: current.id, correct, fromBox: current.box }]);
+    void awardActivities([{ kind: "review" }]);
     setGraded({ verdict, correct, inDays });
     setPhase("graded");
   }
