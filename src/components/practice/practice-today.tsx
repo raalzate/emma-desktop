@@ -8,6 +8,7 @@
  */
 
 import { ArrowRight, Ear, ListChecks, Repeat, Trophy } from "lucide-react";
+import { Stagger, StaggerItem } from "@/components/motion";
 import type { PracticeStep, PracticeTab, PracticeToday as PracticePlan } from "@/domain/practice/practice-today";
 
 const ICONS: Record<PracticeTab, typeof Repeat> = {
@@ -33,11 +34,11 @@ export function PracticeToday({ plan, onPick }: Props) {
         <p className="font-code text-[11px] uppercase tracking-wide text-muted-foreground">Today</p>
         <h2 className="font-headline text-base font-semibold">{plan.headlineEs}</h2>
       </div>
-      <ol className="grid gap-2 sm:grid-cols-2">
+      <Stagger as="ol" className="grid gap-2 sm:grid-cols-2">
         {plan.steps.map((step, i) => {
           const Icon = ICONS[step.tab];
           return (
-            <li key={`${step.tab}-${i}`}>
+            <StaggerItem as="li" key={`${step.tab}-${i}`}>
               <button
                 type="button"
                 title="Abre este paso del plan en su pestaña"
@@ -61,10 +62,10 @@ export function PracticeToday({ plan, onPick }: Props) {
                 </span>
                 <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
-            </li>
+            </StaggerItem>
           );
         })}
-      </ol>
+      </Stagger>
     </section>
   );
 }

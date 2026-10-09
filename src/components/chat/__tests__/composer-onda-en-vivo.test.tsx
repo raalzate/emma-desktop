@@ -28,7 +28,8 @@ function render(recording: boolean): string {
   return "";
 }
 
-describe("Composer — onda en vivo al grabar", () => {
+// Import dinámico tras vi.resetModules: en frío y con la suite en paralelo pasa de 5 s.
+describe("Composer — onda en vivo al grabar", { timeout: 20_000 }, () => {
   it("mientras graba, pinta la onda en vivo (LiveWaveform)", async () => {
     vi.resetModules();
     render(true);

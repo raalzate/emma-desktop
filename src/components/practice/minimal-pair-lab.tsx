@@ -24,6 +24,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ChevronDown, Loader2, Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AnswerFeedback, ItemTransition } from "@/components/motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -365,6 +366,7 @@ function PerceptionRound({ contrastId, level }: { contrastId: string; level: Cef
   }
 
   return (
+    <ItemTransition itemKey={index}>
     <Card>
       <CardHeader>
         <CardTitle className="text-sm text-muted-foreground">
@@ -396,7 +398,7 @@ function PerceptionRound({ contrastId, level }: { contrastId: string; level: Cef
           </div>
         </div>
         {feedback !== null && (
-          <div className="space-y-3">
+          <AnswerFeedback state={feedback ? "success" : "error"} className="space-y-3">
             <p className={feedback ? "font-medium text-scaffold-easy" : "font-medium text-scaffold-hard"}>
               {feedback ? "Correct: it was " : "No: the word you heard was "}
               <span className="font-code">&quot;{item.prompt}&quot;</span>
@@ -408,10 +410,11 @@ function PerceptionRound({ contrastId, level }: { contrastId: string; level: Cef
             <Button size="sm" title="Pasa al siguiente par mínimo" onClick={next}>
               Next
             </Button>
-          </div>
+          </AnswerFeedback>
         )}
       </CardContent>
     </Card>
+    </ItemTransition>
   );
 }
 
