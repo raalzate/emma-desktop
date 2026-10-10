@@ -53,9 +53,22 @@ relaciones cross-file.
 
 ## PFA — Processflow Architect (arquitectura viva)
 
-La arquitectura del repo vive como proyecto **"EMMA Desktop"** en Processflow
-Architect (MCP `pfa`, registrado en `.mcp.json`; requiere la app abierta con el
-servidor MCP activo en `http://127.0.0.1:7331/mcp`).
+La arquitectura del repo vive en Processflow Architect (MCP `pfa`, registrado en
+`.mcp.json`; requiere la app abierta con el servidor MCP activo en
+`http://127.0.0.1:7331/mcp`), repartida en **cuatro proyectos de la app** con el
+prefijo «EMMA ·» (la app no tiene carpetas: el proyecto ES la categoría):
+
+| Proyecto | Modelo base | Pestañas |
+|---|---|---|
+| **EMMA · Arquitectura** | C4 contexto + contenedores | C4 · Capas del renderer |
+| **EMMA · Conversación** | Simulación y feedback (la sesión completa) | BPMN · Turno de chat · BPMN · Voz y pronunciación |
+| **EMMA · Progreso y práctica** | Ruta y progresión | BPMN · Repaso SRS |
+| **EMMA · Onboarding** | Onboarding ReAct (BPMN) | UML · Estados del agente |
+
+En el servidor MCP, todo diagrama de trabajo de EMMA va en la organización
+**`proyecto-integrador`** (`use_org` antes de crear o importar): las demás son de
+otros clientes. `export_as_view` escribe en el proyecto ABIERTO en la app;
+`export_to_app` actualiza el proyecto que se le nombre.
 
 - Para preguntas de **nivel arquitectura** (sistemas, contenedores, procesos,
   estados del agente): consulta PFA antes de releer docs — `get_app_state`
@@ -63,10 +76,9 @@ servidor MCP activo en `http://127.0.0.1:7331/mcp`).
   `export_mermaid_view` (el diagrama como Mermaid para citarlo en un doc o PR).
   Para código puntual sigue mandando graphify; PFA responde el "qué habla con
   qué", no el "dónde está la función".
-- Vistas actuales del proyecto: **C4** (contexto + contenedores, modelo base),
-  **BPMN · Onboarding ReAct**, **UML · Estados ReAct**, **BPMN · Simulación y
-  feedback**, **BPMN · Turno de chat**, **BPMN · Repaso SRS**, **BPMN · Ruta y
-  progresión** y **BPMN · Voz y pronunciación**.
+- Las vistas con instantánea en `docs/diagramas/` (su campo `proyecto` dice en
+  cuál vive) son las cinco BPMN de Conversación y de Progreso y práctica; las de
+  Arquitectura y Onboarding todavía no tienen instantánea.
 - **Lo que se lee en el lienzo va en lenguaje de producto**, no en rutas del
   repo: «Propone 3 respuestas», no `suggest-replies-use-case.ts`. Una caja que
   nombra un archivo no le dice nada a quien lee el proceso.

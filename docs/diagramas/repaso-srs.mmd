@@ -8,16 +8,17 @@ flowchart LR
   subgraph agg_Pantalla_de_repaso["Pantalla de repaso"]
     muestra_tarjeta("Muestra la tarjeta<br><i>Tarea</i>")
     fin_sin_vencidas(("Nada por repasar<br><i>Evento de Fin</i>"))
+    suma_xp_tarjeta("Suma XP<br><i>Tarea</i>")
   end
   subgraph agg_Repaso_espaciado["Repaso espaciado"]
     crea_tarjetas("Convierte errores en tarjetas<br><i>Tarea</i>")
-    arma_sesion("Arma la tanda del día<br><i>Tarea</i>")
-    gw_acierta{"¿Le salió?<br><i>Compuerta Exclusiva</i>"}
-    gw_quedan{"¿Quedan tarjetas?<br><i>Compuerta Exclusiva</i>"}
     guarda_nuevas("Guarda sólo lo nuevo<br><i>Tarea</i>")
+    arma_sesion("Arma la tanda del día<br><i>Tarea</i>")
     gw_vencidas{"¿Hay algo vencido?<br><i>Compuerta Exclusiva</i>"}
+    gw_acierta{"¿Le salió?<br><i>Compuerta Exclusiva</i>"}
     sube_caja("Espacia el repaso<br><i>Tarea</i>")
     baja_caja("Vuelve al principio<br><i>Tarea</i>")
+    gw_quedan{"¿Quedan tarjetas?<br><i>Compuerta Exclusiva</i>"}
   end
   subgraph agg_Datos_del_aprendiz["Datos del aprendiz"]
     store_tarjetas[("Tarjetas de repaso<br><i>Almacén de Datos</i>")]
@@ -33,9 +34,10 @@ flowchart LR
   gw_vencidas -->|"ninguna vencida"| fin_sin_vencidas
   gw_vencidas -->|"hasta 15, frágiles primero"| muestra_tarjeta
   muestra_tarjeta -->|"pide producción"| responde
-  responde -->|"se califica"| gw_acierta
   sube_caja -->|"nueva fecha"| store_tarjetas
   baja_caja -->|"vuelve pronto"| store_tarjetas
   store_tarjetas -->|"tarjeta actualizada"| gw_quedan
   gw_quedan -->|"sí: siguiente"| muestra_tarjeta
   gw_quedan -->|"no: sesión completa"| fin_repaso
+  responde -->|"se califica"| suma_xp_tarjeta
+  suma_xp_tarjeta --> gw_acierta
