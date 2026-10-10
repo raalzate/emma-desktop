@@ -1,0 +1,76 @@
+flowchart LR
+  subgraph agg_Estudiante["Estudiante"]
+    abre_practica(("Abre la práctica<br><i>Evento de Inicio</i>"))
+    elige_escenario("Elige escenario<br><i>Tarea</i>")
+    fin_a_lecciones(("Va a sus lecciones<br><i>Evento de Fin</i>"))
+    lee_antesala_es("Lee la antesala<br><i>Tarea</i>")
+    habla_escribe_en("Habla o escribe<br><i>Tarea</i>")
+    lee_el_reporte("Lee su lección<br><i>Tarea</i>")
+    sesion_cerrada(("Practica o continúa<br><i>Evento de Fin</i>"))
+  end
+  subgraph agg_Tutora_EMMA["Tutora EMMA"]
+    gw_pendientes{"¿Tiene pendientes?<br><i>Compuerta Exclusiva</i>"}
+    genera_contrato_escena("Prepara la escena<br><i>Tarea</i>")
+    contrato_valido{"¿Hechos válidos?<br><i>Compuerta Exclusiva</i>"}
+    framing_del_catalogo("Usa el catálogo<br><i>Tarea</i>")
+    arma_system_briefing("Arma la escena<br><i>Tarea</i>")
+    observa_turno("Lee la intención<br><i>Tarea</i>")
+    construye_prompt_turno("Decide la consigna<br><i>Tarea</i>")
+    limpia_y_valida("Limpia y valida<br><i>Tarea</i>")
+    respuesta_valida{"¿La respuesta sirve?<br><i>Compuerta Exclusiva</i>"}
+    recupera_en_personaje("Retoma la pregunta<br><i>Tarea</i>")
+    muestra_linea_voz("Muestra y lee la línea<br><i>Tarea</i>")
+    chequea_gramatica("Revisa la gramática<br><i>Tarea</i>")
+    bufer_de_errores["Errores de la sesión<br><i>Objeto de Datos</i>"]
+    fin_de_sesion{"¿Termina la escena?<br><i>Compuerta Exclusiva</i>"}
+    persiste_errores("Guarda los errores<br><i>Tarea</i>")
+    arma_reporte_feedback("Arma la lección<br><i>Tarea</i>")
+    evalua_progresion("Decide el nivel<br><i>Tarea</i>")
+    suma_xp("Suma XP<br><i>Tarea</i>")
+    perfil_sqlite[("Datos del aprendiz<br><i>Almacén de Datos</i>")]
+    gw_cierre{"¿Hubo correcciones?<br><i>Compuerta Exclusiva</i>"}
+    asigna_lecciones("Asigna las lecciones<br><i>Tarea</i>")
+  end
+  subgraph agg_Modelo_de_lenguaje["Modelo de lenguaje"]
+    genera_hechos_escena("Escribe los hechos<br><i>Tarea</i>")
+    genera_respuesta("Genera la respuesta<br><i>Tarea</i>")
+    corrige_turno("Corrige el turno<br><i>Tarea</i>")
+  end
+  abre_practica -->|"entra"| elige_escenario
+  elige_escenario -->|"escena elegida"| gw_pendientes
+  gw_pendientes -->|"bloqueada"| fin_a_lecciones
+  gw_pendientes -->|"permitida"| genera_contrato_escena
+  genera_contrato_escena -->|"pide hechos"| genera_hechos_escena
+  genera_hechos_escena -->|"4 líneas"| contrato_valido
+  contrato_valido -->|"hechos válidos"| arma_system_briefing
+  contrato_valido -->|"el modelo falló"| framing_del_catalogo
+  framing_del_catalogo -->|"respaldo"| arma_system_briefing
+  arma_system_briefing -->|"antesala en español"| lee_antesala_es
+  lee_antesala_es -->|"comienza"| habla_escribe_en
+  habla_escribe_en -->|"su línea"| observa_turno
+  habla_escribe_en -->|"en paralelo"| chequea_gramatica
+  observa_turno -->|"intención"| construye_prompt_turno
+  construye_prompt_turno -->|"consigna"| genera_respuesta
+  genera_respuesta -->|"palabra por palabra"| limpia_y_valida
+  limpia_y_valida -->|"revisa"| respuesta_valida
+  respuesta_valida -->|"sirve"| muestra_linea_voz
+  respuesta_valida -->|"otro intento (hasta 3)"| genera_respuesta
+  respuesta_valida -->|"tres fallidos"| recupera_en_personaje
+  recupera_en_personaje -->|"retoma"| muestra_linea_voz
+  muestra_linea_voz -->|"turno completo"| fin_de_sesion
+  fin_de_sesion -->|"sigue la escena"| habla_escribe_en
+  fin_de_sesion -->|"objetivo o tope"| persiste_errores
+  chequea_gramatica -->|"pide corrección"| corrige_turno
+  corrige_turno -->|"errores enseñables"| bufer_de_errores
+  bufer_de_errores -->|"errores de la sesión"| arma_reporte_feedback
+  persiste_errores -->|"guarda errores"| perfil_sqlite
+  persiste_errores -->|"luego"| arma_reporte_feedback
+  arma_reporte_feedback -->|"luego"| evalua_progresion
+  evalua_progresion -->|"racha y nivel"| perfil_sqlite
+  evalua_progresion -->|"resultado"| suma_xp
+  suma_xp -->|"guarda el XP"| perfil_sqlite
+  suma_xp -->|"lección, nivel y XP"| lee_el_reporte
+  lee_el_reporte -->|"cierra la lección"| gw_cierre
+  gw_cierre -->|"hubo correcciones"| asigna_lecciones
+  asigna_lecciones -->|"Start my lessons"| fin_a_lecciones
+  gw_cierre -->|"nada que corregir"| sesion_cerrada

@@ -300,9 +300,9 @@
     "file": "STATUS.md"
   },
   "diagrams": {
-    "$comment": "Arquitectura viva: las vistas viven en Processflow Architect (proyecto «EMMA Desktop»), que está FUERA del repo. Cada vista deja su instantánea en `dir`. LO QUE SE LEE EN EL LIENZO va en lenguaje de producto («Propone 3 respuestas»): una caja que dice `src/lib/ai/router.ts` no le sirve a quien lee el proceso. El ancla al código vive SÓLO en la instantánea, en el campo `codigo` (`ruta/archivo.ts:símbolo`), y el puente entre las dos caras es el `id` del elemento. `scripts/diagrams-check.mjs` verifica las tres cosas: que cada caja tenga descripción, que no hable en rutas del repo, y que su ancla apunte a un archivo y un símbolo que existen. Se ancla en el SÍMBOLO y no en la línea a propósito: la línea se corre en cada edición y un freno con rojos falsos termina desactivado.",
+    "$comment": "Arquitectura viva: las vistas viven en Processflow Architect (cuatro proyectos «EMMA · Arquitectura | Conversación | Progreso y práctica | Onboarding»; cada instantánea dice el suyo en `proyecto`), que está FUERA del repo. Cada vista deja su instantánea en `dir`. LO QUE SE LEE EN EL LIENZO va en lenguaje de producto («Propone 3 respuestas»): una caja que dice `src/lib/ai/router.ts` no le sirve a quien lee el proceso. El ancla al código vive SÓLO en la instantánea, en el campo `codigo` (`ruta/archivo.ts:símbolo`), y el puente entre las dos caras es el `id` del elemento. `scripts/diagrams-check.mjs` verifica las tres cosas: que cada caja tenga descripción, que no hable en rutas del repo, y que su ancla apunte a un archivo y un símbolo que existen. Se ancla en el SÍMBOLO y no en la línea a propósito: la línea se corre en cada edición y un freno con rojos falsos termina desactivado.",
     "dir": "docs/diagramas",
-    "project": "EMMA Desktop",
+    "project": "EMMA · Arquitectura | EMMA · Conversación | EMMA · Progreso y práctica | EMMA · Onboarding",
     "anchorFormat": "ruta/al/archivo.ts:símbolo",
     "reason": "un diagrama que describe código que ya no existe es peor que no tener diagrama: se lee con la misma confianza y manda al lector al lugar equivocado. Y uno que sólo nombra archivos no es un diagrama de proceso: es un índice del repo con cajas."
   },

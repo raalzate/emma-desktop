@@ -12,14 +12,19 @@ flowchart LR
     genera_chips("Propone 3 respuestas<br><i>Tarea</i>")
     arma_prompt("Reconstruye la escena<br><i>Tarea</i>")
     gw_stream{"¿Apertura segura?<br><i>Compuerta Exclusiva</i>"}
-    fallback("Disculpa en personaje<br><i>Tarea</i>")
     sanea_valida("Limpia y controla<br><i>Tarea</i>")
     gw_valida{"¿La respuesta sirve?<br><i>Compuerta Exclusiva</i>"}
     reintento_nudge("Pide otra versión<br><i>Tarea</i>")
-    reformula("Dilo más simple<br><i>Tarea</i>")
-    recuperacion("Retoma la pregunta<br><i>Tarea</i>")
     gw_valida2{"¿Sirve el 2º intento?<br><i>Compuerta Exclusiva</i>"}
+    reformula("Dilo más simple<br><i>Tarea</i>")
     gw_valida3{"¿Sirve el 3º intento?<br><i>Compuerta Exclusiva</i>"}
+    recuperacion("Retoma la pregunta<br><i>Tarea</i>")
+    fallback("Disculpa en personaje<br><i>Tarea</i>")
+    observa("Lee la intención<br><i>Tarea</i>")
+    gw_coherencia{"¿Se entiende?<br><i>Compuerta Exclusiva</i>"}
+    pide_reformular("Pide que lo reformule<br><i>Tarea</i>")
+    reencauza("Vuelve a la escena<br><i>Tarea</i>")
+    decide_consigna("Decide qué pedir<br><i>Tarea</i>")
   end
   subgraph agg_Modelo_de_lenguaje["Modelo de lenguaje"]
     genera_llm("Escribe el diálogo<br><i>Tarea</i>")
@@ -36,7 +41,6 @@ flowchart LR
   genera_llm -->|"tarda demasiado"| timeout_60s
   pide_sugerencias -->|"pide ideas"| genera_chips
   genera_chips -->|"muestra chips"| elige_chip
-  ini_mensaje -->|"su línea"| arma_prompt
   arma_prompt -->|"escena + consigna"| genera_llm
   genera_llm -->|"primeras palabras"| gw_stream
   gw_stream -->|"apertura segura"| stream_burbuja
@@ -49,3 +53,11 @@ flowchart LR
   recuperacion -->|"sin declarar amnesia"| fin_respuesta
   fallback -->|"nunca un error técnico"| fin_respuesta
   elige_chip -->|"mientras teclea"| pide_sugerencias
+  ini_mensaje -->|"su línea"| observa
+  observa -->|"etiqueta el turno"| gw_coherencia
+  gw_coherencia -->|"se entiende"| decide_consigna
+  gw_coherencia -->|"no se entiende"| pide_reformular
+  gw_coherencia -->|"se fue de tema"| reencauza
+  decide_consigna -->|"consigna"| arma_prompt
+  pide_reformular -->|"consigna"| arma_prompt
+  reencauza -->|"consigna"| arma_prompt
