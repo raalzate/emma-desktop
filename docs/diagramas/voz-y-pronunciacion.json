@@ -2,8 +2,8 @@
   "vista": "BPMN · Voz y pronunciación",
   "notacion": "bpmn",
   "proyecto": "EMMA Desktop",
-  "revisado": "2026-09-15",
-  "resumen": "Un mismo mecanismo de micrófono sirve al chat y al laboratorio: se graba, se transcribe sin salir del equipo y, según desde dónde se grabó, el texto entra como nota de voz o se compara con lo que había que pronunciar. Queda declarada la deuda: la comprobación de duración mínima no corre en el camino real.",
+  "revisado": "2026-10-12",
+  "resumen": "Un mismo mecanismo de micrófono sirve al chat y al laboratorio: se graba, se transcribe sin salir del equipo y, según desde dónde se grabó, el texto entra como nota de voz o se compara con lo que había que pronunciar. Queda declarada la deuda: la comprobación de duración mínima no corre en el camino real. La voz de Emma recorre una cadena de tres: voz en línea, voz neuronal en el equipo y, como último recurso, la voz del sistema.",
   "elementos": [
     { "id": "aprendiz", "nombre": "Aprendiz", "tipo": "Carril", "descripcion": "Habla: para conversar con EMMA o para medir su pronunciación.", "codigo": "src/components/chat/use-voice-input.ts:useVoiceInput" },
     { "id": "usevoiceinput", "nombre": "Grabación de voz", "tipo": "Carril", "descripcion": "El mecanismo de micrófono que comparten el chat y el laboratorio de pronunciación.", "codigo": "src/components/chat/use-voice-input.ts:useVoiceInput" },
@@ -22,6 +22,13 @@
     { "id": "sin-texto", "nombre": "No te entendí", "tipo": "Tarea", "descripcion": "Vale como resultado, no como falla: si la máquina no te entiende, un humano tampoco.", "codigo": "src/components/practice/minimal-pair-lab.tsx:expectingRef" },
     { "id": "fin-veredicto", "nombre": "Ve su veredicto", "tipo": "Evento de Fin", "descripcion": "Verde si la máquina lo entendió; si no, qué oyó en su lugar. En el reto largo, palabra por palabra.", "codigo": "src/components/practice/minimal-pair-lab.tsx:PerceptionSayIt" },
     { "id": "fin-chat", "nombre": "Sigue la conversación", "tipo": "Evento de Fin", "descripcion": "El turno continúa como si lo hubiera escrito. Hay turnos donde hablar no es opcional —abrir la escena, explicar con detalle, cerrarla o volver tras varios turnos en silencio— y ahí el teclado queda cerrado.", "codigo": "src/components/chat/use-voice-input.ts:useVoiceInput" },
+    { "id": "voz-emma", "nombre": "Voz de Emma", "tipo": "Carril", "descripcion": "Lee en voz alta las notas de Emma con la mejor voz que haya disponible, y resalta la oración que suena.", "codigo": "src/components/chat/use-karaoke.ts:useKaraoke" },
+    { "id": "ini-play", "nombre": "Pulsa reproducir", "tipo": "Evento de Inicio", "descripcion": "Escucha una nota de Emma o repite una oración con un clic.", "codigo": "src/components/chat/use-karaoke.ts:playFrom" },
+    { "id": "voz-en-linea", "nombre": "Prueba la voz en línea", "tipo": "Tarea", "descripcion": "Primero se intenta la voz de la nube. Si falla una vez, no se vuelve a intentar durante toda la sesión: se va directo a la siguiente.", "codigo": "src/infrastructure/tts/speech-chain.ts:createEdgeBreaker" },
+    { "id": "gw-en-linea", "nombre": "¿Respondió la voz en línea?", "tipo": "Compuerta Exclusiva", "descripcion": "Si respondió, suena esa voz. Si no, se pasa a la voz que vive en el equipo.", "codigo": "src/infrastructure/tts/speech-chain.ts:synthesizeChain" },
+    { "id": "voz-neuronal", "nombre": "Voz neuronal en el equipo", "tipo": "Tarea", "descripcion": "Una voz natural que se genera sin salir de la máquina, con una voz distinta para cada personaje. La primera vez descarga el modelo (unos 326 MB) y queda guardado.", "codigo": "src/infrastructure/tts/kokoro-tts.ts:synthesizeKokoro" },
+    { "id": "voz-sistema", "nombre": "Voz del sistema", "tipo": "Tarea", "descripcion": "Responde mientras el modelo se descarga o si falla, para no dejar a la persona esperando. La descarga sigue en segundo plano y queda lista para el próximo clic.", "codigo": "src/infrastructure/tts/web-speech-tts.ts:speak" },
+    { "id": "fin-escucha", "nombre": "Escucha a Emma", "tipo": "Evento de Fin", "descripcion": "Suena la nota con el resaltado palabra a palabra; con la voz del sistema el resaltado es aproximado y no se puede saltar a una oración.", "codigo": "src/components/chat/use-karaoke.ts:useKaraoke" },
     { "id": "deuda-casos-uso", "nombre": "Deuda conocida", "tipo": "Anotación", "descripcion": "Hay una comprobación de duración mínima —pensada para descartar toques accidentales del micrófono— con su lógica probada, pero la pantalla llama al dictado directo: hoy esa comprobación no corre.", "codigo": "src/application/audio/transcribe-audio-use-case.ts:transcribeAudio" }
   ]
 }
