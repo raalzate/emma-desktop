@@ -229,3 +229,20 @@ Regla:   Kokoro corre en un Web Worker con WASM (CPU), nunca WebGPU; la nota se 
   queda en el log con `reason` y `exitCode`.
 Mecanismo: `src/infrastructure/tts/__tests__/kokoro-worker-contrato.test.ts` (WASM en worker, `new URL`
   empaquetable) y `main/__tests__/rastro-de-cierres.test.ts` (el log de cierres).
+
+---
+
+### GOTCHA: Edge-TTS daba 403 y el WASM de onnxruntime salía de un CDN
+
+Síntoma: desde ~2026-10-10 Edge-TTS responde 403 (token `Sec-MS-GEC` de Microsoft,
+  rany2/edge-tts#490); cada intento era un viaje de red perdido y, sin red, tampoco cargaba el
+  runtime WASM de Kokoro ni el de Whisper (transformers.js lo pide a cdn.jsdelivr.net por defecto).
+Causa:   depender de un endpoint no oficial y de un CDN contradice el local-first.
+Regla:   la voz es Kokoro local (Web Speech solo de respaldo); Edge-TTS y `msedge-tts` se retiraron.
+  El WASM va empaquetado: `scripts/copy-ort-wasm.mjs` lo copia a `public/ort/` (ignorado en git) en
+  cada build y `configureOrtWasm` apunta `wasmPaths` a `/ort/` en el hilo principal Y en el Worker
+  (el `env` es de cada contexto). Las claves `en-US-…Neural` de las protopersonas se quedan: son la
+  clave estable de `kokoroVoiceFor`, no una voz Edge.
+  La única descarga de la primera vez es el modelo de Hugging Face.
+Mecanismo: `speech-chain.test.ts` (cadena solo Kokoro), `ort-empaquetado-contrato.test.ts`
+  (cada punto de entrada configura el WASM; el build lo copia) y `scripts/__tests__/copy-ort-wasm.test.ts`.

@@ -22,8 +22,8 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   clave en la franja SCENE (#228, PR #240), «Level up!» interactivo sobre la lección y
   menús nativos en inglés (#239, PR #241), juez de escena que regenera la línea de la
   persona si contradice los hechos o el rol (#229, PR #242) y voz neuronal local Kokoro
-  como respaldo de Edge-TTS (#230, PR #243). Edge-TTS da 403 desde ~2026-10-10 (token
-  `Sec-MS-GEC` de Microsoft, rany2/edge-tts#490): la cadena es Edge ⇒ Kokoro ⇒ Web Speech.
+  (#230, PR #243). Edge-TTS daba 403 desde ~2026-10-10 y se retiró (#247): la cadena es
+  Kokoro ⇒ Web Speech y el runtime WASM de onnxruntime va empaquetado (sin CDN).
   Verificado en la app real (build de producción por CDP): Kokoro suena con WebGPU (~1,4 s
   al primer sonido) y el karaoke resalta; «Keep going» responde sobre la lección.
   Pendiente: lienzo de PFA de «Turno de chat», «Voz y pronunciación», «Ruta y

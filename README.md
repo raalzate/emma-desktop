@@ -50,8 +50,9 @@ patrón de escalado de IA (router local/remoto).
   con `safeStorage` en el proceso main; llamadas por `fetch` (sin SDKs).
 - **STT: Whisper vía `@huggingface/transformers`** en el renderer (reemplaza a
   faster-whisper).
-- **TTS + karaoke: Web Speech API** (`speechSynthesis` con eventos `boundary` para
-  los timings de palabra) — reemplaza a edge-tts.
+- **TTS + karaoke: Kokoro-82M local** (Web Worker con WASM, audio y timings por
+  palabra), con **Web Speech API** como respaldo mientras baja el modelo. Edge-TTS
+  se retiró (#247): la voz es 100 % local.
 - **Gramática silenciosa: llamada estructurada a Gemma** (reemplaza al modelo T5).
 - **Persistencia: store JSON por colección** en el proceso main (`main/services/store.ts`;
   perfil, progresión, errores, roadmap, resúmenes de sesión), expuesta por IPC.
