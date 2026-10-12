@@ -39,15 +39,6 @@ export interface EmmaApi {
   updatesCurrentVersion(): Promise<string>;
   onUpdateStatus(callback: (status: unknown) => void): () => void;
 
-  ttsSynthesize(
-    text: string,
-    voice?: string,
-  ): Promise<{
-    audioBase64: string;
-    mime: string;
-    timings: { word: string; start: number; end: number }[];
-  }>;
-
   storeGet(key: string): Promise<Record<string, unknown>>;
   storeSet(key: string, value: Record<string, unknown>): Promise<{ ok: boolean }>;
 

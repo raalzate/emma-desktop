@@ -70,9 +70,9 @@ describe("createChunkedPlayer", () => {
     const { player, jobs } = setup();
     expect(player.engine()).toBeNull();
     const ready = player.ready();
-    jobs.get(chunks[0].text)!.resolve(speechOf("a", 5, "edge"));
+    jobs.get(chunks[0].text)!.resolve(speechOf("a", 5, "kokoro"));
     await ready;
-    expect(player.engine()).toBe("edge");
+    expect(player.engine()).toBe("kokoro");
   });
 
   it("sintetiza el primer trozo y solo después pide el siguiente", async () => {

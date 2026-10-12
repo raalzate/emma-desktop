@@ -15,7 +15,6 @@ import { describePersonaVoice, voiceSampleText } from "@/domain/personas/voice-s
 
 const ENGINE_LABELS: Record<NonNullable<Karaoke["engine"]>, string> = {
   kokoro: "Kokoro (on this device)",
-  edge: "Edge (cloud)",
   system: "System voice",
 };
 

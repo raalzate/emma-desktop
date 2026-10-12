@@ -55,7 +55,7 @@ describe("LessonKaraoke", () => {
     expect(html).toContain("bg-primary font-semibold text-primary-foreground");
   });
 
-  it("con Edge-TTS cada oración es clicable para repetirla", () => {
+  it("con audio real cada oración es clicable para repetirla", () => {
     expect(render(karaoke())).toContain('title="Clic para escuchar esta oración"');
   });
 

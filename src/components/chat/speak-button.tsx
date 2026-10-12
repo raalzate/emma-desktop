@@ -2,7 +2,7 @@
 
 /**
  * Botón para escuchar la pronunciación de un texto en inglés. Reutiliza el
- * motor TTS (Edge-TTS con caída a Web Speech) vía useKaraoke. Sin karaoke:
+ * motor TTS (Kokoro con caída a Web Speech) vía useKaraoke. Sin karaoke:
  * sólo reproduce/detiene. Sin `label` es el icono compacto de las filas de
  * Teach me y Translate; con `label` es un botón visible con texto, para los
  * ejercicios de sonido donde escuchar ES la tarea.

@@ -1,6 +1,6 @@
 /**
  * Voz de Emma en segundo plano para el onboarding: cada mensaje suyo se locuta
- * solo, sin botón de play ni karaoke. Voz principal Edge-TTS (audio real) con
+ * solo, sin botón de play ni karaoke. Voz principal Kokoro (audio real, local) con
  * caída a Web Speech (SO, offline). Un mensaje nuevo corta al anterior, y una
  * síntesis que llega tarde (de un mensaje ya superado) se descarta para que
  * nunca suenen dos voces a la vez. Las dependencias entran por argumento para
@@ -19,8 +19,8 @@ export interface LocalHandle {
 }
 
 export interface BackgroundVoiceDeps {
-  edgeAvailable(): boolean;
-  /** Sintetiza con Edge y devuelve la URL del audio. */
+  neuralAvailable(): boolean;
+  /** Sintetiza con la voz neuronal y devuelve la URL del audio. */
   synthesize(text: string): Promise<string>;
   createAudio(url: string): Playable;
   localAvailable(): boolean;
@@ -58,7 +58,7 @@ export function createBackgroundVoice(deps: BackgroundVoiceDeps): BackgroundVoic
     if (!hasSpeakableContent(text)) return;
     const speakable = toSpeakable(text);
     const mine = ++generation;
-    if (!deps.edgeAvailable()) return speakLocal(speakable);
+    if (!deps.neuralAvailable()) return speakLocal(speakable);
     try {
       const url = await deps.synthesize(speakable);
       if (mine !== generation) return;

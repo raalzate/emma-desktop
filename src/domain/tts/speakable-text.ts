@@ -1,6 +1,6 @@
 /**
  * Convierte texto de burbuja a una versión "hablable" para TTS: elimina
- * emojis, comillas, paréntesis y símbolos decorativos que Edge-TTS pronuncia
+ * emojis, comillas, paréntesis y símbolos decorativos que un motor TTS pronuncia
  * literalmente, conservando puntuación natural, contracciones y números.
  */
 

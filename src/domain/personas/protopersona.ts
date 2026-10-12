@@ -22,7 +22,11 @@ export interface Protopersona {
   trait: string;
   /** Voz TTS acorde a la persona (Emma, la tutora, es siempre femenina aparte). */
   voice: PersonaVoice;
-  /** Voz Edge-TTS única de esta persona. en-US-EmmaNeural está RESERVADA para Emma. */
+  /**
+   * Clave de voz única de esta persona (formato `en-US-…Neural`): `kokoroVoiceFor`
+   * la mapea a una voz Kokoro y de ahí salen acento y género. No es una voz de
+   * Edge activa. en-US-EmmaNeural está RESERVADA para Emma.
+   */
   ttsVoice: string;
 }
 

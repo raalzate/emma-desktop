@@ -1,7 +1,6 @@
 /**
  * Reproductor de una nota de voz sintetizada por trozos (ver `planSpeechChunks`).
- * Sintetiza los trozos EN ORDEN (uno a la vez: el motor local es serial y así
- * el breaker de Edge se entera del primer fallo antes del siguiente intento),
+ * Sintetiza los trozos EN ORDEN (uno a la vez: el motor local es serial),
  * empieza a sonar en cuanto el primero está listo y encadena los demás. Expone
  * un tiempo GLOBAL (los timings de cada trozo van desplazados por la duración
  * acumulada), de modo que el karaoke sigue resaltando palabra y oración y

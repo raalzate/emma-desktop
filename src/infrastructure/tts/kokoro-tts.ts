@@ -1,6 +1,6 @@
 /**
- * Voz neuronal local con Kokoro-82M (kokoro-js sobre transformers.js), la caída
- * de Edge-TTS. El modelo corre en un Web Worker (`kokoro.worker.ts`) con WASM
+ * Voz neuronal local con Kokoro-82M (kokoro-js sobre transformers.js), la voz
+ * de EMMA. El modelo corre en un Web Worker (`kokoro.worker.ts`) con WASM
  * (CPU), nunca WebGPU: así no compite por la GPU con Gemma (LiteRT) ni bloquea
  * la UI. Se mide fp32 contra q8 en WASM: fp32 es más rápido (ver el worker).
  * El modelo (~326 MB) se descarga una vez y queda en la caché del navegador.

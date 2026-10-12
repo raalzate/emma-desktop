@@ -12,7 +12,6 @@ const render = (over: Partial<Parameters<typeof PersonaVoiceSampleView>[0]> = {}
 describe("engineLabel", () => {
   it("nombra cada motor en inglés, o nada antes de reproducir", () => {
     expect(engineLabel("kokoro")).toBe("Kokoro (on this device)");
-    expect(engineLabel("edge")).toBe("Edge (cloud)");
     expect(engineLabel("system")).toBe("System voice");
     expect(engineLabel(null)).toBeNull();
   });
@@ -41,7 +40,7 @@ describe("PersonaVoiceSampleView", () => {
 
   it("no dice con qué sonó antes de reproducir y sí después", () => {
     expect(render()).not.toContain("Played with");
-    expect(render({ engine: "edge" })).toContain("Played with: Edge (cloud)");
+    expect(render({ engine: "kokoro" })).toContain("Played with: Kokoro (on this device)");
     expect(render({ engine: "system" })).toContain("Played with: System voice");
   });
 });

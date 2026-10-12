@@ -2,7 +2,7 @@
 
 /**
  * Cablea la voz en segundo plano del onboarding a los adaptadores reales
- * (voz neuronal Edge-TTS ⇒ Kokoro local, Web Speech como caída) y la calla al
+ * (Kokoro local, Web Speech como caída) y la calla al
  * desmontar la pantalla.
  */
 
@@ -15,7 +15,7 @@ export function useBackgroundVoice(): BackgroundVoice {
   const voice = useMemo(
     () =>
       createBackgroundVoice({
-        edgeAvailable: neuralSpeechAvailable,
+        neuralAvailable: neuralSpeechAvailable,
         synthesize: async (text) => (await synthesizeSpeech(text)).audioUrl,
         createAudio: (url) => new Audio(url),
         localAvailable: ttsAvailable,

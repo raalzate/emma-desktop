@@ -62,7 +62,7 @@ describe("protopersonas por escenario", () => {
   });
 
   it("cada protopersona tiene voz TTS única, del catálogo válido y nunca la de Emma", () => {
-    // Catálogo de voces Edge-TTS disponibles (provisto por producto).
+    // Catálogo de claves de voz disponibles (provisto por producto).
     const VALID_VOICES = new Set([
       "en-US-JennyNeural", "en-US-AriaNeural", "en-US-AnaNeural",
       "en-US-GuyNeural", "en-US-AndrewMultilingualNeural", "en-US-EricNeural",

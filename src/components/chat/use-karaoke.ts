@@ -4,7 +4,7 @@
  * Karaoke de la nota de voz de Emma, por ORACIÓN (FR-010..013 de la spec 002).
  * Al motor de voz solo va el texto hablable (sin emojis/comillas/paréntesis);
  * la transcripción visible conserva el original. Voz principal: neuronal
- * (Edge-TTS, y Kokoro local si Edge no responde; audio + timings por palabra) con resaltado de la oración activa y clic-para-repetir
+ * (Kokoro local; audio + timings por palabra) con resaltado de la oración activa y clic-para-repetir
  * (seek al inicio de la oración). El audio se sintetiza por trozos (primera
  * oración primero, ver `chunked-player`): suena sin esperar a todo el mensaje.
  * Fallback: Web Speech local, resaltado best-effort sin seek. Sin autoplay.
@@ -13,7 +13,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { speak, ttsAvailable, type KaraokeHandle } from "@/infrastructure/tts/web-speech-tts";
 import { neuralSpeechAvailable, synthesizeSpeech } from "@/infrastructure/tts/neural-speech";
-import type { SpeechEngine } from "@/infrastructure/tts/speech-chain";
 import { createChunkedPlayer, type ChunkedPlayer } from "@/infrastructure/tts/chunked-player";
 import { planSpeechChunks } from "@/domain/tts/speech-chunks";
 import type { WordTiming } from "@/domain/ai/llm-port";
@@ -37,10 +36,10 @@ export interface Karaoke {
   playing: boolean;
   loading: boolean;
   available: boolean;
-  /** Con audio real (Edge/Kokoro) se puede saltar a una oración; con Web Speech no. */
+  /** Con audio real (Kokoro) se puede saltar a una oración; con Web Speech no. */
   canSeek: boolean;
   /** Motor que sonó: neuronal, "system" (Web Speech) o null antes de reproducir. */
-  engine: SpeechEngine | "system" | null;
+  engine: "kokoro" | "system" | null;
   play(): void;
   /** Reproduce desde el inicio de la oración i (repetible sin límite). */
   playSentence(i: number): void;
