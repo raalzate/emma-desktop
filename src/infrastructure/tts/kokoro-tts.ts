@@ -89,9 +89,13 @@ export function createKokoroService(deps: KokoroDeps): KokoroService {
   return { state, warm: () => getEngine().then(() => undefined), synthesize };
 }
 
-/** El worker se empaqueta aparte: `new URL(..., import.meta.url)` es lo que webpack reconoce. */
+/**
+ * El worker se empaqueta aparte: `new URL(..., import.meta.url)` literal es lo
+ * que webpack reconoce (verificado en el export estático: sale un chunk de
+ * worker clásico servido desde app://-; webpack descarta `type: "module"`).
+ */
 function spawnKokoroWorker(): Worker {
-  return new Worker(new URL("./kokoro.worker.ts", import.meta.url), { type: "module" });
+  return new Worker(new URL("./kokoro.worker.ts", import.meta.url));
 }
 
 const kokoro = createKokoroService({ load: createWorkerEngineLoader(spawnKokoroWorker), toUrl: (blob) => URL.createObjectURL(blob) });
