@@ -3,15 +3,15 @@
 /**
  * Karaoke de la nota de voz de Emma, por ORACIÓN (FR-010..013 de la spec 002).
  * Al motor de voz solo va el texto hablable (sin emojis/comillas/paréntesis);
- * la transcripción visible conserva el original. Voz principal: Edge-TTS (mp3 +
- * timings por palabra) con resaltado de la oración activa y clic-para-repetir
+ * la transcripción visible conserva el original. Voz principal: neuronal
+ * (Edge-TTS, y Kokoro local si Edge no responde; audio + timings por palabra) con resaltado de la oración activa y clic-para-repetir
  * (seek al inicio de la oración). Fallback: Web Speech local, resaltado
  * best-effort sin seek. Sin autoplay.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { speak, ttsAvailable, type KaraokeHandle } from "@/infrastructure/tts/web-speech-tts";
-import { edgeTtsAvailable, synthesizeEdge } from "@/infrastructure/tts/edge-tts";
+import { neuralSpeechAvailable, synthesizeSpeech } from "@/infrastructure/tts/neural-speech";
 import type { WordTiming } from "@/domain/ai/llm-port";
 import type { VoiceGender } from "@/domain/chat-settings/chat-settings";
 import { hasSpeakableContent } from "@/domain/tts/speakable-text";
@@ -33,7 +33,7 @@ export interface Karaoke {
   playing: boolean;
   loading: boolean;
   available: boolean;
-  /** Con Edge (audio real) se puede saltar a una oración; con Web Speech no. */
+  /** Con audio real (Edge/Kokoro) se puede saltar a una oración; con Web Speech no. */
   canSeek: boolean;
   play(): void;
   /** Reproduce desde el inicio de la oración i (repetible sin límite). */
@@ -84,7 +84,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
   // Sintetiza una sola vez por texto y cachea audio+timings (repetir = seek).
   const ensureAudio = useCallback(async (): Promise<HTMLAudioElement | null> => {
     if (audioRef.current) return audioRef.current;
-    const { audioUrl, timings } = await synthesizeEdge(script.speakText, gender, voiceId);
+    const { audioUrl, timings } = await synthesizeSpeech(script.speakText, gender, voiceId);
     const audio = new Audio(audioUrl);
     timingsRef.current = timings;
     audio.ontimeupdate = () => {
@@ -107,7 +107,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
 
   const playFrom = useCallback(
     async (startTime: number, stopAt: number | null = null) => {
-      if (!edgeTtsAvailable()) return playWebSpeech();
+      if (!neuralSpeechAvailable()) return playWebSpeech();
       setLoading(true);
       try {
         const audio = await ensureAudio();
@@ -117,7 +117,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
         setPlaying(true);
         await audio.play();
       } catch {
-        playWebSpeech(); // sin red / fallo Edge → voz local
+        playWebSpeech(); // sin voz neuronal (o aún descargando Kokoro) → Web Speech
       } finally {
         setLoading(false);
       }
@@ -130,7 +130,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
       const sentence = script.sentences[i];
       if (!sentence || sentence.wordCount === 0) return;
       // Garantiza timings (primer clic sintetiza) y reproduce SOLO esa oración.
-      if (!edgeTtsAvailable()) return playWebSpeech();
+      if (!neuralSpeechAvailable()) return playWebSpeech();
       setLoading(true);
       try {
         await ensureAudio();
@@ -171,7 +171,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
     activeWord,
     playing,
     loading,
-    available: speakable && (edgeTtsAvailable() || ttsAvailable()),
+    available: speakable && (neuralSpeechAvailable() || ttsAvailable()),
     canSeek,
     play: () => void playFrom(0),
     playSentence,
