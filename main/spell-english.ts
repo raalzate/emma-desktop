@@ -45,7 +45,7 @@ export function loadEnglishSpeller(): EnglishSpeller {
 /**
  * Sustituye las sugerencias del SO por las del diccionario inglés. Si el SO
  * subrayó una palabra que en inglés es correcta, se marca `correctInEnglish`
- * para que el menú lo diga en vez de ofrecer "Sin sugerencias".
+ * para que el menú lo diga en vez de ofrecer "No Suggestions".
  */
 export function toEnglishSpellParams(params: SpellCheckParams, speller: EnglishSpeller): SpellCheckParams {
   if (!params.misspelledWord) return params;
