@@ -313,6 +313,6 @@ describe("autoevaluación retirada (#208)", () => {
 describe("motor de voz compartido", () => {
   it("useKaraoke descarta el audio cacheado cuando cambia el texto", () => {
     const src = fs.readFileSync(path.join(process.cwd(), "src/components/chat/use-karaoke.ts"), "utf8");
-    expect(src).toMatch(/audioRef\.current = null;[\s\S]*\[script\.speakText, gender, voiceId\]/);
+    expect(src).toMatch(/playerRef\.current = null;[\s\S]*\[script\.speakText, gender, voiceId\]/);
   });
 });

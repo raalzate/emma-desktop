@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { createKokoroService, pickDevice, type KokoroEngine, type KokoroAudio } from "../kokoro-tts";
+import { createKokoroService, type KokoroEngine, type KokoroAudio } from "../kokoro-tts";
 
-function fakeAudio(seconds: number, rate = 24000): KokoroAudio {
-  return { audio: new Float32Array(Math.round(seconds * rate)), sampling_rate: rate, toBlob: () => new Blob(["wav"]) };
+function fakeAudio(seconds: number): KokoroAudio {
+  return { duration: seconds, toBlob: () => new Blob(["wav"]) };
 }
 
 function service(over: { engine?: KokoroEngine; load?: () => Promise<KokoroEngine> } = {}) {
@@ -11,14 +11,6 @@ function service(over: { engine?: KokoroEngine; load?: () => Promise<KokoroEngin
   const svc = createKokoroService({ load, toUrl: () => "blob:fake" });
   return { svc, engine, load };
 }
-
-describe("pickDevice", () => {
-  it("usa webgpu si el navegador lo expone y wasm si no", () => {
-    expect(pickDevice({ gpu: {} })).toBe("webgpu");
-    expect(pickDevice({})).toBe("wasm");
-    expect(pickDevice(undefined)).toBe("wasm");
-  });
-});
 
 describe("createKokoroService", () => {
   it("sintetiza y devuelve la URL del audio con timings que cubren la duración", async () => {
@@ -85,5 +77,18 @@ describe("createKokoroService", () => {
     const { svc } = service({ engine: { generate } });
     await expect(svc.synthesize("a", "af_heart")).rejects.toThrow("boom");
     await expect(svc.synthesize("b", "af_heart")).resolves.toBeDefined();
+  });
+
+  it("si el motor quedó muerto (el worker cayó), la siguiente síntesis recarga en vez de reusarlo", async () => {
+    let muerto = false;
+    const vivo: KokoroEngine = { generate: async () => fakeAudio(1), isDead: () => muerto };
+    const nuevo: KokoroEngine = { generate: async () => fakeAudio(1) };
+    const load = vi.fn().mockResolvedValueOnce(vivo).mockResolvedValue(nuevo);
+    const { svc } = service({ load });
+    await svc.synthesize("a", "af_heart");
+    muerto = true;
+    expect(svc.state()).toBe("idle");
+    await svc.synthesize("b", "af_heart");
+    expect(load).toHaveBeenCalledTimes(2);
   });
 });
