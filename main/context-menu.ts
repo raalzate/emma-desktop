@@ -46,24 +46,24 @@ export function buildContextMenuTemplate(
       }
     } else if (params.correctInEnglish) {
       // El SO (en español) subrayó una palabra inglesa válida: decirlo evita que el aprendiz la "arregle".
-      template.push({ label: 'Correcta en inglés', enabled: false });
+      template.push({ label: 'Correct in English', enabled: false });
     } else {
       // Silenciar el caso vacío dejaba el mismo menú que sin error: hay que decirlo.
-      template.push({ label: 'Sin sugerencias', enabled: false });
+      template.push({ label: 'No Suggestions', enabled: false });
     }
     template.push({ type: 'separator' });
     template.push({
-      label: 'Agregar al diccionario',
+      label: 'Add to Dictionary',
       click: () => actions.addToDictionary(params.misspelledWord),
     });
     template.push({ type: 'separator' });
   }
 
   template.push(
-    { label: 'Cortar', role: 'cut', enabled: params.editFlags.canCut },
-    { label: 'Copiar', role: 'copy', enabled: params.editFlags.canCopy },
-    { label: 'Pegar', role: 'paste', enabled: params.editFlags.canPaste },
-    { label: 'Seleccionar todo', role: 'selectAll' }
+    { label: 'Cut', role: 'cut', enabled: params.editFlags.canCut },
+    { label: 'Copy', role: 'copy', enabled: params.editFlags.canCopy },
+    { label: 'Paste', role: 'paste', enabled: params.editFlags.canPaste },
+    { label: 'Select All', role: 'selectAll' }
   );
 
   return template;

@@ -25,7 +25,7 @@ describe('buildContextMenuTemplate', () => {
       actions()
     );
     expect(labels(template).slice(0, 2)).toEqual(['architect', 'architects']);
-    expect(labels(template)).toContain('Agregar al diccionario');
+    expect(labels(template)).toContain('Add to Dictionary');
   });
 
   it('aplica la sugerencia elegida sobre la palabra mal escrita', () => {
@@ -44,7 +44,7 @@ describe('buildContextMenuTemplate', () => {
       { ...baseParams, misspelledWord: 'Bogotá', dictionarySuggestions: [] },
       a
     );
-    const add = template.find((item) => item.label === 'Agregar al diccionario');
+    const add = template.find((item) => item.label === 'Add to Dictionary');
     add?.click?.(undefined as never, undefined as never, undefined as never);
     expect(a.addToDictionary).toHaveBeenCalledWith('Bogotá');
   });
@@ -54,7 +54,7 @@ describe('buildContextMenuTemplate', () => {
       { ...baseParams, misspelledWord: 'qwerty', dictionarySuggestions: [] },
       actions()
     );
-    const aviso = template.find((item) => item.label === 'Sin sugerencias');
+    const aviso = template.find((item) => item.label === 'No Suggestions');
     expect(aviso?.enabled).toBe(false);
   });
 
@@ -72,7 +72,7 @@ describe('buildContextMenuTemplate', () => {
 
   it('sin palabra mal escrita deja sólo las acciones de edición', () => {
     const template = buildContextMenuTemplate(baseParams, actions());
-    expect(labels(template)).toEqual(['Cortar', 'Copiar', 'Pegar', 'Seleccionar todo']);
+    expect(labels(template)).toEqual(['Cut', 'Copy', 'Paste', 'Select All']);
   });
 
   it('deshabilita las acciones que el foco no permite', () => {
@@ -81,9 +81,9 @@ describe('buildContextMenuTemplate', () => {
       actions()
     );
     const porEtiqueta = Object.fromEntries(template.map((i) => [i.label, i.enabled]));
-    expect(porEtiqueta['Cortar']).toBe(false);
-    expect(porEtiqueta['Copiar']).toBe(false);
-    expect(porEtiqueta['Pegar']).toBe(true);
+    expect(porEtiqueta['Cut']).toBe(false);
+    expect(porEtiqueta['Copy']).toBe(false);
+    expect(porEtiqueta['Paste']).toBe(true);
   });
 });
 
@@ -93,7 +93,7 @@ describe('buildContextMenuTemplate · veredicto del diccionario inglés', () => 
       { ...baseParams, misspelledWord: 'deploy', dictionarySuggestions: [], correctInEnglish: true },
       actions()
     );
-    expect(labels(template)).toContain('Correcta en inglés');
-    expect(labels(template)).not.toContain('Sin sugerencias');
+    expect(labels(template)).toContain('Correct in English');
+    expect(labels(template)).not.toContain('No Suggestions');
   });
 });

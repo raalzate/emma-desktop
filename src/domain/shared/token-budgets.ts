@@ -12,6 +12,8 @@ export const LLM_DEFAULT_MAX_TOKENS = 500;
 export const CHAT_MAX_TOKENS = 512;
 /** Etiqueta del turno del aprendiz (JSON de una línea): LLM juzga, código decide. */
 export const OBSERVE_MAX_TOKENS = 80;
+/** Veredicto del juez de fidelidad de escena: un JSON corto. */
+export const FIDELITY_MAX_TOKENS = 60;
 export const WELCOME_MAX_TOKENS = 150;
 export const COMPREHEND_MAX_TOKENS = 50;
 /** Red de extracción estricta del onboarding: un valor o NONE, nada más. */

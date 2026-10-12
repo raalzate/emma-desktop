@@ -115,6 +115,12 @@ export interface RunChatTurnArgs {
   /** Verify del loop: false ⇒ la respuesta se rechaza y se reintenta. */
   validateReply?: (reply: string) => boolean;
   /**
+   * Juez de escena asíncrono (fail-open): tras la limpieza, rechaza la línea que
+   * contradice los hechos o se sale del rol. Aplica al primer y segundo intento;
+   * la reformulación es la propia línea anterior y no se juzga.
+   */
+  judgeReply?: (reply: string) => Promise<{ inScene: boolean; issue: string | null }>;
+  /**
    * Turno de REPARACIÓN: el aprendiz no siguió a la persona y la orden es decir
    * lo mismo con palabras más simples. Los guardias anti-repetición no pueden
    * vetar eso — vetaban las dos generaciones y el turno caía en la recuperación
@@ -155,6 +161,15 @@ function cleanReply(
 const RETRY_NUDGE =
   "\n\nYour previous reply was rejected (meta text, repetition, or wrong language). " +
   "Reply again: ONE short, natural spoken line as your character, with different wording.";
+
+/** Nudge del reintento cuando el juez sacó la línea de la escena: nombra el problema. */
+function sceneNudge(issue: string | null): string {
+  return (
+    `\n\nYour previous reply left the scene (${issue ?? "off-scene"}). ` +
+    "Stay inside the SCENE FACTS and your role, and answer the learner's last message. " +
+    "Reply again: ONE short, natural spoken line as your character."
+  );
+}
 
 /**
  * Compuerta de streaming (BUG-001): la UI mostraba los tokens crudos ANTES del
@@ -220,6 +235,17 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
     if (cleaned && args.validateReply && !args.validateReply(cleaned)) return "";
     return cleaned;
   };
+  /** Limpia y pasa por el juez; si éste rechaza devuelve "" y el problema. */
+  const accept = async (raw: string): Promise<{ text: string; issue: string | null }> => {
+    const text = clean(raw);
+    if (!text || !args.judgeReply) return { text, issue: null };
+    try {
+      const verdict = await args.judgeReply(text);
+      return verdict.inScene ? { text, issue: null } : { text: "", issue: verdict.issue };
+    } catch {
+      return { text, issue: null };
+    }
+  };
   const generation = args.llm({
     prompt,
     system: args.system,
@@ -233,22 +259,23 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
     if (tokens.length === 0) return FALLBACK;
     return clean(tokens.join("")) || FALLBACK;
   }
-  const firstTry = clean(result);
-  if (firstTry) return firstTry;
+  const first = await accept(result);
+  if (first.text) return first.text;
   if (!result.trim()) return FALLBACK;
+  const nudge = first.issue ? sceneNudge(first.issue) : RETRY_NUDGE;
   // Loop de validación (BUG-001): la generación fue basura (meta/fuga/repetición)
   // → UN reintento con nudge correctivo, sin streaming (la burbuja espera el final).
   const retry = await withTimeout(
     args.llm({
-      prompt: prompt + RETRY_NUDGE,
+      prompt: prompt + nudge,
       system: args.system,
       maxTokens: CHAT_MAX_TOKENS,
       sessionId: args.sessionId,
     }),
     LLM_TIMEOUT_SECONDS * 1000,
   );
-  const secondTry = retry === TIMEOUT ? "" : clean(retry);
-  if (secondTry) return secondTry;
+  const second = retry === TIMEOUT ? { text: "" } : await accept(retry);
+  if (second.text) return second.text;
   const lastAssistantLine = previousAssistant[previousAssistant.length - 1] ?? "";
   // TERCER intento con contexto recortado: reformular la propia línea. Es el
   // pedido más fácil que existe para el modelo y mantiene el hilo; se limpia en
