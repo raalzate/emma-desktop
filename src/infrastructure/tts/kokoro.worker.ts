@@ -13,6 +13,7 @@
 import { createKokoroWorkerHandler, type WorkerEngine } from "./kokoro-worker-core";
 import type { WorkerResponse } from "./kokoro-protocol";
 import type { KokoroTTS } from "kokoro-js";
+import { configureOrtWasm } from "@/infrastructure/ort/ort-wasm";
 
 const MODEL_ID = "onnx-community/Kokoro-82M-v1.0-ONNX";
 
@@ -25,6 +26,8 @@ interface WorkerScope {
 }
 
 async function loadEngine(): Promise<WorkerEngine> {
+  const { env } = await import("@huggingface/transformers");
+  configureOrtWasm(env); // el WASM sale de la app, no de un CDN (#247)
   const { KokoroTTS } = await import("kokoro-js");
   const tts = await KokoroTTS.from_pretrained(MODEL_ID, { dtype: "fp32", device: "wasm" });
   return {

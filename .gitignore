@@ -11,6 +11,9 @@
 /.next/
 /out/
 
+# runtime WASM de onnxruntime: se copia en cada build (scripts/copy-ort-wasm.mjs)
+/public/ort/
+
 # production
 /build
 

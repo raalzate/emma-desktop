@@ -6,6 +6,8 @@
  * El import es dinámico para no cargar el runtime pesado hasta el primer uso.
  */
 
+import { configureOrtWasm } from "@/infrastructure/ort/ort-wasm";
+
 let pipelinePromise: Promise<any> | null = null;
 
 const MODEL_ID = "Xenova/whisper-base"; // equivalente al "base" de faster-whisper
@@ -13,7 +15,8 @@ const MODEL_ID = "Xenova/whisper-base"; // equivalente al "base" de faster-whisp
 async function getPipeline(): Promise<any> {
   if (pipelinePromise) return pipelinePromise;
   pipelinePromise = (async () => {
-    const { pipeline } = await import("@huggingface/transformers");
+    const { pipeline, env } = await import("@huggingface/transformers");
+    configureOrtWasm(env); // el WASM sale de la app, no de un CDN (#247)
     return pipeline("automatic-speech-recognition", MODEL_ID);
   })();
   pipelinePromise.catch(() => {
