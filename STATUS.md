@@ -4,7 +4,7 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-10-09
+- **Fecha del último gate completo:** 2026-10-12
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
@@ -17,15 +17,17 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1 sigue en BORRADOR con sus 3
   instaladores. Publicar un borrador sigue siendo gesto del humano.
 - **Pendiente de #195:** T7 (#203), vistas de PFA (requiere la app conectada).
-- **En `main` sin release (#206, PR #214, 2026-10-09):** subir de nivel escribe
-  `profile.englishLevel` y archiva el historial del nivel superado («Archived», solo
-  lectura); autoevaluación retirada; la UI muestra «Level 1–5» (CEFR solo interno);
-  prácticas con `motion` vía `src/components/motion/`; el cierre asigna solo las lecciones
-  y lleva a «My lessons» o pregunta practicar/continuar. Convive con la gamificación
-  (merge verificado: XP en los 6 puntos de cableado). Instantánea «Ruta y progresión»
-  reescrita; el lienzo de PFA (esa vista y «Simulación y feedback») sigue pendiente (#213).
-  `main` va por delante de v0.8.1: lo que se descarga hoy aún muestra autoevaluación y
-  niveles CEFR.
+- **v0.9.0 en preparación (2026-10-12, tag pendiente de build; publicar = gesto del humano):**
+  cierre guiado y niveles propios (#206, PR #214), Teach me en columna lateral, frases
+  clave en la franja SCENE (#228, PR #240), «Level up!» interactivo sobre la lección y
+  menús nativos en inglés (#239, PR #241), juez de escena que regenera la línea de la
+  persona si contradice los hechos o el rol (#229, PR #242) y voz neuronal local Kokoro
+  como respaldo de Edge-TTS (#230, PR #243). Edge-TTS da 403 desde ~2026-10-10 (token
+  `Sec-MS-GEC` de Microsoft, rany2/edge-tts#490): la cadena es Edge ⇒ Kokoro ⇒ Web Speech.
+  Verificado en la app real (build de producción por CDP): Kokoro suena con WebGPU (~1,4 s
+  al primer sonido) y el karaoke resalta; «Keep going» responde sobre la lección.
+  Pendiente: lienzo de PFA de «Turno de chat», «Voz y pronunciación», «Ruta y
+  progresión» y «Simulación y feedback» (#213; app no conectada).
 - **Milestone v0.5.0 fusionado (2026-09-25):** lección en karaoke con audio al lado, escena
   visible en modal durante el chat, correcciones triviales fuera del feedback, gramática con
   tres formas y verbos resaltados, lista de lecciones («Mis lecciones» en Práctica), turnos
