@@ -213,3 +213,19 @@ Regla:   todo script npm/pnpm citado en docs y hooks existe en `package.json`; t
 Mecanismo: `node scripts/docs-linkcheck.mjs` (señal del gate) — frenos «script npm/pnpm citado»
   y «artículo BLOCKING sin freno» (`docs.scriptRefs` y `docs.constitution` del config), cada uno
   con su caso en `scripts/harness-selftest.mjs` (3i, 3j).
+
+---
+
+### GOTCHA: la voz local Kokoro tardaba 2-16 s con Gemma cargada y la app se cerró sin dejar rastro
+
+Síntoma: v0.9.0, perfil real: Kokoro (WebGPU, fp32) tardaba 2-16 s al primer sonido, a veces no sonaba
+  y la app se cerró justo tras crear la sesión ONNX. Sin Gemma tardaba 1,4 s. El log no decía nada.
+Causa:   Kokoro y Gemma (LiteRT) competían por la GPU y por su memoria, y la síntesis del mensaje
+  ENTERO corría en el hilo de la UI. Main no registraba `render-process-gone` / `child-process-gone`,
+  así que un cierre no dejaba causa.
+Regla:   Kokoro corre en un Web Worker con WASM (CPU), nunca WebGPU; la nota se sintetiza por trozos
+  (primera oración primero). fp32 gana a q8 en WASM (q8 es más lento: ~2,2 contra ~1,6 s de cómputo por
+  s de audio); con crossOriginIsolated (hilos) la diferencia es 0,5 contra 1,0. Todo cierre de proceso
+  queda en el log con `reason` y `exitCode`.
+Mecanismo: `src/infrastructure/tts/__tests__/kokoro-worker-contrato.test.ts` (WASM en worker, `new URL`
+  empaquetable) y `main/__tests__/rastro-de-cierres.test.ts` (el log de cierres).
