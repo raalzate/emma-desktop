@@ -4,7 +4,10 @@ import { isDev, appServe } from './config';
 import { assetsDir } from './paths';
 import { loadProductionRenderer } from './load-renderer';
 import { buildContextMenuTemplate } from './context-menu';
+import { traceChildProcesses, traceRenderer } from './crash-trace';
 import { loadEnglishSpeller, toEnglishSpellParams, type EnglishSpeller } from './spell-english';
+
+let childProcessesTraced = false;
 
 /** Crea la ventana principal de EMMA y su menú nativo (ES). */
 export function createMainWindow(): BrowserWindow {
@@ -41,6 +44,13 @@ export function createMainWindow(): BrowserWindow {
   win.webContents.on('did-fail-load', (_e, code, desc, url) =>
     console.error(`[did-fail-load] ${code} ${desc} ${url}`)
   );
+
+  // Un cierre inesperado debe dejar rastro en el log (#245).
+  traceRenderer(win.webContents, (line) => console.error(line));
+  if (!childProcessesTraced) {
+    childProcessesTraced = true;
+    traceChildProcesses(app, (line) => console.error(line));
+  }
 
   if (process.env.EMMA_SMOKE === '1') wireSmokeProbe(win);
 
