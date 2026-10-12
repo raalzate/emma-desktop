@@ -18,6 +18,7 @@ import { personaFor } from "@/domain/personas/protopersona";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import { useTypewriter } from "./use-typewriter";
+import { SceneText } from "./scene-text";
 
 interface Props {
   scenario: Scenario;
@@ -104,7 +105,8 @@ export function SceneNarration({ scenario, situation, animate = true, onDone, na
                     : "text-foreground/75",
                 )}
               >
-                {text}
+                {/* El título ya va en negrita: resaltarlo lo partiría. */}
+                {beat.kind === "setting" && i === 0 ? text : <SceneText text={text} name={persona.name} />}
                 {typing && <Caret />}
               </p>
             </div>

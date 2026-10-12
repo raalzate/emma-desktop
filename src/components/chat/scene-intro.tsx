@@ -15,6 +15,7 @@ import { personaFor } from "@/domain/personas/protopersona";
 import { buildSceneBriefing } from "@/domain/situations/scene-briefing";
 import { characterLabel } from "@/domain/situations/character-label";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
+import { SceneText } from "./scene-text";
 
 interface Props {
   scenario: Scenario;
@@ -34,10 +35,12 @@ function SituationBriefing({
   situation,
   narrative,
   sceneReady,
+  personaName,
 }: {
   situation: SituationVariant;
   narrative: string | null;
   sceneReady: boolean;
+  personaName: string;
 }) {
   const briefing = buildSceneBriefing(situation);
   return (
@@ -65,7 +68,7 @@ function SituationBriefing({
               SCENE
             </span>
             <p className="text-sm italic leading-relaxed text-foreground/80">
-              {narrative ?? briefing.hypothetical}
+              <SceneText text={narrative ?? briefing.hypothetical} name={personaName} />
             </p>
           </div>
         )}
@@ -119,7 +122,12 @@ export function SceneIntro({ scenario, situation, level, maxTurns, starting, nar
             </div>
           </div>
           {situation && (
-            <SituationBriefing situation={situation} narrative={narrative} sceneReady={sceneReady} />
+            <SituationBriefing
+              situation={situation}
+              narrative={narrative}
+              sceneReady={sceneReady}
+              personaName={persona.name}
+            />
           )}
           <div className="flex items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
             <Badge variant="secondary">{levelLabel(level)}</Badge>
