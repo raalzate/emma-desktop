@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { speak, ttsAvailable, type KaraokeHandle } from "@/infrastructure/tts/web-speech-tts";
 import { neuralSpeechAvailable, synthesizeSpeech } from "@/infrastructure/tts/neural-speech";
+import type { SpeechEngine } from "@/infrastructure/tts/speech-chain";
 import { createChunkedPlayer, type ChunkedPlayer } from "@/infrastructure/tts/chunked-player";
 import { planSpeechChunks } from "@/domain/tts/speech-chunks";
 import type { WordTiming } from "@/domain/ai/llm-port";
@@ -38,6 +39,8 @@ export interface Karaoke {
   available: boolean;
   /** Con audio real (Edge/Kokoro) se puede saltar a una oración; con Web Speech no. */
   canSeek: boolean;
+  /** Motor que sonó: neuronal, "system" (Web Speech) o null antes de reproducir. */
+  engine: SpeechEngine | "system" | null;
   play(): void;
   /** Reproduce desde el inicio de la oración i (repetible sin límite). */
   playSentence(i: number): void;
@@ -56,6 +59,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [canSeek, setCanSeek] = useState(false);
+  const [engine, setEngine] = useState<Karaoke["engine"]>(null);
   const webHandle = useRef<KaraokeHandle | null>(null);
   const playerRef = useRef<ChunkedPlayer | null>(null);
 
@@ -72,6 +76,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
   const playWebSpeech = useCallback(() => {
     if (!ttsAvailable()) return setPlaying(false);
     setPlaying(true);
+    setEngine("system");
     webHandle.current = speak(script.speakText, {
       gender,
       onWord: setActiveWord,
@@ -102,6 +107,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
       throw error;
     }
     setCanSeek(true);
+    setEngine(player.engine());
     return player;
   }, [text, gender, voiceId]);
 
@@ -159,6 +165,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
       setPlaying(false);
       setActiveWord(-1);
       setCanSeek(false);
+      setEngine(null);
     },
     [script.speakText, gender, voiceId],
   );
@@ -171,6 +178,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
     loading,
     available: speakable && (neuralSpeechAvailable() || ttsAvailable()),
     canSeek,
+    engine,
     play: () => void playFrom(0),
     playSentence,
     stop,

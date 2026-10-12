@@ -12,7 +12,7 @@
 
 import type { WordTiming } from "@/domain/ai/llm-port";
 import { chunkIndexAtTime, offsetTimings, type SpeechChunk } from "@/domain/tts/speech-chunks";
-import type { Speech } from "./speech-chain";
+import type { Speech, SpeechEngine } from "./speech-chain";
 
 /** Lo mínimo que usamos de `HTMLAudioElement`. */
 export interface PlayerAudio {
@@ -38,6 +38,8 @@ export interface ChunkedPlayerDeps {
 export interface ChunkedPlayer {
   /** Resuelve con el primer trozo listo; rechaza si falla (usar Web Speech). */
   ready(): Promise<void>;
+  /** Motor del primer trozo sintetizado; null si aún no hay audio. */
+  engine(): SpeechEngine | null;
   /** Timings globales de los trozos ya sintetizados. */
   timings(): WordTiming[];
   /** Espera a que los timings cubran la palabra global i; rechaza si no llegará. */
@@ -70,6 +72,7 @@ export function createChunkedPlayer(deps: ChunkedPlayerDeps): ChunkedPlayer {
   let current = -1;
   let stopAt: number | null = null;
   let waitingNext = false;
+  let engine: SpeechEngine | null = null;
 
   let resolveReady!: () => void;
   let rejectReady!: (error: Error) => void;
@@ -141,6 +144,7 @@ export function createChunkedPlayer(deps: ChunkedPlayerDeps): ChunkedPlayer {
         break;
       }
       if (disposed) return;
+      engine ??= speech.engine;
       const part = makePart(speech);
       parts.push(part);
       timings.push(...offsetTimings(speech.timings, part.offset));
@@ -166,6 +170,7 @@ export function createChunkedPlayer(deps: ChunkedPlayerDeps): ChunkedPlayer {
 
   return {
     ready: () => (start(), readyPromise),
+    engine: () => engine,
     timings: () => timings,
     untilWord(i) {
       start();

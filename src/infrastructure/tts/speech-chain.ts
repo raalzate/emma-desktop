@@ -14,9 +14,18 @@
 import type { WordTiming } from "@/domain/ai/llm-port";
 import type { KokoroState } from "./kokoro-tts";
 
-export interface Speech {
+/** Motor neuronal que produjo el audio. */
+export type SpeechEngine = "edge" | "kokoro";
+
+/** Lo que devuelve cada motor: audio + timings, sin saber de la cadena. */
+export interface EngineSpeech {
   audioUrl: string;
   timings: WordTiming[];
+}
+
+export interface Speech extends EngineSpeech {
+  /** Motor que respondió realmente (la cadena lo sabe). */
+  engine: SpeechEngine;
 }
 
 export interface EdgeBreaker {
@@ -31,12 +40,12 @@ export function createEdgeBreaker(): EdgeBreaker {
 }
 
 export interface ChainDeps {
-  edge: { available(): boolean; synthesize(): Promise<Speech> };
+  edge: { available(): boolean; synthesize(): Promise<EngineSpeech> };
   kokoro: {
     available(): boolean;
     state(): KokoroState;
     warm(): Promise<void>;
-    synthesize(): Promise<Speech>;
+    synthesize(): Promise<EngineSpeech>;
   };
   breaker: EdgeBreaker;
   /** Tope de espera a la carga del modelo de Kokoro. */
@@ -49,7 +58,7 @@ const BUDGET_EXCEEDED = "Kokoro no estuvo listo dentro del presupuesto";
 async function tryEdge(deps: ChainDeps): Promise<Speech | null> {
   if (!deps.edge.available() || deps.breaker.tripped()) return null;
   try {
-    return await deps.edge.synthesize();
+    return { ...(await deps.edge.synthesize()), engine: "edge" };
   } catch {
     deps.breaker.trip();
     return null;
@@ -74,5 +83,5 @@ export async function synthesizeChain(deps: ChainDeps): Promise<Speech> {
 
   if (!deps.kokoro.available()) throw new Error("Sin voz neuronal disponible");
   await waitForModel(deps);
-  return deps.kokoro.synthesize();
+  return { ...(await deps.kokoro.synthesize()), engine: "kokoro" };
 }

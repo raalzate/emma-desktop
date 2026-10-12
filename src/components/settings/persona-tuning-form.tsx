@@ -22,6 +22,7 @@ import {
   loadPersonaTunings,
   savePersonaTuning,
 } from "@/infrastructure/persistence/persona-tuning-repository";
+import { PersonaVoiceSample } from "./persona-voice-sample";
 import { LabeledSelect } from "./labeled-select";
 import { PERSONA_TUNING_FIELDS } from "./personality-options";
 
@@ -90,6 +91,7 @@ export function PersonaTuningForm() {
             </Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">{persona.trait}</p>
+          <PersonaVoiceSample persona={persona} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">

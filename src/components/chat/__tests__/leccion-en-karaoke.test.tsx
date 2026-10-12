@@ -28,6 +28,7 @@ const karaoke = (over: Partial<Karaoke> = {}): Karaoke => ({
   loading: false,
   available: true,
   canSeek: true,
+  engine: "kokoro",
   play: vi.fn(),
   playSentence: vi.fn(),
   stop: vi.fn(),

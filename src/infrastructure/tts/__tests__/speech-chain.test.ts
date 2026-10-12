@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
-import { createEdgeBreaker, synthesizeChain, type ChainDeps, type Speech } from "../speech-chain";
+import { createEdgeBreaker, synthesizeChain, type ChainDeps, type EngineSpeech } from "../speech-chain";
 import type { KokoroState } from "../kokoro-tts";
 
-const speech = (tag: string): Speech => ({ audioUrl: `url:${tag}`, timings: [] });
+const speech = (tag: string): EngineSpeech => ({ audioUrl: `url:${tag}`, timings: [] });
 
 /** Cadena con fakes: Edge y Kokoro disponibles; el sleep nunca vence salvo que se pida. */
 function build(over: {
@@ -38,6 +38,20 @@ describe("createEdgeBreaker", () => {
 });
 
 describe("synthesizeChain", () => {
+  it("marca engine edge cuando responde Edge", async () => {
+    expect((await synthesizeChain(build())).engine).toBe("edge");
+  });
+
+  it("marca engine kokoro cuando Edge no está disponible", async () => {
+    const deps = build({ edge: { available: () => false } });
+    expect((await synthesizeChain(deps)).engine).toBe("kokoro");
+  });
+
+  it("marca engine kokoro cuando Edge falla", async () => {
+    const deps = build({ edge: { synthesize: vi.fn(async () => { throw new Error("403"); }) } });
+    expect((await synthesizeChain(deps)).engine).toBe("kokoro");
+  });
+
   it("usa Edge primero cuando responde", async () => {
     const deps = build();
     expect((await synthesizeChain(deps)).audioUrl).toBe("url:edge");

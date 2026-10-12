@@ -31,8 +31,8 @@ const chunks: SpeechChunk[] = [
 ];
 
 /** Speech de n palabras de 1 s cada una: dura n segundos. */
-function speechOf(url: string, words: number): Speech {
-  return { audioUrl: url, timings: Array.from({ length: words }, (_, i) => ({ word: `w${i}`, start: i, end: i + 1 })) };
+function speechOf(url: string, words: number, engine: Speech["engine"] = "kokoro"): Speech {
+  return { audioUrl: url, engine, timings: Array.from({ length: words }, (_, i) => ({ word: `w${i}`, start: i, end: i + 1 })) };
 }
 
 function deferred<T>() {
@@ -66,6 +66,15 @@ function setup() {
 }
 
 describe("createChunkedPlayer", () => {
+  it("engine() es null antes de sintetizar y el del primer trozo después", async () => {
+    const { player, jobs } = setup();
+    expect(player.engine()).toBeNull();
+    const ready = player.ready();
+    jobs.get(chunks[0].text)!.resolve(speechOf("a", 5, "edge"));
+    await ready;
+    expect(player.engine()).toBe("edge");
+  });
+
   it("sintetiza el primer trozo y solo después pide el siguiente", async () => {
     const { player, jobs, synthesize, flush } = setup();
     const ready = player.ready();
