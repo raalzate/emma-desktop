@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { PartyPopper, Sparkles, Target, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { XpAward } from "@/application/gamification/award-xp-use-case";
@@ -93,34 +94,39 @@ function ToastStack({ toasts, onClose }: { toasts: AchievementToast[]; onClose: 
   );
 }
 
+/**
+ * Dialog de Radix y no un `div` fijo: suele saltar ENCIMA del modal de la
+ * lección, que apaga los clics del `body` y atrapa el foco. Como capa Radix se
+ * apila arriba y es la única interactiva (Escape y clic afuera la cierran a
+ * ella, no a la lección). Sin Portal para que el render estático la incluya.
+ */
 function LevelUpCard({ level, onClose }: { level: PlayerLevel; onClose: () => void }) {
   return (
-    <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-background/70 backdrop-blur-sm motion-safe:animate-in motion-safe:fade-in"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Level up"
-      onClick={onClose}
-    >
-      <Confetti />
-      <div
-        className="relative flex w-80 flex-col items-center gap-4 rounded-bubble border border-border bg-card p-8 text-center shadow-2xl motion-safe:animate-pop-in"
-        onClick={(e) => e.stopPropagation()}
+    <DialogPrimitive.Root open onOpenChange={(open) => !open && onClose()}>
+      <DialogPrimitive.Content
+        aria-describedby={undefined}
+        className="fixed inset-0 z-[70] flex items-center justify-center bg-background/70 backdrop-blur-sm outline-none motion-safe:animate-in motion-safe:fade-in"
+        onClick={(e) => e.target === e.currentTarget && onClose()}
       >
-        <PartyPopper className="h-8 w-8 text-accent" aria-hidden />
-        <p className="font-code text-[11px] uppercase tracking-widest text-muted-foreground">Level up!</p>
-        <ProgressRing value={1} size={128} stroke={10} barClassName="stroke-accent">
-          <span className="font-headline text-5xl font-bold leading-none">{level.level}</span>
-        </ProgressRing>
-        <p className="font-headline text-2xl font-semibold">{level.title}</p>
-        <p className="text-sm text-muted-foreground">
-          {level.xpForLevel} XP to the next level. Keep practicing every day.
-        </p>
-        <Button title="Cerrar la celebración y seguir practicando" onClick={onClose} autoFocus>
-          Keep going
-        </Button>
-      </div>
-    </div>
+        <Confetti />
+        <div className="relative flex w-80 flex-col items-center gap-4 rounded-bubble border border-border bg-card p-8 text-center shadow-2xl motion-safe:animate-pop-in">
+          <PartyPopper className="h-8 w-8 text-accent" aria-hidden />
+          <DialogPrimitive.Title className="font-code text-[11px] font-normal uppercase tracking-widest text-muted-foreground">
+            Level up!
+          </DialogPrimitive.Title>
+          <ProgressRing value={1} size={128} stroke={10} barClassName="stroke-accent">
+            <span className="font-headline text-5xl font-bold leading-none">{level.level}</span>
+          </ProgressRing>
+          <p className="font-headline text-2xl font-semibold">{level.title}</p>
+          <p className="text-sm text-muted-foreground">
+            {level.xpForLevel} XP to the next level. Keep practicing every day.
+          </p>
+          <Button title="Cerrar la celebración y seguir practicando" onClick={onClose} autoFocus>
+            Keep going
+          </Button>
+        </div>
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Root>
   );
 }
 
@@ -168,15 +174,6 @@ export function CelebrationLayer() {
       pending.forEach(clearTimeout);
     };
   }, [later, closeToast]);
-
-  useEffect(() => {
-    if (!levelUp) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setLevelUp(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [levelUp]);
 
   return (
     <CelebrationLayerView
