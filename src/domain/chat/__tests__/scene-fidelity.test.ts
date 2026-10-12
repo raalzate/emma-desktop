@@ -53,6 +53,7 @@ describe("parseFidelity", () => {
     expect(parseFidelity('{"inScene":false,"issue":"wrong-role"}')).toEqual({
       inScene: false,
       issue: "wrong-role",
+      source: "judge",
     });
   });
 
@@ -60,6 +61,7 @@ describe("parseFidelity", () => {
     expect(parseFidelity('Sure: {"inScene":true,"issue":null} done')).toEqual({
       inScene: true,
       issue: null,
+      source: "judge",
     });
   });
 
@@ -69,13 +71,14 @@ describe("parseFidelity", () => {
     ["JSON roto", '{"inScene":'],
     ["inScene no booleano", '{"inScene":"no","issue":null}'],
   ])("falla abierto con salida inválida: %s", (_n, raw) => {
-    expect(parseFidelity(raw)).toEqual({ inScene: true, issue: null });
+    expect(parseFidelity(raw)).toEqual({ inScene: true, issue: null, source: "fail-open" });
   });
 
   it("un rechazo con issue desconocido cae a breaks-fiction", () => {
     expect(parseFidelity('{"inScene":false,"issue":"zzz"}')).toEqual({
       inScene: false,
       issue: "breaks-fiction",
+      source: "judge",
     });
   });
 
@@ -83,6 +86,7 @@ describe("parseFidelity", () => {
     expect(parseFidelity('{"inScene":true,"issue":"wrong-role"}')).toEqual({
       inScene: true,
       issue: null,
+      source: "judge",
     });
   });
 });

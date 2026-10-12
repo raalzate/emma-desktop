@@ -26,7 +26,7 @@ describe("juez de escena en use-chat-session", () => {
   it("chatTurn recibe judgeReply que llama al juez del runtime", () => {
     const call = chatTurnCall();
     expect(call).toMatch(/judgeReply:/);
-    expect(call).toMatch(/runtime\.judgeSceneFidelity\(/);
+    expect(call).toMatch(/runtime\s*\.judgeSceneFidelity\(/);
   });
 
   it("juzga con los hechos del contrato y, sin contrato, con el framing de la situación", () => {
@@ -42,6 +42,13 @@ describe("juez de escena en use-chat-session", () => {
   it("los hechos vigentes están en las dependencias del callback de envío", () => {
     const deps = hook.slice(hook.indexOf("[busy, messages, turnCount, runtime"));
     expect(deps.slice(0, deps.indexOf("]"))).toMatch(/contract/);
+  });
+
+  it("el fallback del juez queda observable en dev (aviso en consola)", () => {
+    const call = chatTurnCall();
+    expect(call).toMatch(/source === "fail-open"/);
+    expect(call).toMatch(/NODE_ENV !== "production"/);
+    expect(call).toMatch(/console\.warn\("\[escena\] juez de escena no respondio/);
   });
 
   it("la respuesta final reemplaza el texto en streaming", () => {

@@ -11,8 +11,9 @@ import type { LlmGenerate } from "@/domain/ai/llm-port";
 import {
   buildFidelityPrompt,
   detectTimeDrift,
-  IN_SCENE,
+  FAIL_OPEN,
   parseFidelity,
+  TIME_DRIFT,
   type FidelityVerdict,
 } from "@/domain/chat/scene-fidelity";
 import { FIDELITY_MAX_TOKENS } from "@/domain/shared/token-budgets";
@@ -33,8 +34,8 @@ export interface JudgeSceneFidelityArgs {
 export async function judgeSceneFidelity(args: JudgeSceneFidelityArgs): Promise<FidelityVerdict> {
   const { llm, facts, reply } = args;
   // Sin hechos no hay contra qué juzgar.
-  if (!facts.trim()) return IN_SCENE;
-  if (detectTimeDrift(reply, facts)) return { inScene: false, issue: "contradicts-facts" };
+  if (!facts.trim()) return FAIL_OPEN;
+  if (detectTimeDrift(reply, facts)) return TIME_DRIFT;
   const prompt = buildFidelityPrompt({ ...args, facts, reply });
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<null>((resolve) => {
@@ -42,9 +43,9 @@ export async function judgeSceneFidelity(args: JudgeSceneFidelityArgs): Promise<
   });
   try {
     const raw = await Promise.race([llm({ prompt, maxTokens: FIDELITY_MAX_TOKENS }), timeout]);
-    return raw === null ? IN_SCENE : parseFidelity(raw);
+    return raw === null ? FAIL_OPEN : parseFidelity(raw);
   } catch {
-    return IN_SCENE;
+    return FAIL_OPEN;
   } finally {
     clearTimeout(timer);
   }

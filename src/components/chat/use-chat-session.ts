@@ -402,13 +402,22 @@ export function useChatSession(d: Deps) {
         // o sale del rol; sin contrato rige el framing de la situación.
         judgeReply: (r) => {
           const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
-          return runtime.judgeSceneFidelity({
-            facts: contract?.facts || situation?.framingDescription || "",
-            personaName: persona.name,
-            personaRole: persona.role,
-            situationTitle: situation?.title ?? "",
-            reply: r,
-          });
+          return runtime
+            .judgeSceneFidelity({
+              facts: contract?.facts || situation?.framingDescription || "",
+              personaName: persona.name,
+              personaRole: persona.role,
+              situationTitle: situation?.title ?? "",
+              reply: r,
+            })
+            .then((verdict) => {
+              if (verdict.source === "fail-open" && process.env.NODE_ENV !== "production") {
+                // Visible en la consola de dev: si esto aparece en cada turno, el
+                // juez no está corriendo (timeout o cola del motor) y no protege.
+                console.warn("[escena] juez de escena no respondio: linea aceptada sin juzgar", verdict);
+              }
+              return verdict;
+            });
         },
         // Reparación: la orden es decir lo mismo más simple, así que los
         // guardias anti-repetición no pueden vetar la respuesta (si lo hacen,

@@ -11,9 +11,13 @@ import { extractTimes } from "@/domain/chat/scene-highlights";
 
 export type FidelityIssue = "contradicts-facts" | "wrong-role" | "other-scene" | "breaks-fiction";
 
+/** Quién respondió: el juez LLM, el chequeo de horas o el fail-open (nadie juzgó). */
+export type FidelitySource = "judge" | "time-check" | "fail-open";
+
 export interface FidelityVerdict {
   inScene: boolean;
   issue: FidelityIssue | null;
+  source: FidelitySource;
 }
 
 export const ISSUES: readonly FidelityIssue[] = [
@@ -23,8 +27,15 @@ export const ISSUES: readonly FidelityIssue[] = [
   "breaks-fiction",
 ];
 
-/** Veredicto neutro: ante la duda se acepta la línea. */
-export const IN_SCENE: FidelityVerdict = { inScene: true, issue: null };
+/** Veredicto neutro: ante la duda se acepta la línea, y se declara que nadie juzgó. */
+export const FAIL_OPEN: FidelityVerdict = { inScene: true, issue: null, source: "fail-open" };
+
+/** Rechazo del chequeo determinista de horas. */
+export const TIME_DRIFT: FidelityVerdict = {
+  inScene: false,
+  issue: "contradicts-facts",
+  source: "time-check",
+};
 
 export interface FidelityPromptArgs {
   facts: string;
@@ -62,17 +73,17 @@ function extractJsonObject(raw: string): string | null {
 /** Parsea el veredicto del juez; cualquier salida inválida ⇒ en escena. */
 export function parseFidelity(raw: string): FidelityVerdict {
   const json = extractJsonObject(raw);
-  if (!json) return IN_SCENE;
+  if (!json) return FAIL_OPEN;
   let data: unknown;
   try {
     data = JSON.parse(json);
   } catch {
-    return IN_SCENE;
+    return FAIL_OPEN;
   }
-  if (!isRecord(data) || typeof data.inScene !== "boolean") return IN_SCENE;
-  if (data.inScene) return IN_SCENE;
+  if (!isRecord(data) || typeof data.inScene !== "boolean") return FAIL_OPEN;
+  if (data.inScene) return { inScene: true, issue: null, source: "judge" };
   const issue = ISSUES.find((i) => i === data.issue) ?? "breaks-fiction";
-  return { inScene: false, issue };
+  return { inScene: false, issue, source: "judge" };
 }
 
 /**
