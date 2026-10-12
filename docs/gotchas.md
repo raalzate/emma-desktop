@@ -152,7 +152,9 @@ Causa:   el motor local procesa UNA generación a la vez. `send` encolaba el che
 Regla:   toda pieza con fallback silencioso declara quién respondió (`source`) y el
   fallback se ve en la consola de dev; el juez corre primero en la cola del motor.
 Mecanismo: `src/components/chat/__tests__/juez-antes-que-gramatica.test.ts` — falla si el
-  orden se invierte o si el aviso de fallback desaparece. Los invariantes de conversación
+  orden se invierte o si el aviso de fallback desaparece. El juez de escena sigue la misma
+  regla: `FidelityVerdict.source` y el aviso `[escena] juez de escena no respondio` (sin tildes: `ui-en-ingles.test.ts` las lee como copy en español) los
+  fija `juez-de-escena-cableado.test.ts`. Los invariantes de conversación
   (`conversacion-invariantes.test.ts`) fijan además el piso que la red garantiza sola.
 
 ---

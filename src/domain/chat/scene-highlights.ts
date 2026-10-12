@@ -80,6 +80,15 @@ function merge(spans: Span[]): Span[] {
   return out;
 }
 
+/** Horas del texto normalizadas ("2 PM" y "2:00pm" son la misma: "2:00pm"). */
+export function extractTimes(text: string): string[] {
+  return [...text.matchAll(TIME)].map((m) => {
+    const compact = m[0].toLowerCase().replace(/[\s.]/g, "");
+    const [, hour, minutes = "00", meridiem] = compact.match(/^(\d{1,2})(?::(\d{2}))?([ap]m)$/) ?? [];
+    return `${hour}:${minutes}${meridiem}`;
+  });
+}
+
 /** Parte *text* en segmentos; los `key` son las frases a resaltar. */
 export function highlightScenePhrases(text: string, names: string[]): SceneSegment[] {
   if (!text) return [];
