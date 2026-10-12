@@ -1,5 +1,5 @@
 /**
- * TTS local vía Web Speech API (`speechSynthesis`) — reemplaza a edge-tts.
+ * TTS local vía Web Speech API (`speechSynthesis`) — respaldo de Kokoro.
  *
  * Corre en el SO del usuario (offline en macOS/Windows). Los eventos `boundary`
  * dan el índice de carácter + tiempo transcurrido, con lo que sincronizamos el

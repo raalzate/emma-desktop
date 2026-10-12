@@ -3,7 +3,7 @@ import { kokoroVoiceFor } from "../kokoro-voice";
 import { PROTOPERSONAS } from "@/domain/personas/protopersona";
 
 describe("kokoroVoiceFor", () => {
-  it("Emma (voz Edge reservada) usa af_heart", () => {
+  it("Emma (clave de voz reservada) usa af_heart", () => {
     expect(kokoroVoiceFor("en-US-EmmaNeural", "feminine")).toBe("af_heart");
   });
 
@@ -43,7 +43,7 @@ describe("kokoroVoiceFor", () => {
     expect(new Set(voices).size).toBeGreaterThanOrEqual(Math.ceil(voices.length / 2));
   });
 
-  it("sin id Edge reconocible cae al acento estadounidense", () => {
+  it("sin id de voz reconocible cae al acento estadounidense", () => {
     expect(kokoroVoiceFor("raro", "masculine")).toMatch(/^am_/);
   });
 });

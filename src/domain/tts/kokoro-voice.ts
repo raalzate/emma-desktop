@@ -1,14 +1,14 @@
 /**
- * Mapeo de la voz Edge-TTS de una persona a una voz Kokoro del mismo género y
- * acento cercano. `af_heart` es de Emma (voz Edge reservada) y ninguna otra
- * persona la recibe. La elección dentro del grupo es un hash del id Edge, para
+ * Mapeo de la clave de voz (`en-US-…Neural`) de una persona a una voz Kokoro del mismo género y
+ * acento cercano. `af_heart` es de Emma (clave de voz reservada) y ninguna otra
+ * persona la recibe. La elección dentro del grupo es un hash del id de voz, para
  * que sea estable y personas distintas tiendan a voces distintas.
  */
 
 import type { VoiceGender } from "@/domain/chat-settings/chat-settings";
 
 export const EMMA_KOKORO_VOICE = "af_heart";
-const EMMA_EDGE_VOICE = "en-US-EmmaNeural";
+const EMMA_VOICE_KEY = "en-US-EmmaNeural";
 
 const POOLS = {
   usFemale: ["af_bella", "af_nicole", "af_sarah", "af_sky", "af_nova", "af_river", "af_jessica", "af_kore", "af_alloy", "af_aoede"],
@@ -24,13 +24,13 @@ function hash(text: string): number {
   return h;
 }
 
-export function kokoroVoiceFor(edgeVoiceId?: string, gender?: VoiceGender): string {
+export function kokoroVoiceFor(voiceId?: string, gender?: VoiceGender): string {
   const feminine = gender !== "masculine";
-  if (feminine && (!edgeVoiceId || edgeVoiceId === EMMA_EDGE_VOICE)) return EMMA_KOKORO_VOICE;
+  if (feminine && (!voiceId || voiceId === EMMA_VOICE_KEY)) return EMMA_KOKORO_VOICE;
 
-  const british = /^en-GB-/i.test(edgeVoiceId ?? "");
+  const british = /^en-GB-/i.test(voiceId ?? "");
   const pool = british
     ? feminine ? POOLS.gbFemale : POOLS.gbMale
     : feminine ? POOLS.usFemale : POOLS.usMale;
-  return pool[hash(edgeVoiceId ?? "") % pool.length];
+  return pool[hash(voiceId ?? "") % pool.length];
 }

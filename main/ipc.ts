@@ -22,7 +22,6 @@ import {
   openDownloadPage,
 } from './services/auto-update';
 import { storeGet, storeSet } from './services/store';
-import { synthesizeTts } from './services/tts';
 
 /**
  * IPC del proceso main de EMMA. La IA local (Gemma) corre en el RENDERER
@@ -50,11 +49,6 @@ export function registerIpcHandlers(): void {
 
   // --- Info del sistema (vista de Configuración) ---
   ipcMain.handle('system-info', async () => getSystemInfo());
-
-  // --- TTS Edge (voz de Emma + timings de karaoke) ---
-  ipcMain.handle('tts-synthesize', async (_e, text: string, voice?: string) =>
-    synthesizeTts(text, voice)
-  );
 
   // --- Almacén JSON de datos del usuario (perfil, progreso, sesiones…) ---
   ipcMain.handle('store-get', async (_e, key: string) => storeGet(key));

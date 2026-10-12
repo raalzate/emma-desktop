@@ -23,8 +23,6 @@ flowchart LR
   end
   subgraph agg_Voz_de_Emma["Voz de Emma"]
     ini_play(("Pulsa reproducir<br><i>Evento de Inicio</i>"))
-    voz_en_linea("Prueba la voz en línea<br><i>Tarea</i>")
-    gw_en_linea{"¿Respondió la voz en línea?<br><i>Compuerta Exclusiva</i>"}
     voz_neuronal("Voz neuronal en el equipo<br><i>Tarea</i>")
     voz_sistema("Voz del sistema<br><i>Tarea</i>")
     fin_escucha(("Escucha a Emma<br><i>Evento de Fin</i>"))
@@ -44,10 +42,7 @@ flowchart LR
   gw_texto -->|"nada entendible"| sin_texto
   gw_modo -->|"desde el chat"| nota_voz
   gw_modo -->|"desde el lab"| compara
-  ini_play -->|"pide la voz"| voz_en_linea
-  voz_en_linea -->|"intento hecho"| gw_en_linea
-  gw_en_linea -->|"respondió"| fin_escucha
-  gw_en_linea -->|"falló o ya se descartó"| voz_neuronal
+  ini_play -->|"pide la voz"| voz_neuronal
   voz_neuronal -->|"lista a tiempo"| fin_escucha
   voz_neuronal -->|"aún descargando o falló"| voz_sistema
   voz_sistema -->|"habla sin esperar"| fin_escucha

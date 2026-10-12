@@ -1,19 +1,17 @@
 import { describe, it, expect, vi } from "vitest";
-import { createEdgeBreaker, synthesizeChain, type ChainDeps, type Speech } from "../speech-chain";
+import { synthesizeChain, type ChainDeps, type EngineSpeech } from "../speech-chain";
 import type { KokoroState } from "../kokoro-tts";
 
-const speech = (tag: string): Speech => ({ audioUrl: `url:${tag}`, timings: [] });
+const speech = (tag: string): EngineSpeech => ({ audioUrl: `url:${tag}`, timings: [] });
 
-/** Cadena con fakes: Edge y Kokoro disponibles; el sleep nunca vence salvo que se pida. */
+/** Cadena con fakes: Kokoro disponible; el sleep nunca vence salvo que se pida. */
 function build(over: {
-  edge?: Partial<ChainDeps["edge"]>;
   kokoro?: Partial<ChainDeps["kokoro"]>;
   sleep?: ChainDeps["sleep"];
   state?: KokoroState;
 } = {}) {
   let state: KokoroState = over.state ?? "ready";
   const deps: ChainDeps = {
-    edge: { available: () => true, synthesize: vi.fn(async () => speech("edge")), ...over.edge },
     kokoro: {
       available: () => true,
       state: () => state,
@@ -21,63 +19,29 @@ function build(over: {
       synthesize: vi.fn(async () => speech("kokoro")),
       ...over.kokoro,
     },
-    breaker: createEdgeBreaker(),
     budgetMs: 3000,
     sleep: over.sleep ?? (() => new Promise<void>(() => {})),
   };
   return deps;
 }
 
-describe("createEdgeBreaker", () => {
-  it("arranca cerrado, se abre con trip y no se cierra solo", () => {
-    const b = createEdgeBreaker();
-    expect(b.tripped()).toBe(false);
-    b.trip();
-    expect(b.tripped()).toBe(true);
-  });
-});
-
 describe("synthesizeChain", () => {
-  it("usa Edge primero cuando responde", async () => {
-    const deps = build();
-    expect((await synthesizeChain(deps)).audioUrl).toBe("url:edge");
-    expect(deps.kokoro.synthesize).not.toHaveBeenCalled();
-  });
-
-  it("si Edge falla cae a Kokoro y abre el breaker", async () => {
-    const deps = build({ edge: { synthesize: vi.fn(async () => { throw new Error("403"); }) } });
-    expect((await synthesizeChain(deps)).audioUrl).toBe("url:kokoro");
-    expect(deps.breaker.tripped()).toBe(true);
-  });
-
-  it("con el breaker abierto no reintenta Edge", async () => {
-    const deps = build({ edge: { synthesize: vi.fn(async () => { throw new Error("403"); }) } });
-    await synthesizeChain(deps);
-    await synthesizeChain(deps);
-    await synthesizeChain(deps);
-    expect(deps.edge.synthesize).toHaveBeenCalledTimes(1);
-    expect(deps.kokoro.synthesize).toHaveBeenCalledTimes(3);
-  });
-
-  it("si Edge no está disponible va directo a Kokoro sin abrir el breaker", async () => {
-    const deps = build({ edge: { available: () => false } });
-    expect((await synthesizeChain(deps)).audioUrl).toBe("url:kokoro");
-    expect(deps.edge.synthesize).not.toHaveBeenCalled();
-    expect(deps.breaker.tripped()).toBe(false);
+  it("marca engine kokoro cuando responde Kokoro", async () => {
+    expect((await synthesizeChain(build())).engine).toBe("kokoro");
   });
 
   it("si Kokoro tampoco está disponible rechaza para que el llamador use Web Speech", async () => {
-    const deps = build({ edge: { available: () => false }, kokoro: { available: () => false } });
+    const deps = build({ kokoro: { available: () => false } });
     await expect(synthesizeChain(deps)).rejects.toThrow();
   });
 
   it("si Kokoro falla al sintetizar rechaza (Web Speech)", async () => {
-    const deps = build({ edge: { available: () => false }, kokoro: { synthesize: vi.fn(async () => { throw new Error("oom"); }) } });
+    const deps = build({ kokoro: { synthesize: vi.fn(async () => { throw new Error("oom"); }) } });
     await expect(synthesizeChain(deps)).rejects.toThrow("oom");
   });
 
   it("con el modelo sin cargar espera la carga dentro del presupuesto y luego sintetiza", async () => {
-    const deps = build({ edge: { available: () => false }, state: "idle" });
+    const deps = build({ state: "idle" });
     expect((await synthesizeChain(deps)).audioUrl).toBe("url:kokoro");
     expect(deps.kokoro.warm).toHaveBeenCalledTimes(1);
   });
@@ -86,7 +50,6 @@ describe("synthesizeChain", () => {
     let terminarDescarga!: () => void;
     const warm = vi.fn(() => new Promise<void>((r) => (terminarDescarga = r)));
     const deps = build({
-      edge: { available: () => false },
       state: "idle",
       kokoro: { warm },
       sleep: async () => {}, // el presupuesto vence de inmediato
@@ -99,7 +62,6 @@ describe("synthesizeChain", () => {
 
   it("si la carga del modelo falla dentro del presupuesto rechaza", async () => {
     const deps = build({
-      edge: { available: () => false },
       state: "idle",
       kokoro: { warm: vi.fn(async () => { throw new Error("sin red"); }) },
     });
@@ -108,7 +70,7 @@ describe("synthesizeChain", () => {
 
   it("con el modelo ya listo no aplica presupuesto a la generación", async () => {
     const sleep = vi.fn(async () => {});
-    const deps = build({ edge: { available: () => false }, state: "ready", sleep });
+    const deps = build({ state: "ready", sleep });
     expect((await synthesizeChain(deps)).audioUrl).toBe("url:kokoro");
     expect(sleep).not.toHaveBeenCalled();
   });

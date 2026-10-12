@@ -48,13 +48,6 @@ contextBridge.exposeInMainWorld('emmaAPI', {
   // --- Info del sistema ---
   systemInfo: (): Promise<any> => ipcRenderer.invoke('system-info'),
 
-  // --- TTS Edge (voz de Emma + timings de karaoke) ---
-  ttsSynthesize: (
-    text: string,
-    voice?: string
-  ): Promise<{ audioBase64: string; mime: string; timings: { word: string; start: number; end: number }[] }> =>
-    ipcRenderer.invoke('tts-synthesize', text, voice),
-
   // --- Almacén de datos del usuario ---
   storeGet: (key: string): Promise<Record<string, unknown>> => ipcRenderer.invoke('store-get', key),
   storeSet: (key: string, value: Record<string, unknown>): Promise<{ ok: boolean }> =>

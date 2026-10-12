@@ -4,14 +4,17 @@
  * Karaoke de la nota de voz de Emma, por ORACIÓN (FR-010..013 de la spec 002).
  * Al motor de voz solo va el texto hablable (sin emojis/comillas/paréntesis);
  * la transcripción visible conserva el original. Voz principal: neuronal
- * (Edge-TTS, y Kokoro local si Edge no responde; audio + timings por palabra) con resaltado de la oración activa y clic-para-repetir
- * (seek al inicio de la oración). Fallback: Web Speech local, resaltado
- * best-effort sin seek. Sin autoplay.
+ * (Kokoro local; audio + timings por palabra) con resaltado de la oración activa y clic-para-repetir
+ * (seek al inicio de la oración). El audio se sintetiza por trozos (primera
+ * oración primero, ver `chunked-player`): suena sin esperar a todo el mensaje.
+ * Fallback: Web Speech local, resaltado best-effort sin seek. Sin autoplay.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { speak, ttsAvailable, type KaraokeHandle } from "@/infrastructure/tts/web-speech-tts";
 import { neuralSpeechAvailable, synthesizeSpeech } from "@/infrastructure/tts/neural-speech";
+import { createChunkedPlayer, type ChunkedPlayer } from "@/infrastructure/tts/chunked-player";
+import { planSpeechChunks } from "@/domain/tts/speech-chunks";
 import type { WordTiming } from "@/domain/ai/llm-port";
 import type { VoiceGender } from "@/domain/chat-settings/chat-settings";
 import { hasSpeakableContent } from "@/domain/tts/speakable-text";
@@ -33,8 +36,10 @@ export interface Karaoke {
   playing: boolean;
   loading: boolean;
   available: boolean;
-  /** Con audio real (Edge/Kokoro) se puede saltar a una oración; con Web Speech no. */
+  /** Con audio real (Kokoro) se puede saltar a una oración; con Web Speech no. */
   canSeek: boolean;
+  /** Motor que sonó: neuronal, "system" (Web Speech) o null antes de reproducir. */
+  engine: "kokoro" | "system" | null;
   play(): void;
   /** Reproduce desde el inicio de la oración i (repetible sin límite). */
   playSentence(i: number): void;
@@ -53,20 +58,16 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
   const [canSeek, setCanSeek] = useState(false);
+  const [engine, setEngine] = useState<Karaoke["engine"]>(null);
   const webHandle = useRef<KaraokeHandle | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const timingsRef = useRef<WordTiming[]>([]);
-  // Frontera de reproducción: al reproducir UNA oración, el audio se detiene
-  // al llegar a su fin (null = reproducir hasta el final del mensaje).
-  const stopAtRef = useRef<number | null>(null);
+  const playerRef = useRef<ChunkedPlayer | null>(null);
 
   const speakable = hasSpeakableContent(text);
 
   const stop = useCallback(() => {
     webHandle.current?.stop();
     webHandle.current = null;
-    audioRef.current?.pause();
-    stopAtRef.current = null;
+    playerRef.current?.pause();
     setPlaying(false);
     setActiveWord(-1);
   }, []);
@@ -74,6 +75,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
   const playWebSpeech = useCallback(() => {
     if (!ttsAvailable()) return setPlaying(false);
     setPlaying(true);
+    setEngine("system");
     webHandle.current = speak(script.speakText, {
       gender,
       onWord: setActiveWord,
@@ -81,41 +83,41 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
     });
   }, [script.speakText, gender]);
 
-  // Sintetiza una sola vez por texto y cachea audio+timings (repetir = seek).
-  const ensureAudio = useCallback(async (): Promise<HTMLAudioElement | null> => {
-    if (audioRef.current) return audioRef.current;
-    const { audioUrl, timings } = await synthesizeSpeech(script.speakText, gender, voiceId);
-    const audio = new Audio(audioUrl);
-    timingsRef.current = timings;
-    audio.ontimeupdate = () => {
-      // Reproducción por oración: al cruzar la frontera se pausa ahí mismo.
-      const boundary = stopAtRef.current;
-      if (boundary !== null && audio.currentTime >= boundary) {
-        audio.pause();
-        stopAtRef.current = null;
-        setPlaying(false);
-        setActiveWord(-1);
-        return;
-      }
-      setActiveWord(wordAt(timings, audio.currentTime));
-    };
-    audio.onended = () => (setPlaying(false), setActiveWord(-1));
-    audioRef.current = audio;
+  // Un reproductor por texto: sintetiza por trozos y cachea audio+timings
+  // (repetir = seek). Resuelve cuando el PRIMER trozo está listo.
+  const ensureAudio = useCallback(async (): Promise<ChunkedPlayer> => {
+    if (!playerRef.current) {
+      const player: ChunkedPlayer = createChunkedPlayer({
+        chunks: planSpeechChunks(text),
+        synthesize: (chunk) => synthesizeSpeech(chunk, gender, voiceId),
+        createAudio: (url) => new Audio(url),
+        onTime: (t) => setActiveWord(wordAt(player.timings(), t)),
+        onStop: () => (setPlaying(false), setActiveWord(-1)),
+        onBuffering: setLoading,
+      });
+      playerRef.current = player;
+    }
+    const player = playerRef.current;
+    try {
+      await player.ready();
+    } catch (error) {
+      player.dispose();
+      if (playerRef.current === player) playerRef.current = null;
+      throw error;
+    }
     setCanSeek(true);
-    return audio;
-  }, [script.speakText, gender]);
+    setEngine(player.engine());
+    return player;
+  }, [text, gender, voiceId]);
 
   const playFrom = useCallback(
     async (startTime: number, stopAt: number | null = null) => {
       if (!neuralSpeechAvailable()) return playWebSpeech();
       setLoading(true);
       try {
-        const audio = await ensureAudio();
-        if (!audio) return;
-        stopAtRef.current = stopAt;
-        audio.currentTime = startTime;
+        const player = await ensureAudio();
         setPlaying(true);
-        await audio.play();
+        await player.playFrom(startTime, stopAt);
       } catch {
         playWebSpeech(); // sin voz neuronal (o aún descargando Kokoro) → Web Speech
       } finally {
@@ -132,15 +134,18 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
       // Garantiza timings (primer clic sintetiza) y reproduce SOLO esa oración.
       if (!neuralSpeechAvailable()) return playWebSpeech();
       setLoading(true);
+      let player: ChunkedPlayer;
       try {
-        await ensureAudio();
+        player = await ensureAudio();
+        // La oración puede caer en un trozo que aún se sintetiza: se espera su fin.
+        await player.untilWord(sentence.wordStart + sentence.wordCount - 1);
       } catch {
         setLoading(false);
         return playWebSpeech();
       }
       setLoading(false);
-      const start = sentenceStartTime(sentence, timingsRef.current);
-      const end = sentenceEndTime(sentence, timingsRef.current);
+      const start = sentenceStartTime(sentence, player.timings());
+      const end = sentenceEndTime(sentence, player.timings());
       if (start === null) return;
       void playFrom(start, end);
     },
@@ -154,13 +159,12 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
     () => () => {
       webHandle.current?.stop();
       webHandle.current = null;
-      audioRef.current?.pause();
-      audioRef.current = null;
-      timingsRef.current = [];
-      stopAtRef.current = null;
+      playerRef.current?.dispose();
+      playerRef.current = null;
       setPlaying(false);
       setActiveWord(-1);
       setCanSeek(false);
+      setEngine(null);
     },
     [script.speakText, gender, voiceId],
   );
@@ -173,6 +177,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
     loading,
     available: speakable && (neuralSpeechAvailable() || ttsAvailable()),
     canSeek,
+    engine,
     play: () => void playFrom(0),
     playSentence,
     stop,

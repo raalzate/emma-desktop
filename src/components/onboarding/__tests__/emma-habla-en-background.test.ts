@@ -1,6 +1,6 @@
 /**
  * En el onboarding Emma habla sola: cada mensaje suyo se locuta en segundo
- * plano sin botón de play. Un mensaje nuevo corta al anterior, la voz Edge cae
+ * plano sin botón de play. Un mensaje nuevo corta al anterior, la voz neuronal cae
  * a Web Speech si falla, y una síntesis tardía de un mensaje viejo no pisa al
  * mensaje vigente.
  */
@@ -19,7 +19,7 @@ function fakeAudio(): Playable & { paused: boolean } {
 function deps(over: Partial<BackgroundVoiceDeps> = {}) {
   const audios: ReturnType<typeof fakeAudio>[] = [];
   const d: BackgroundVoiceDeps = {
-    edgeAvailable: () => true,
+    neuralAvailable: () => true,
     synthesize: vi.fn(async (text: string) => `url:${text}`),
     createAudio: vi.fn(() => {
       const a = fakeAudio();
@@ -34,7 +34,7 @@ function deps(over: Partial<BackgroundVoiceDeps> = {}) {
 }
 
 describe("Emma habla en background durante el onboarding", () => {
-  it("locuta el mensaje con la voz Edge sin que nadie pulse play", async () => {
+  it("locuta el mensaje con la voz neuronal sin que nadie pulse play", async () => {
     const { d, audios } = deps();
     const voice = createBackgroundVoice(d);
     await voice.speak("Hi! What's your name?");
@@ -68,15 +68,15 @@ describe("Emma habla en background durante el onboarding", () => {
     expect(d.createAudio).toHaveBeenCalledWith("url:Fast");
   });
 
-  it("si Edge falla cae a la voz local del sistema", async () => {
+  it("si la voz neuronal falla cae a la voz local del sistema", async () => {
     const { d } = deps({ synthesize: vi.fn(async () => { throw new Error("sin red"); }) });
     const voice = createBackgroundVoice(d);
     await voice.speak("Hello");
     expect(d.speakLocal).toHaveBeenCalledWith("Hello", expect.any(Function));
   });
 
-  it("sin Edge usa Web Speech directamente", async () => {
-    const { d } = deps({ edgeAvailable: () => false });
+  it("sin voz neuronal usa Web Speech directamente", async () => {
+    const { d } = deps({ neuralAvailable: () => false });
     const voice = createBackgroundVoice(d);
     await voice.speak("Hello");
     expect(d.synthesize).not.toHaveBeenCalled();
@@ -100,9 +100,9 @@ describe("Emma habla en background durante el onboarding", () => {
     expect(d.speakLocal).not.toHaveBeenCalled();
   });
 
-  it("stop() calla tanto el audio Edge como la voz local", async () => {
+  it("stop() calla tanto el audio neuronal como la voz local", async () => {
     const localHandle = { stop: vi.fn() };
-    const { d, audios } = deps({ edgeAvailable: () => false, speakLocal: vi.fn(() => localHandle) });
+    const { d, audios } = deps({ neuralAvailable: () => false, speakLocal: vi.fn(() => localHandle) });
     const voice = createBackgroundVoice(d);
     await voice.speak("Hello");
     voice.stop();
