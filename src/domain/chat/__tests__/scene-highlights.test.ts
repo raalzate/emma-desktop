@@ -47,6 +47,15 @@ describe("highlightScenePhrases", () => {
     expect(claves("Sofía Torres waves at you.", ["Sofía Torres"])).toEqual(["Sofía Torres"]);
   });
 
+  it("resalta nombres de tecnología con punto (Node.js) completos, sin comerse el punto final", () => {
+    expect(claves("You learn the legacy Node.js codebase and ship it by 5 PM.")).toEqual([
+      "Node.js",
+      "5 PM",
+    ]);
+    expect(claves("The team uses Vue.js and ASP.NET daily.")).toEqual(["Vue.js", "ASP.NET"]);
+    expect(claves("We meet at 3 p.m. sharp.")).toEqual(["3 p.m."]);
+  });
+
   it("texto vacío ⇒ sin segmentos", () => {
     expect(highlightScenePhrases("", [])).toEqual([]);
   });

@@ -24,8 +24,10 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   v0.8.1 (gamificación #216), v0.8.0, v0.7.0 y v0.6.0. v0.1.0 quedó retirada de hecho (dmg
   roto, gotcha 2026-08-31) y v0.1.1 sigue en BORRADOR. Publicar un borrador sigue siendo
   gesto del humano.
-- **Deuda de local-first:** el motor de Gemma (`@litert-lm/core`) aún carga desde jsdelivr
-  (#248). Kokoro en WASM de un hilo va a RTF 1,6–1,9; con hilos (COOP/COEP) bajaría a ~0,5.
+- **IA 100 % local en `main` (#248, sin release):** el motor de Gemma (`@litert-lm/core`) y su
+  WASM se sirven desde `app://-/litert/` (copiados en el build): Gemma generó una escena en 20 s
+  con 0 requests a jsdelivr (verificado por CDP). Deuda: Kokoro en WASM de un hilo va a RTF
+  1,6–1,9; con hilos (COOP/COEP) bajaría a ~0,5.
 - **Arquitectura viva en PFA (2026-10-10, #203 y #213):** cuatro proyectos de la app —
   «EMMA · Arquitectura», «EMMA · Conversación», «EMMA · Progreso y práctica» y «EMMA ·
   Onboarding»— con las cinco vistas BPMN regeneradas desde `docs/diagramas/` (juez de

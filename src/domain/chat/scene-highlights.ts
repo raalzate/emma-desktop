@@ -14,10 +14,13 @@ interface Span {
   end: number;
 }
 
-const TIME = /\b\d{1,2}(?::\d{2})?\s?(?:[ap]\.?m\.?)(?![\p{L}])/giu;
+// "p.m." lleva su punto final; "PM." no: ese punto cierra la oración.
+const TIME = /\b\d{1,2}(?::\d{2})?\s?(?:[ap]\.m\.|[ap]m)(?![\p{L}])/giu;
 const DURATION = /\b\d+\s(?:minutes?|hours?|days?|weeks?|months?|people|members)\b/gi;
 const LABELED_NUMBER = /\b([A-Za-z]+)\s(\d+)\b/g;
-const PROPER_NOUN = /\p{Lu}[\p{L}'’-]*(?:\s\p{Lu}[\p{L}'’-]*)*/gu;
+// Un sufijo pegado tras punto ("Node.js", "ASP.NET") es parte del nombre; el
+// punto de fin de oración no, porque lo sigue un espacio y no una letra.
+const PROPER_NOUN = /\p{Lu}[\p{L}'’-]*(?:\.\p{L}+)*(?:\s\p{Lu}[\p{L}'’-]*(?:\.\p{L}+)*)*/gu;
 
 /** Palabras que no son contexto del número ("at 3" no dice nada). */
 const FUNCTION_WORDS = new Set(

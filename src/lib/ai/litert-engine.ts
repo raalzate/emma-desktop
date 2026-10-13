@@ -6,8 +6,9 @@
  * Electron). El `.litertlm` se sirve localmente vía el protocolo `litert-model://`
  * (registrado en main, lee de userData/models/litert) → carga offline, con Range.
  *
- * El paquete carga WASM de forma dinámica; lo importamos por CDN con
- * `webpackIgnore` para que webpack/Next NO intente bundlearlo (rompería).
+ * El paquete carga WASM de forma dinámica; su ESM y su WASM se copian a
+ * `public/litert/` en el build y se importan desde la app con `webpackIgnore`,
+ * para que webpack/Next NO intente bundlearlo (rompería) y sin CDN (#248).
  */
 
 import type { GenerationPriority } from "@/domain/ai/llm-port";
@@ -59,12 +60,28 @@ function installLitertLogFilter(): void {
 // los logs del WASM nunca disparen el overlay de error de Next-dev.
 installLitertLogFilter();
 
-/** Carga el paquete @litert-lm/core (CDN, sin bundling). */
+/** ESM y WASM empaquetados; sin la ruta del WASM `Engine.create` lo pediría a un CDN (#248). */
+const LITERT_CORE_URL = "/litert/core/index.js";
+const LITERT_WASM_PATH = "/litert/wasm/";
+
+/**
+ * Carga @litert-lm/core desde la app (copiado a public/litert en el build por
+ * scripts/copy-litert-runtime.mjs) y fija la ruta local del WASM antes de crear
+ * cualquier engine.
+ */
 function loadLib(): Promise<any> {
   installLitertLogFilter();
   if (!libPromise) {
-    // @ts-ignore — módulo remoto (CDN) sin tipos; webpackIgnore evita que webpack lo bundlee.
-    libPromise = import(/* webpackIgnore: true */ "https://cdn.jsdelivr.net/npm/@litert-lm/core@0.13.1/+esm") as Promise<any>;
+    libPromise = (async () => {
+      // ESM servido por la app, sin tipos. La URL va en una constante y con
+      // webpackIgnore/@vite-ignore: ni Next ni Vitest deben intentar resolverla.
+      const lib = await import(/* webpackIgnore: true */ /* @vite-ignore */ LITERT_CORE_URL);
+      if (!lib.hasGlobalLiteRtLmPromise()) await lib.loadLiteRtLm(LITERT_WASM_PATH);
+      return lib;
+    })();
+    libPromise.catch(() => {
+      libPromise = null;
+    });
   }
   return libPromise;
 }

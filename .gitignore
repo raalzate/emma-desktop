@@ -14,6 +14,9 @@
 # runtime WASM de onnxruntime: se copia en cada build (scripts/copy-ort-wasm.mjs)
 /public/ort/
 
+# motor de Gemma (@litert-lm/core): se copia en cada build (scripts/copy-litert-runtime.mjs)
+/public/litert/
+
 # production
 /build
 
