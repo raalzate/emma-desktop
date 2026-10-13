@@ -62,7 +62,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en issues de GitHub; sin `specs/` en el repo |
 | Diagramas sincronizados | `node scripts/diagrams-check.mjs` | verde — 5 vistas BPMN, 147 elementos; cajas en lenguaje de producto y anclas que apuntan a código que existe |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
-| Tests | `pnpm test` | verde — 2083 pruebas en 257 archivos |
+| Tests | `pnpm test` | verde — 2090 pruebas en 259 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
 | Smoke de producción | `pnpm smoke` | verde — Electron carga `app://-` con contenido (camino empaquetado); OMITIDA donde no hay binario de Electron (gate de CI) |
 
