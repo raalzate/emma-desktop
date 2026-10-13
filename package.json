@@ -7,9 +7,9 @@
   "author": "EMMA",
   "main": "build/main.js",
   "scripts": {
-    "dev": "node scripts/copy-ort-wasm.mjs && next dev",
-    "next-dev": "node scripts/copy-ort-wasm.mjs && next dev",
-    "next-build": "node scripts/copy-ort-wasm.mjs && next build",
+    "dev": "node scripts/copy-ort-wasm.mjs && node scripts/copy-litert-runtime.mjs && next dev",
+    "next-dev": "node scripts/copy-ort-wasm.mjs && node scripts/copy-litert-runtime.mjs && next dev",
+    "next-build": "node scripts/copy-ort-wasm.mjs && node scripts/copy-litert-runtime.mjs && next build",
     "ts:build": "tsc -p tsconfig.electron.json",
     "ts:watch": "tsc -p tsconfig.electron.json --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.electron.json --noEmit",

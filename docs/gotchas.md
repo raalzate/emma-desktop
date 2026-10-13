@@ -246,3 +246,21 @@ Regla:   la voz es Kokoro local (Web Speech solo de respaldo); Edge-TTS y `msedg
   La única descarga de la primera vez es el modelo de Hugging Face.
 Mecanismo: `speech-chain.test.ts` (cadena solo Kokoro), `ort-empaquetado-contrato.test.ts`
   (cada punto de entrada configura el WASM; el build lo copia) y `scripts/__tests__/copy-ort-wasm.test.ts`.
+
+---
+
+### GOTCHA: el motor de Gemma (LiteRT-LM) también salía de un CDN, por dos caminos
+
+Síntoma: con #247 la voz quedó local, pero el modelo de Gemma seguía sin arrancar sin red: el ESM
+  de `@litert-lm/core` se importaba de `cdn.jsdelivr.net/+esm` y, aunque se importe local,
+  `Engine.create` carga su WASM desde `LiteRtLm.DEFAULT_WASM_PATH` (otro CDN) si nadie llamó antes
+  a `loadLiteRtLm(ruta)`.
+Causa:   el paquete importa `@litertjs/wasm-utils` por nombre (el navegador no lo resuelve sin
+  bundler) y webpack no puede empaquetarlo; el `+esm` del CDN resolvía ambas cosas a escondidas.
+Regla:   `scripts/copy-litert-runtime.mjs` copia el ESM, `wasm-utils` y el WASM a `public/litert/`
+  (ignorado en git) en cada build, reescribiendo el import por nombre a ruta relativa; `loadLib`
+  importa `/litert/core/index.js` y llama a `loadLiteRtLm("/litert/wasm/")` antes de cualquier engine.
+  La URL va en una constante con `webpackIgnore` y `@vite-ignore`: con el literal en el `import()`,
+  Vitest se niega a importar un archivo de `public/` y rompe la suite que carga el módulo.
+Mecanismo: `src/lib/ai/__tests__/litert-sin-cdn.test.ts` (sin URLs de CDN, ruta local del WASM, el
+  build lo copia) y `scripts/__tests__/copy-litert-runtime.test.ts`.
