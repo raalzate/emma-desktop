@@ -26,9 +26,16 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   gesto del humano.
 - **Deuda de local-first:** el motor de Gemma (`@litert-lm/core`) aún carga desde jsdelivr
   (#248). Kokoro en WASM de un hilo va a RTF 1,6–1,9; con hilos (COOP/COEP) bajaría a ~0,5.
-- **Pendiente de #195 y #206:** T7 (#203) y T7 (#213), lienzos de PFA de «Turno de chat»,
-  «Voz y pronunciación», «Ruta y progresión» y «Simulación y feedback» (app no
-  conectada; las instantáneas de `docs/diagramas/` están al día).
+- **Arquitectura viva en PFA (2026-10-10, #203 y #213):** cuatro proyectos de la app —
+  «EMMA · Arquitectura», «EMMA · Conversación», «EMMA · Progreso y práctica» y «EMMA ·
+  Onboarding»— con las cinco vistas BPMN regeneradas desde `docs/diagramas/` (juez de
+  coherencia, onda en vivo, pares en oraciones, bloqueo por lecciones pendientes, cierre
+  guiado, niveles y XP). Diagramas de trabajo en la org `proyecto-integrador` del MCP.
+  Los proyectos viejos «Flujos y procesos» y «Arquitectura» quedan en la app hasta que el
+  humano los borre.
+  Pendiente: llevar al lienzo lo del 2026-10-12 —juez de escena en «Turno de chat» y el
+  carril «Voz de Emma» (Kokoro local) en «Voz y pronunciación»—; las instantáneas de
+  `docs/diagramas/` ya lo tienen (app no conectada).
 - **Milestone v0.5.0 fusionado (2026-09-25):** lección en karaoke con audio al lado, escena
   visible en modal durante el chat, correcciones triviales fuera del feedback, gramática con
   tres formas y verbos resaltados, lista de lecciones («Mis lecciones» en Práctica), turnos
@@ -50,7 +57,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Link-check de docs | `node scripts/docs-linkcheck.mjs` | verde — enlaces, rutas citadas, scripts npm/pnpm citados y honestidad BLOCKING de la constitución |
 | Lint de convenciones | `node scripts/repo-lint.mjs` | verde — PUREZA (domain/application/infrastructure), ANY, SECRETO, CONSOLE, ONLY, INCIDENTE |
 | Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en issues de GitHub; sin `specs/` en el repo |
-| Diagramas sincronizados | `node scripts/diagrams-check.mjs` | verde — 4 vistas BPMN, 94 elementos; cajas en lenguaje de producto y anclas que apuntan a código que existe |
+| Diagramas sincronizados | `node scripts/diagrams-check.mjs` | verde — 5 vistas BPMN, 147 elementos; cajas en lenguaje de producto y anclas que apuntan a código que existe |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
 | Tests | `pnpm test` | verde — 2083 pruebas en 257 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
@@ -81,14 +88,6 @@ con sus casos de self-test (primer gotcha real en `docs/gotchas.md`). L4 pide qu
 sea rutina, no estreno.
 
 ## Deuda conocida
-
-- **Vistas PFA desincronizadas con lo fusionado el 2026-09-25:** «BPMN · Voz y pronunciación»
-  (turnos con voz obligatoria, #169), «BPMN · Simulación y feedback» (lista de lecciones,
-  #172) y «BPMN · Repaso SRS» (recuerdo escrito, #183) describen el flujo anterior en el
-  lienzo. Las instantáneas en `docs/diagramas/` pasan la señal del gate (anclas válidas),
-  pero el dibujo en Processflow Architect no se pudo actualizar: la app no respondió en
-  `127.0.0.1:7331` durante la sesión. Se sincroniza con el skill `disenar-diagrama` en
-  cuanto esté abierta.
 
 - **Cobertura sin umbral:** `vitest.config.ts` no exige mínimo de cobertura; el Artículo 1
   (TDD) es REVIEW hasta que se declare `coverage.thresholds` (mecanismo candidato:
