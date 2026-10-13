@@ -8,22 +8,22 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.9.0 (2026-10-12, marcada Latest, 3 instaladores):
-  cierre guiado y niveles propios (#206, PR #214), Teach me en columna lateral, frases
-  clave en la franja SCENE (#228, PR #240), «Level up!» interactivo sobre la lección y
-  menús nativos en inglés (#239, PR #241), juez de escena (#229, PR #242) y voz neuronal
-  local Kokoro (#230, PR #243). Antes: v0.8.1 (2026-10-09, gamificación #216), v0.8.0,
-  v0.7.0 y v0.6.0. v0.1.0 quedó retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1
-  sigue en BORRADOR. Publicar un borrador sigue siendo gesto del humano.
-- **v0.9.1 en preparación (2026-10-12; publicar = gesto del humano):** voz 100 % local.
-  Kokoro corre en un Web Worker con WASM fp32 (#245): en WebGPU competía con Gemma
-  (2–16 s y un cierre inesperado). Síntesis por oración; main registra
+- **Último release publicado:** v0.9.1 (2026-10-13, marcada Latest, 3 instaladores): voz
+  100 % local. Kokoro corre en un Web Worker con WASM fp32 (#245): en WebGPU competía con
+  Gemma (2–16 s y un cierre inesperado). Síntesis por oración; main registra
   `render-process-gone` / `child-process-gone`. Verificado en la app real con el perfil del
   usuario y Gemma cargada: Kokoro en 10/10 reproducciones sin cierres, primer sonido
   0,5–8,4 s (mediana ~3 s), 0,25 s con caché. Muestra de voz por protopersona (#246).
   Edge-TTS retirado (#247; 403 de Microsoft desde ~2026-10-10): la cadena es Kokoro ⇒ Web
   Speech y el runtime WASM de onnxruntime va empaquetado en `app://-/ort/` (0 requests a
-  jsdelivr verificado por CDP).
+  jsdelivr verificado por CDP). Instaladores de Windows y Linux sin probar a mano; Whisper
+  con el WASM empaquetado sin ejercitar en vivo (requiere micrófono).
+- **v0.9.0 (2026-10-12, publicada):** cierre guiado y niveles propios (#206, PR #214), Teach
+  me en columna lateral, frases clave en la franja SCENE (#228), «Level up!» interactivo y
+  menús nativos en inglés (#239), juez de escena (#229) y voz local Kokoro (#230). Antes:
+  v0.8.1 (gamificación #216), v0.8.0, v0.7.0 y v0.6.0. v0.1.0 quedó retirada de hecho (dmg
+  roto, gotcha 2026-08-31) y v0.1.1 sigue en BORRADOR. Publicar un borrador sigue siendo
+  gesto del humano.
 - **Deuda de local-first:** el motor de Gemma (`@litert-lm/core`) aún carga desde jsdelivr
   (#248). Kokoro en WASM de un hilo va a RTF 1,6–1,9; con hilos (COOP/COEP) bajaría a ~0,5.
 - **Pendiente de #195 y #206:** T7 (#203) y T7 (#213), lienzos de PFA de «Turno de chat»,
