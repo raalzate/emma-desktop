@@ -125,7 +125,9 @@ animado importa `motion/react` directo).
   store JSON por colección (`main/services/store.ts`, un documento por colección
   bajo `userData/emma/store/`, escritura atómica) — reemplaza a SQLite.
 - **preload** (`preload.ts`): puente IPC tipado (contextBridge).
-- **renderer** (Next.js): UI, IA local WebGPU, STT (Whisper), TTS (Web Speech).
+- **renderer** (Next.js): UI, IA local WebGPU, STT (Whisper), TTS (Kokoro local en un Worker
+  WASM, con Web Speech como respaldo). Sin voces de nube: el runtime WASM de onnxruntime
+  va empaquetado en `public/ort/` (copiado en el build por `scripts/copy-ort-wasm.mjs`).
 
 ## Dónde va cada cosa
 

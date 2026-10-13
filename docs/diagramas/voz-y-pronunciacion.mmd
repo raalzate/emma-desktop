@@ -26,6 +26,12 @@ flowchart LR
     elige_palabra("Elige lo que oyó<br><i>Tarea</i>")
     suma_xp_par("Suma XP<br><i>Tarea</i>")
   end
+  subgraph agg_Voz_de_Emma["Voz de Emma"]
+    ini_play(("Pulsa reproducir<br><i>Evento de Inicio</i>"))
+    voz_neuronal("Voz neuronal en el equipo<br><i>Tarea</i>")
+    voz_sistema("Voz del sistema<br><i>Tarea</i>")
+    fin_escucha(("Escucha a Emma<br><i>Evento de Fin</i>"))
+  end
   nota_voz -->|"texto y audio"| fin_chat
   deuda_casos_uso ---|"comprobación omitida"| whisper
   sin_texto -->|"cuenta como no logrado"| fin_veredicto
@@ -46,3 +52,7 @@ flowchart LR
   escucha_oracion -->|"elige"| elige_palabra
   elige_palabra -->|"acierto o intento"| suma_xp_par
   suma_xp_par -->|"ve si acertó"| fin_veredicto
+  ini_play -->|"pide la voz"| voz_neuronal
+  voz_neuronal -->|"lista a tiempo"| fin_escucha
+  voz_neuronal -->|"aún descargando o falló"| voz_sistema
+  voz_sistema -->|"habla sin esperar"| fin_escucha

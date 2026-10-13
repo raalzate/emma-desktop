@@ -1,6 +1,6 @@
 /**
  * Selección de voz TTS a partir del nivel CEFR y el género. Los identificadores
- * son los de EdgeTTS y se escriben tal cual: cualquier cambio los rompe.
+ * son claves de voz estables (`en-US-…Neural`) que `kokoroVoiceFor` mapea a Kokoro; se escriben tal cual: cualquier cambio rompe el mapeo.
  */
 
 const DEFAULT_VOICE = "en-US-EmmaNeural";
@@ -19,13 +19,13 @@ export const VOICE_BY_GENDER: Record<string, string> = {
   neutral: DEFAULT_VOICE,
 };
 
-/** Voz EdgeTTS para el nivel CEFR; cae a la voz por defecto si es desconocido. */
+/** Clave de voz para el nivel CEFR; cae a la voz por defecto si es desconocido. */
 export function getVoiceForLevel(cefrLevel: string | null): string {
   if (cefrLevel === null) return DEFAULT_VOICE;
   return CEFR_VOICE_MAP[cefrLevel] ?? DEFAULT_VOICE;
 }
 
-/** Voz EdgeTTS para *gender*, o null si no está mapeado. */
+/** Clave de voz para *gender*, o null si no está mapeado. */
 export function getVoiceForGender(gender: string | null): string | null {
   if (gender === null) return null;
   return VOICE_BY_GENDER[gender] ?? null;

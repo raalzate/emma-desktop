@@ -398,6 +398,27 @@ export function useChatSession(d: Deps) {
           !isReaskingCovered(r, sceneState.current, {
             deepeningOn: deepen ? deepeningTarget(sceneState.current)?.id : undefined,
           }),
+        // Juez de escena (fail-open): rechaza la línea que contradice los hechos
+        // o sale del rol; sin contrato rige el framing de la situación.
+        judgeReply: (r) => {
+          const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
+          return runtime
+            .judgeSceneFidelity({
+              facts: contract?.facts || situation?.framingDescription || "",
+              personaName: persona.name,
+              personaRole: persona.role,
+              situationTitle: situation?.title ?? "",
+              reply: r,
+            })
+            .then((verdict) => {
+              if (verdict.source === "fail-open" && process.env.NODE_ENV !== "production") {
+                // Visible en la consola de dev: si esto aparece en cada turno, el
+                // juez no está corriendo (timeout o cola del motor) y no protege.
+                console.warn("[escena] juez de escena no respondio: linea aceptada sin juzgar", verdict);
+              }
+              return verdict;
+            });
+        },
         // Reparación: la orden es decir lo mismo más simple, así que los
         // guardias anti-repetición no pueden vetar la respuesta (si lo hacen,
         // el turno cae en la recuperación y la escena parece amnésica).
@@ -421,7 +442,7 @@ export function useChatSession(d: Deps) {
       if (decision.grantGrace) graceTurns.current += 1;
       if (decision.close) setSceneComplete(true);
     },
-    [busy, messages, turnCount, runtime, bufferGrammar, sceneComplete, scenario.scenarioType],
+    [busy, messages, turnCount, runtime, bufferGrammar, sceneComplete, scenario.scenarioType, contract, situation],
   );
 
   // Emite el snapshot al padre tras cada cambio con contenido (para persistir).

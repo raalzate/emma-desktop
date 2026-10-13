@@ -21,7 +21,7 @@ interface Props {
   /** Índice global de la palabra que suena, -1 si ninguna. */
   activeWord: number;
   onPick: (i: number) => void;
-  /** El motor permite saltar al inicio de una oración (Edge-TTS sí, Web Speech no). */
+  /** El motor permite saltar al inicio de una oración (Kokoro sí, Web Speech no). */
   seekable?: boolean;
   className?: string;
 }

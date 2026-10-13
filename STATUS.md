@@ -4,26 +4,28 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-10-09
+- **Fecha del último gate completo:** 2026-10-12
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.8.1 (2026-10-09, marcada Latest, 3 instaladores):
-  gamificación visible #216 (XP, nivel de jugador, racha diaria, meta del día, 15 logros,
-  celebraciones animadas; PR #221) y evals A1 con promptfoo fuera del gate (PR #222).
-  Antes: v0.8.0 (2026-09-29): gramática
-  correcta en Teach me (#193/#194) y la feature #195 «práctica guiada y conversación
-  coherente» (PR #201); el mismo día v0.7.0 (UI en inglés, #192) y v0.6.0. v0.1.0 quedó
-  retirada de hecho (dmg roto, gotcha 2026-08-31) y v0.1.1 sigue en BORRADOR con sus 3
-  instaladores. Publicar un borrador sigue siendo gesto del humano.
-- **En `main` sin release (#206, PR #214, 2026-10-09):** subir de nivel escribe
-  `profile.englishLevel` y archiva el historial del nivel superado («Archived», solo
-  lectura); autoevaluación retirada; la UI muestra «Level 1–5» (CEFR solo interno);
-  prácticas con `motion` vía `src/components/motion/`; el cierre asigna solo las lecciones
-  y lleva a «My lessons» o pregunta practicar/continuar. Convive con la gamificación
-  (merge verificado: XP en los 6 puntos de cableado).
-  `main` va por delante de v0.8.1: lo que se descarga hoy aún muestra autoevaluación y
-  niveles CEFR.
+- **Último release publicado:** v0.9.1 (2026-10-13, marcada Latest, 3 instaladores): voz
+  100 % local. Kokoro corre en un Web Worker con WASM fp32 (#245): en WebGPU competía con
+  Gemma (2–16 s y un cierre inesperado). Síntesis por oración; main registra
+  `render-process-gone` / `child-process-gone`. Verificado en la app real con el perfil del
+  usuario y Gemma cargada: Kokoro en 10/10 reproducciones sin cierres, primer sonido
+  0,5–8,4 s (mediana ~3 s), 0,25 s con caché. Muestra de voz por protopersona (#246).
+  Edge-TTS retirado (#247; 403 de Microsoft desde ~2026-10-10): la cadena es Kokoro ⇒ Web
+  Speech y el runtime WASM de onnxruntime va empaquetado en `app://-/ort/` (0 requests a
+  jsdelivr verificado por CDP). Instaladores de Windows y Linux sin probar a mano; Whisper
+  con el WASM empaquetado sin ejercitar en vivo (requiere micrófono).
+- **v0.9.0 (2026-10-12, publicada):** cierre guiado y niveles propios (#206, PR #214), Teach
+  me en columna lateral, frases clave en la franja SCENE (#228), «Level up!» interactivo y
+  menús nativos en inglés (#239), juez de escena (#229) y voz local Kokoro (#230). Antes:
+  v0.8.1 (gamificación #216), v0.8.0, v0.7.0 y v0.6.0. v0.1.0 quedó retirada de hecho (dmg
+  roto, gotcha 2026-08-31) y v0.1.1 sigue en BORRADOR. Publicar un borrador sigue siendo
+  gesto del humano.
+- **Deuda de local-first:** el motor de Gemma (`@litert-lm/core`) aún carga desde jsdelivr
+  (#248). Kokoro en WASM de un hilo va a RTF 1,6–1,9; con hilos (COOP/COEP) bajaría a ~0,5.
 - **Arquitectura viva en PFA (2026-10-10, #203 y #213):** cuatro proyectos de la app —
   «EMMA · Arquitectura», «EMMA · Conversación», «EMMA · Progreso y práctica» y «EMMA ·
   Onboarding»— con las cinco vistas BPMN regeneradas desde `docs/diagramas/` (juez de
@@ -31,13 +33,16 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   guiado, niveles y XP). Diagramas de trabajo en la org `proyecto-integrador` del MCP.
   Los proyectos viejos «Flujos y procesos» y «Arquitectura» quedan en la app hasta que el
   humano los borre.
+  Pendiente: llevar al lienzo lo del 2026-10-12 —juez de escena en «Turno de chat» y el
+  carril «Voz de Emma» (Kokoro local) en «Voz y pronunciación»—; las instantáneas de
+  `docs/diagramas/` ya lo tienen (app no conectada).
 - **Milestone v0.5.0 fusionado (2026-09-25):** lección en karaoke con audio al lado, escena
   visible en modal durante el chat, correcciones triviales fuera del feedback, gramática con
   tres formas y verbos resaltados, lista de lecciones («Mis lecciones» en Práctica), turnos
   con voz obligatoria y corrector ortográfico en inglés en todas las plataformas (issues
   #167–#174, #182; PRs #175–#179, #181, #185). Más **v0.6.0**: prácticas dinámicas (#183,
   PR #184).
-- **Vitrina pública** (capturas en inglés y sección de gamificación al día con v0.8.1, PR #224;
+- **Vitrina pública** (capturas y textos al día con v0.9.1 — Level 1–5, frases clave, voz local —, PR #254, con datos de ejemplo ficticios;
   describe la versión descargable, no `main` — se recaptura con el próximo release):
   https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
@@ -52,9 +57,9 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 | Link-check de docs | `node scripts/docs-linkcheck.mjs` | verde — enlaces, rutas citadas, scripts npm/pnpm citados y honestidad BLOCKING de la constitución |
 | Lint de convenciones | `node scripts/repo-lint.mjs` | verde — PUREZA (domain/application/infrastructure), ANY, SECRETO, CONSOLE, ONLY, INCIDENTE |
 | Artefactos en su lugar | `node scripts/artifacts-check.mjs` | verde — artefactos SDD en issues de GitHub; sin `specs/` en el repo |
-| Diagramas sincronizados | `node scripts/diagrams-check.mjs` | verde — 5 vistas BPMN, 140 elementos; cajas en lenguaje de producto y anclas que apuntan a código que existe |
+| Diagramas sincronizados | `node scripts/diagrams-check.mjs` | verde — 5 vistas BPMN, 147 elementos; cajas en lenguaje de producto y anclas que apuntan a código que existe |
 | Typecheck | `pnpm typecheck` | verde (tsconfig app + electron) |
-| Tests | `pnpm test` | verde — 1935 pruebas en 233 archivos |
+| Tests | `pnpm test` | verde — 2083 pruebas en 257 archivos |
 | Build de producción | `pnpm build` | verde — next export + tsc electron + move-out |
 | Smoke de producción | `pnpm smoke` | verde — Electron carga `app://-` con contenido (camino empaquetado); OMITIDA donde no hay binario de Electron (gate de CI) |
 

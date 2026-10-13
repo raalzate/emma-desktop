@@ -18,6 +18,7 @@ import { buildSceneNarration, type NarrationKind } from "@/domain/chat/scene-nar
 import { personaFor } from "@/domain/personas/protopersona";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
+import { SceneText } from "./scene-text";
 
 interface BodyProps {
   scenario: Scenario;
@@ -75,7 +76,8 @@ export function SceneDialogBody({ scenario, situation, sceneReady, narrative }: 
                   i === 0 ? "font-semibold tracking-tight text-foreground" : "text-foreground/75",
                 )}
               >
-                {beat.text}
+                {/* El título ya va en negrita: resaltarlo lo partiría. */}
+                {i === 0 ? beat.text : <SceneText text={beat.text} name={persona.name} />}
               </p>
             </div>
           );

@@ -1,5 +1,5 @@
 /**
- * TTS local vía Web Speech API (`speechSynthesis`) — reemplaza a edge-tts.
+ * TTS local vía Web Speech API (`speechSynthesis`) — respaldo de Kokoro.
  *
  * Corre en el SO del usuario (offline en macOS/Windows). Los eventos `boundary`
  * dan el índice de carácter + tiempo transcurrido, con lo que sincronizamos el
@@ -7,6 +7,7 @@
  */
 
 import type { VoiceGender } from "@/domain/chat-settings/chat-settings";
+import { pickNaturalVoice } from "@/domain/tts/voice-ranking";
 
 export interface KaraokeHandle {
   /** Cancela la locución en curso. */
@@ -40,11 +41,7 @@ function wordOffsets(text: string): { index: number; start: number }[] {
 }
 
 function pickVoice(lang: string, gender?: VoiceGender): SpeechSynthesisVoice | undefined {
-  const voices = window.speechSynthesis.getVoices();
-  const byLang = voices.filter((v) => v.lang.startsWith(lang.slice(0, 2)));
-  if (!byLang.length) return voices[0];
-  const wants = gender === "masculine" ? /male|david|daniel|alex/i : /female|emma|samantha|victoria|zira/i;
-  return byLang.find((v) => wants.test(v.name)) ?? byLang[0];
+  return pickNaturalVoice(window.speechSynthesis.getVoices(), lang, gender);
 }
 
 /** Locuta *text* y dispara `onWord` en cada palabra para el karaoke. */

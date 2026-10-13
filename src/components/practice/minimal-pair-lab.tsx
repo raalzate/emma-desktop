@@ -3,7 +3,7 @@
 /**
  * Laboratorio de pronunciación: percepción de pares mínimos (dominio puro:
  * buildPerceptionRound/checkPerception/scoreRound) + subsección de Shadowing
- * (protocolo de 6 fases + Reto A). El TTS reutiliza <SpeakButton/> (Edge-TTS
+ * (protocolo de 6 fases + Reto A). El TTS reutiliza <SpeakButton/> (Kokoro
  * con caída a Web Speech), el mismo mecanismo del chat: no hace falta una
  * sesión de conversación para escuchar una palabra o un texto suelto.
  *

@@ -14,6 +14,8 @@ flowchart LR
     gw_stream{"¿Apertura segura?<br><i>Compuerta Exclusiva</i>"}
     sanea_valida("Limpia y controla<br><i>Tarea</i>")
     gw_valida{"¿La respuesta sirve?<br><i>Compuerta Exclusiva</i>"}
+    juez_escena("Juez de escena<br><i>Tarea</i>")
+    juez_escena2("Juez de escena (2º intento)<br><i>Tarea</i>")
     reintento_nudge("Pide otra versión<br><i>Tarea</i>")
     gw_valida2{"¿Sirve el 2º intento?<br><i>Compuerta Exclusiva</i>"}
     reformula("Dilo más simple<br><i>Tarea</i>")
@@ -47,8 +49,12 @@ flowchart LR
   stream_burbuja -->|"línea completa"| sanea_valida
   timeout_60s -->|"sin tokens parciales"| fallback
   timeout_60s -->|"rescata lo dicho"| sanea_valida
-  gw_valida -->|"válida"| fin_respuesta
-  gw_valida2 -->|"válida"| fin_respuesta
+  gw_valida -->|"válida"| juez_escena
+  juez_escena -->|"en escena o sin respuesta a tiempo"| fin_respuesta
+  juez_escena -->|"se sale de la escena"| reintento_nudge
+  gw_valida2 -->|"válida"| juez_escena2
+  juez_escena2 -->|"en escena o sin respuesta a tiempo"| fin_respuesta
+  juez_escena2 -->|"se sale de la escena"| reformula
   gw_valida3 -->|"válida"| fin_respuesta
   recuperacion -->|"sin declarar amnesia"| fin_respuesta
   fallback -->|"nunca un error técnico"| fin_respuesta
