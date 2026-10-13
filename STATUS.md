@@ -8,7 +8,12 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.9.1 (2026-10-13, marcada Latest, 3 instaladores): voz
+- **Último release publicado:** v0.9.2 (2026-10-13, marcada Latest, 3 instaladores): IA 100 % local. El motor
+  de Gemma (`@litert-lm/core`) y su WASM se sirven desde `app://-/litert/` (copiados en el
+  build; #248): Gemma generó una escena en 20 s con 0 requests a jsdelivr (verificado por CDP).
+  Resaltado de la escena con nombres con punto y sin el punto final de las horas (#256).
+  Deuda: Kokoro en WASM de un hilo va a RTF 1,6–1,9; con hilos (COOP/COEP) bajaría a ~0,5.
+- **v0.9.1 (2026-10-13, publicada):** voz
   100 % local. Kokoro corre en un Web Worker con WASM fp32 (#245): en WebGPU competía con
   Gemma (2–16 s y un cierre inesperado). Síntesis por oración; main registra
   `render-process-gone` / `child-process-gone`. Verificado en la app real con el perfil del
@@ -24,11 +29,6 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   v0.8.1 (gamificación #216), v0.8.0, v0.7.0 y v0.6.0. v0.1.0 quedó retirada de hecho (dmg
   roto, gotcha 2026-08-31) y v0.1.1 sigue en BORRADOR. Publicar un borrador sigue siendo
   gesto del humano.
-- **v0.9.2 en preparación (2026-10-13; publicar = gesto del humano):** IA 100 % local. El motor
-  de Gemma (`@litert-lm/core`) y su WASM se sirven desde `app://-/litert/` (copiados en el
-  build; #248): Gemma generó una escena en 20 s con 0 requests a jsdelivr (verificado por CDP).
-  Resaltado de la escena con nombres con punto y sin el punto final de las horas (#256).
-  Deuda: Kokoro en WASM de un hilo va a RTF 1,6–1,9; con hilos (COOP/COEP) bajaría a ~0,5.
 - **Arquitectura viva en PFA (2026-10-10, #203 y #213):** cuatro proyectos de la app —
   «EMMA · Arquitectura», «EMMA · Conversación», «EMMA · Progreso y práctica» y «EMMA ·
   Onboarding»— con las cinco vistas BPMN regeneradas desde `docs/diagramas/` (juez de
