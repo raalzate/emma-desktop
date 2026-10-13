@@ -35,7 +35,7 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
   con voz obligatoria y corrector ortográfico en inglés en todas las plataformas (issues
   #167–#174, #182; PRs #175–#179, #181, #185). Más **v0.6.0**: prácticas dinámicas (#183,
   PR #184).
-- **Vitrina pública** (capturas en inglés y sección de gamificación al día con v0.8.1, PR #224;
+- **Vitrina pública** (capturas y textos al día con v0.9.1 — Level 1–5, frases clave, voz local —, PR #254, con datos de ejemplo ficticios;
   describe la versión descargable, no `main` — se recaptura con el próximo release):
   https://raalzate.github.io/emma-desktop/ — sitio estático en
   `site/`, publicado en la rama `gh-pages` por `.github/workflows/pages.yml`. Los
