@@ -97,8 +97,8 @@ sea rutina, no estreno.
   en WASM tardaba 9,6 s; primer sonido del onboarding a 1,7 s) y `pnpm voice:smoke` verde
   (RTF 0,28). Carga desde asar con `utilityProcess` probada con un asar mínimo. **Sin
   verificar todavía:** un instalador empaquetado real (electron-builder lo dispara el
-  humano). Windows: `voice-smoke` verde en `windows-latest` (win32/x64, RTF 0,73 en la VM
-  de CI); falta probarlo en un equipo Windows del cliente.
+  humano). Windows: `voice-smoke` verde en `windows-latest` (win32/x64, RTF 0,27 con la sesión
+  caliente; 0,73 en la primera inferencia); falta probarlo en un equipo Windows del cliente.
 
 - **Cobertura sin umbral:** `vitest.config.ts` no exige mínimo de cobertura; el Artículo 1
   (TDD) es REVIEW hasta que se declare `coverage.thresholds` (mecanismo candidato:
