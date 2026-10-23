@@ -92,6 +92,11 @@ sea rutina, no estreno.
 
 ## Deuda conocida
 
+- **Nube en la puerta de IA (#261, rama `feat/ia-en-la-nube`, gate verde 2026-10-23):** sin
+  probar en vivo con una llave real de Gemini ni en un equipo sin WebGPU; la verificación de
+  llave (listado de modelos) y el reintento 429/5xx sólo están cubiertos por pruebas unitarias.
+  El modo remoto sigue sin streaming.
+
 - **Cobertura sin umbral:** `vitest.config.ts` no exige mínimo de cobertura; el Artículo 1
   (TDD) es REVIEW hasta que se declare `coverage.thresholds` (mecanismo candidato:
   `pnpm test:coverage` como señal del gate con umbral).
