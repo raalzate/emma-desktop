@@ -78,6 +78,20 @@ jobs:
         shell: bash
         run: node scripts/package-smoke.mjs
 
+      # La voz de Emma corre con onnxruntime-node (nativo) en un utilityProcess
+      # (#269): antes de empaquetar, confirmar que arranca y sintetiza en ESTA
+      # plataforma. El modelo se cachea entre runs.
+      - uses: actions/cache@v4
+        with:
+          path: .cache/kokoro
+          key: kokoro-82m-v1.0-fp32
+
+      - name: Voice smoke (Kokoro nativo sintetiza)
+        shell: bash
+        run: pnpm voice:smoke
+        env:
+          EMMA_KOKORO_CACHE: ${{ github.workspace }}/.cache/kokoro
+
       # --- Empaquetado FIRMADO (sólo si hay certificado de macOS) ---
       # `--publish never`: los artefactos los sube softprops en el job `release`,
       # no el publish de electron-builder. shell bash unifica las 3 plataformas.

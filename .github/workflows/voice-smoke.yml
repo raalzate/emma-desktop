@@ -1,0 +1,57 @@
+name: Voice smoke
+
+# La voz de Emma corre con onnxruntime-node (binario nativo) en un utilityProcess
+# (#269). Este workflow prueba que ARRANCA y sintetiza más rápido que tiempo real
+# en Windows y macOS —las plataformas que el cliente usa— cada vez que se toca la
+# voz o las dependencias. El gate de CI corre en Linux y no ejecuta Electron.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "main/services/tts-native/**"
+      - "src/infrastructure/tts/**"
+      - "scripts/voice-smoke.mjs"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/voice-smoke.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: voice-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  voice:
+    name: Voice (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      EMMA_KOKORO_CACHE: ${{ github.workspace }}/.cache/kokoro
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # Install completo: hace falta el binario de Electron para el utilityProcess.
+      - run: pnpm install --frozen-lockfile
+
+      # El modelo (~326 MB) se baja una vez y queda cacheado entre runs.
+      - uses: actions/cache@v4
+        with:
+          path: .cache/kokoro
+          key: kokoro-82m-v1.0-fp32
+
+      - name: Compilar el proceso main
+        run: pnpm exec tsc -p tsconfig.electron.json
+
+      - name: Voz nativa sintetiza
+        shell: bash
+        run: pnpm voice:smoke
