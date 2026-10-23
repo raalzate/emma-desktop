@@ -14,6 +14,8 @@ import {
   type RemoteGenerateArgs,
 } from './services/ai-remote';
 import { getSystemInfo } from './services/system-info';
+import { generateNativeTts, warmNativeTts } from './services/tts-native';
+import { parseGenerateArgs } from './services/tts-native/protocol';
 import {
   checkForUpdates,
   currentVersion,
@@ -46,6 +48,13 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('ai-key-delete', async (_e, provider: RemoteProvider) => deleteAiKey(provider));
   ipcMain.handle('ai-key-status', async () => aiKeyStatus());
   ipcMain.handle('ai-remote-generate', async (_e, args: RemoteGenerateArgs) => remoteGenerate(args));
+
+  // --- Voz nativa: Kokoro con onnxruntime-node en un utilityProcess (#269) ---
+  ipcMain.handle('tts-native-warm', async () => warmNativeTts());
+  ipcMain.handle('tts-native-generate', async (_e, args: unknown) => {
+    const { text, voice } = parseGenerateArgs(args);
+    return generateNativeTts(text, voice);
+  });
 
   // --- Info del sistema (vista de Configuración) ---
   ipcMain.handle('system-info', async () => getSystemInfo());
