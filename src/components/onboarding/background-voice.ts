@@ -29,7 +29,11 @@ export interface BackgroundVoiceDeps {
   createAudio(url: string): Playable;
   localAvailable(): boolean;
   speakLocal(text: string, onEnd: () => void): LocalHandle;
+  /** Estado para la UI: sin indicio, la espera de la voz parecía un cuelgue (#269). */
+  onState?(state: VoiceState): void;
 }
+
+export type VoiceState = "idle" | "preparing" | "speaking";
 
 export interface BackgroundVoice {
   /** Locuta *text*; resuelve cuando el audio arrancó (o se descartó). */
@@ -42,6 +46,13 @@ export function createBackgroundVoice(deps: BackgroundVoiceDeps): BackgroundVoic
   let local: LocalHandle | null = null;
   // Generación de la última petición: una síntesis con generación vieja se tira.
   let generation = 0;
+  let state: VoiceState = "idle";
+
+  const setState = (next: VoiceState) => {
+    if (next === state) return;
+    state = next;
+    deps.onState?.(next);
+  };
 
   const stop = () => {
     generation++;
@@ -50,12 +61,17 @@ export function createBackgroundVoice(deps: BackgroundVoiceDeps): BackgroundVoic
     audio = null;
     local?.stop();
     local = null;
+    setState("idle");
   };
 
   const speakLocal = (text: string) => {
-    if (!deps.localAvailable()) return;
+    if (!deps.localAvailable()) return setState("idle");
+    const mine = generation;
+    setState("speaking");
     local = deps.speakLocal(text, () => {
+      if (mine !== generation) return;
       local = null;
+      setState("idle");
     });
   };
 
@@ -66,10 +82,12 @@ export function createBackgroundVoice(deps: BackgroundVoiceDeps): BackgroundVoic
     audio = deps.createAudio(url);
     audio.onended = () => void advance(chunks, i + 1, next, mine);
     await audio.play();
+    setState("speaking");
   };
 
   const advance = async (chunks: string[], i: number, next: Promise<string> | null, mine: number) => {
-    if (mine !== generation || !next) return;
+    if (mine !== generation) return;
+    if (!next) return setState("idle");
     try {
       const url = await next;
       if (mine !== generation) return;
@@ -89,6 +107,7 @@ export function createBackgroundVoice(deps: BackgroundVoiceDeps): BackgroundVoic
     if (!deps.neuralAvailable()) return speakLocal(speakable);
     const planned = planSpeechChunks(speakable).map((c) => c.text);
     const chunks = planned.length ? planned : [speakable];
+    setState("preparing");
     try {
       const url = await deps.synthesize(chunks[0]);
       if (mine !== generation) return;

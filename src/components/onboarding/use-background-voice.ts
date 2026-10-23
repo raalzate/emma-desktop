@@ -6,7 +6,7 @@
  * al desmontar la pantalla.
  */
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BACKGROUND_LOAD_BUDGET_MS,
   neuralSpeechAvailable,
@@ -14,9 +14,10 @@ import {
   warmNeuralSpeech,
 } from "@/infrastructure/tts/neural-speech";
 import { speak, ttsAvailable } from "@/infrastructure/tts/web-speech-tts";
-import { createBackgroundVoice, type BackgroundVoice } from "./background-voice";
+import { createBackgroundVoice, type BackgroundVoice, type VoiceState } from "./background-voice";
 
-export function useBackgroundVoice(): BackgroundVoice {
+export function useBackgroundVoice(): { voice: BackgroundVoice; voiceState: VoiceState } {
+  const [voiceState, setVoiceState] = useState<VoiceState>("idle");
   const voice = useMemo(
     () =>
       createBackgroundVoice({
@@ -26,6 +27,7 @@ export function useBackgroundVoice(): BackgroundVoice {
         createAudio: (url) => new Audio(url),
         localAvailable: ttsAvailable,
         speakLocal: (text, onEnd) => speak(text, { onEnd }),
+        onState: setVoiceState,
       }),
     [],
   );
@@ -34,5 +36,5 @@ export function useBackgroundVoice(): BackgroundVoice {
     warmNeuralSpeech();
     return () => voice.stop();
   }, [voice]);
-  return voice;
+  return { voice, voiceState };
 }

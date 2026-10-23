@@ -157,6 +157,38 @@ describe("Emma habla en background durante el onboarding", () => {
     expect(d.createAudio).not.toHaveBeenCalledWith("url:I will be your English tutor.");
   });
 
+  // Sin indicio, la espera de la voz parecía un cuelgue (#269).
+  it("informa el estado: preparing mientras sintetiza, speaking al sonar, idle al terminar", async () => {
+    const states: string[] = [];
+    const { d, audios } = deps({ onState: (s) => void states.push(s) });
+    const voice = createBackgroundVoice(d);
+    await voice.speak("Hi there, I am Emma.");
+    expect(states).toEqual(["preparing", "speaking"]);
+    audios[0].onended?.(new Event("ended"));
+    await flush();
+    expect(states.at(-1)).toBe("idle");
+  });
+
+  it("con la voz local también pasa a speaking y a idle cuando termina", async () => {
+    const states: string[] = [];
+    let end: () => void = () => {};
+    const speakLocal = vi.fn((_t: string, onEnd: () => void) => ((end = onEnd), { stop: vi.fn() }));
+    const { d } = deps({ neuralAvailable: () => false, speakLocal, onState: (s) => void states.push(s) });
+    await createBackgroundVoice(d).speak("Hello");
+    expect(states.at(-1)).toBe("speaking");
+    end();
+    expect(states.at(-1)).toBe("idle");
+  });
+
+  it("stop() deja el estado en idle", async () => {
+    const states: string[] = [];
+    const { d } = deps({ onState: (s) => void states.push(s) });
+    const voice = createBackgroundVoice(d);
+    await voice.speak("Hi there, I am Emma.");
+    voice.stop();
+    expect(states.at(-1)).toBe("idle");
+  });
+
   it("stop() durante la síntesis (pantalla desmontada) no deja sonar nada después", async () => {
     let resolve: (url: string) => void = () => {};
     const { d, audios } = deps({ synthesize: vi.fn(() => new Promise<string>((r) => (resolve = r))) });
