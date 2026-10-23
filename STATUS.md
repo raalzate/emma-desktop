@@ -92,6 +92,13 @@ sea rutina, no estreno.
 
 ## Deuda conocida
 
+- **Voz nativa (#269, rama `feat/voz-nativa`, 2026-10-23):** Kokoro con onnxruntime-node en
+  un utilityProcess. Verificado en macOS arm64 (app dev por CDP: 0,68 s para una frase que
+  en WASM tardaba 9,6 s; primer sonido del onboarding a 1,7 s) y `pnpm voice:smoke` verde
+  (RTF 0,28). Carga desde asar con `utilityProcess` probada con un asar mínimo. **Sin
+  verificar todavía:** Windows (lo cubre el workflow `voice-smoke` al abrir el PR) y un
+  instalador empaquetado real (electron-builder lo dispara el humano).
+
 - **Cobertura sin umbral:** `vitest.config.ts` no exige mínimo de cobertura; el Artículo 1
   (TDD) es REVIEW hasta que se declare `coverage.thresholds` (mecanismo candidato:
   `pnpm test:coverage` como señal del gate con umbral).
