@@ -13,8 +13,15 @@ import {
 } from "@/components/onboarding/background-voice";
 
 function fakeAudio(): Playable & { paused: boolean } {
-  return { paused: false, play: vi.fn(async () => {}), pause: vi.fn(function (this: { paused: boolean }) { this.paused = true; }) };
+  return {
+    paused: false,
+    onended: null,
+    play: vi.fn(async () => {}),
+    pause: vi.fn(function (this: { paused: boolean }) { this.paused = true; }),
+  };
 }
+
+const flush = () => new Promise((r) => setTimeout(r, 0));
 
 function deps(over: Partial<BackgroundVoiceDeps> = {}) {
   const audios: ReturnType<typeof fakeAudio>[] = [];
@@ -98,6 +105,67 @@ describe("Emma habla en background durante el onboarding", () => {
     await voice.speak("🎉🎉");
     expect(d.synthesize).not.toHaveBeenCalled();
     expect(d.speakLocal).not.toHaveBeenCalled();
+  });
+
+  // Kokoro en WASM sintetiza ~3x más lento que el tiempo real (#267): esperar el
+  // mensaje entero dejaba segundos de silencio. Se trocea por oración.
+  const LONG = "Hi there, I am Emma. I will be your English tutor. Tell me about yourself.";
+
+  it("trocea por oración: suena la primera mientras se sintetiza el resto", async () => {
+    const { d, audios } = deps();
+    const voice = createBackgroundVoice(d);
+    await voice.speak(LONG);
+    expect(d.synthesize).toHaveBeenNthCalledWith(1, "Hi there, I am Emma.");
+    expect(audios[0].play).toHaveBeenCalled();
+    expect(audios).toHaveLength(1);
+  });
+
+  it("al terminar un trozo suena el siguiente, en orden", async () => {
+    const { d, audios } = deps();
+    const voice = createBackgroundVoice(d);
+    await voice.speak(LONG);
+    audios[0].onended?.(new Event("ended"));
+    await flush();
+    expect(d.createAudio).toHaveBeenNthCalledWith(2, "url:I will be your English tutor.");
+    expect(audios[1].play).toHaveBeenCalled();
+    audios[1].onended?.(new Event("ended"));
+    await flush();
+    expect(d.createAudio).toHaveBeenNthCalledWith(3, "url:Tell me about yourself.");
+  });
+
+  it("si falla un trozo posterior, lo que falta lo dice la voz local", async () => {
+    const synthesize = vi.fn(async (text: string) => {
+      if (text.startsWith("Hi")) return `url:${text}`;
+      throw new Error("worker caído");
+    });
+    const { d, audios } = deps({ synthesize });
+    const voice = createBackgroundVoice(d);
+    await voice.speak(LONG);
+    audios[0].onended?.(new Event("ended"));
+    await flush();
+    expect(d.speakLocal).toHaveBeenCalledWith("I will be your English tutor. Tell me about yourself.", expect.any(Function));
+  });
+
+  it("un mensaje nuevo corta los trozos pendientes del anterior", async () => {
+    const { d, audios } = deps();
+    const voice = createBackgroundVoice(d);
+    await voice.speak(LONG);
+    const first = audios[0];
+    await voice.speak("Great, let's start now!");
+    first.onended?.(new Event("ended"));
+    await flush();
+    expect(d.createAudio).not.toHaveBeenCalledWith("url:I will be your English tutor.");
+  });
+
+  it("stop() durante la síntesis (pantalla desmontada) no deja sonar nada después", async () => {
+    let resolve: (url: string) => void = () => {};
+    const { d, audios } = deps({ synthesize: vi.fn(() => new Promise<string>((r) => (resolve = r))) });
+    const voice = createBackgroundVoice(d);
+    const pending = voice.speak("Hello there, how are you?");
+    voice.stop();
+    resolve("url:late");
+    await pending;
+    expect(audios).toHaveLength(0);
   });
 
   it("stop() calla tanto el audio neuronal como la voz local", async () => {
