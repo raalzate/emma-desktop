@@ -193,6 +193,19 @@ a:focus-visible, button:focus-visible {
   overflow: hidden;
   box-shadow: 0 24px 60px -32px rgba(35, 38, 46, 0.35);
 }
+/* Video de portada: es un Short (vertical, 9:16), así que va angosto y centrado
+   en su columna en vez de estirarse al ancho de la captura que reemplaza. */
+.video-portada {
+  margin: 0;
+  justify-self: center;
+  width: min(100%, 340px);
+  aspect-ratio: 9 / 16;
+  border-radius: var(--radio);
+  overflow: hidden;
+  box-shadow: 0 24px 60px -32px rgba(35, 38, 46, 0.35);
+  background: #000;
+}
+.video-portada iframe { width: 100%; height: 100%; border: 0; display: block; }
 .marco-cabecera {
   display: flex;
   gap: 0.4rem;
