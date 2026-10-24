@@ -78,12 +78,9 @@ while IFS="$SEP" read -r NAME FASTSKIP MISSING ARGV; do
 
   echo ""
   echo "──▶ $NAME"
-  # El argv se expande sin shell: nada de eval sobre datos del config.
-  if node -e '
-      const argv = JSON.parse(process.argv[1]);
-      const r = require("node:child_process").spawnSync(argv[0], argv.slice(1), { stdio: "inherit" });
-      process.exit(r.status === null ? 1 : r.status);
-    ' "$ARGV"; then
+  # El argv se expande sin shell (nada de eval sobre datos del config); en Windows
+  # run-signal.mjs usa shell sólo para poder lanzar los `.cmd` de pnpm (#260).
+  if node scripts/run-signal.mjs "$ARGV"; then
     echo "    ✓ $NAME"
     RAN=$((RAN + 1))
   else

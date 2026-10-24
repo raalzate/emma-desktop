@@ -781,10 +781,20 @@ for (const s of senales) {
   else if (!s.why) bad(`señal «${s.name}»`, "no declara `why`: una señal sin motivo es una señal que nadie defiende");
   else ok(`señal «${s.name}» → ${argv.join(" ")}`);
 }
+/**
+ * ¿Se distribuye ejecutable? En Windows el sistema de archivos no guarda el bit
+ * (#260): lo que cuenta es el modo en el índice de git (100755), que es lo que
+ * recibe quien clona.
+ */
+function esEjecutable(absoluto, relativo) {
+  if (process.platform !== "win32") return (fs.statSync(absoluto).mode & 0o111) !== 0;
+  const res = spawnSync("git", ["ls-files", "-s", "--", relativo], { cwd: REPO_ROOT, encoding: "utf8" });
+  return res.status === 0 && res.stdout.startsWith("100755");
+}
 {
   const gateSh = abs("scripts/gate.sh");
   if (!fs.existsSync(gateSh)) bad("scripts/gate.sh", "no existe: no hay gate");
-  else if (!(fs.statSync(gateSh).mode & 0o111)) bad("scripts/gate.sh", "no es ejecutable (`chmod +x scripts/gate.sh`)");
+  else if (!esEjecutable(gateSh, "scripts/gate.sh")) bad("scripts/gate.sh", "no es ejecutable (`chmod +x scripts/gate.sh` o `git update-index --chmod=+x scripts/gate.sh`)");
   else ok("scripts/gate.sh es ejecutable");
 }
 for (const dir of [".claude/agents", ".claude/commands"]) {

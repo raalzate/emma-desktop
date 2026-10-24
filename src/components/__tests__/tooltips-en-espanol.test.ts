@@ -23,7 +23,8 @@ function listarTsx(dir: string): string[] {
   for (const entry of fs.readdirSync(abs, { withFileTypes: true })) {
     const rel = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (entry.name === "__tests__" || rel === PRIMITIVOS) continue;
+      // `rel` usa el separador del SO (`\` en Windows): se compara normalizado (#260).
+      if (entry.name === "__tests__" || rel.split(path.sep).join("/") === PRIMITIVOS) continue;
       out.push(...listarTsx(rel));
     } else if (entry.name.endsWith(".tsx")) {
       out.push(rel);
