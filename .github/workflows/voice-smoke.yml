@@ -12,6 +12,8 @@ on:
       - "main/services/tts-native/**"
       - "src/infrastructure/tts/**"
       - "scripts/voice-smoke.mjs"
+      - "scripts/packaged-voice-smoke.mjs"
+      - "main.ts"
       - "package.json"
       - "pnpm-lock.yaml"
       - ".github/workflows/voice-smoke.yml"
@@ -56,3 +58,43 @@ jobs:
       - name: Voz nativa sintetiza
         shell: bash
         run: pnpm voice:smoke
+
+  # La app EMPAQUETADA de verdad (`--dir`: sin instalador y sin publicar nada):
+  # prueba asar + asarUnpack + binarios por plataforma, lo que el smoke sin
+  # empaquetar no ve. Ad-hoc en macOS, igual que el release sin certificado.
+  packaged:
+    name: Packaged voice (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+          - os: macos-latest
+            platform: mac
+    runs-on: ${{ matrix.os }}
+    env:
+      EMMA_KOKORO_CACHE: ${{ github.workspace }}/.cache/kokoro
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: .cache/kokoro
+          key: kokoro-82m-v1.0-fp32
+      - run: pnpm build
+      - name: Empaquetar sin instalador (--dir, sin publicar)
+        shell: bash
+        run: pnpm exec electron-builder --${{ matrix.platform }} --dir --publish never -c.mac.identity=- -c.mac.hardenedRuntime=false
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: La app empaquetada habla con el motor nativo
+        shell: bash
+        run: node scripts/packaged-voice-smoke.mjs

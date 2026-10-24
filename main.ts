@@ -7,6 +7,7 @@ import { registerPrivilegedSchemes } from './main/schemes';
 import { createMainWindow } from './main/window';
 import { registerIpcHandlers } from './main/ipc';
 import { scheduleStartupCheck } from './main/services/auto-update';
+import { runVoiceSmokeAndExit } from './main/services/tts-native/smoke';
 
 // Schemes privilegiados. electron-serve encola SU registro (solo 'app') en un
 // `queueMicrotask` al importarse, así que una llamada síncrona nuestra quedaría
@@ -28,6 +29,9 @@ app.commandLine.appendSwitch('enable-features', WEBGPU_FEATURES);
 setupProdLogger();
 
 app.whenReady().then(() => {
+  // Smoke de la voz en la app EMPAQUETADA (scripts/packaged-voice-smoke.mjs): sin ventana.
+  if (process.env.EMMA_VOICE_SMOKE === '1') return void runVoiceSmokeAndExit();
+
   // Sirve userData/models/litert/<archivo>.litertlm vía litert-model://m/<archivo>.
   const litertDir = path.join(app.getPath('userData'), 'models', 'litert');
   protocol.handle('litert-model', (request) => {

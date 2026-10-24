@@ -1,9 +1,10 @@
 // =============================================================================
-// Smoke de la voz nativa: entrada de Electron mínima (sin ventana) que lanza el
-// host real en un utilityProcess y sintetiza una frase. Falla si no hay audio o
-// si va groseramente lento (RTF ≥ 2: p. ej. onnxruntime cayó a un hilo). Las VMs
-// de CI son más lentas que un equipo real: entre 1 y 2 sólo avisa. Lo corre `scripts/voice-smoke.mjs` en CI
-// (Windows y macOS): es la prueba de que onnxruntime-node arranca en esa plataforma.
+// Smoke de la voz nativa: lanza el host real en un utilityProcess y sintetiza
+// una frase. Falla si no hay audio o si va groseramente lento (RTF ≥ 2: p. ej.
+// onnxruntime cayó a un hilo). Las VMs de CI son más lentas que un equipo real:
+// entre 1 y 2 sólo avisa. Dos entradas: `smoke-entry.ts` (compilado, sin
+// empaquetar) y `main.ts` con EMMA_VOICE_SMOKE=1 (la app EMPAQUETADA: prueba
+// asar, asarUnpack y los binarios de la plataforma).
 // =============================================================================
 
 import { app } from 'electron';
@@ -28,12 +29,13 @@ async function run(): Promise<void> {
   console.log(`VOZ NATIVA VERDE — ${summary}`);
 }
 
-app.whenReady().then(() =>
-  run().then(
+/** Corre el smoke y cierra la app con 0 (verde) o 1 (rojo). */
+export function runVoiceSmokeAndExit(): Promise<void> {
+  return run().then(
     () => app.exit(0),
     (error: unknown) => {
       console.error(`VOZ NATIVA ROJA — ${error instanceof Error ? error.message : String(error)}`);
       app.exit(1);
     },
-  ),
-);
+  );
+}

@@ -10,7 +10,7 @@ import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const ENTRY = 'build/main/services/tts-native/smoke.js';
+const ENTRY = 'build/main/services/tts-native/smoke-entry.js';
 
 if (!existsSync(ENTRY)) {
   console.error(`VOZ NATIVA ROJA — falta ${ENTRY}: corré \`pnpm build\` antes.`);
