@@ -3,7 +3,7 @@ name: Voice smoke
 # La voz de Emma corre con onnxruntime-node (binario nativo) en un utilityProcess
 # (#269). Este workflow prueba que ARRANCA y sintetiza en Windows y macOS —las
 # plataformas que el cliente usa— cada vez que se toca la voz o las dependencias,
-# y que no va groseramente lento (RTF < 2: las VMs de CI son más lentas que un
+# y que no va groseramente lento (RTF < 3: las VMs de CI son más lentas que un
 # equipo real). El gate de CI corre en Linux y no ejecuta Electron.
 on:
   pull_request:

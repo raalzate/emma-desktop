@@ -1,8 +1,8 @@
 // =============================================================================
 // Smoke de la voz nativa: lanza el host real en un utilityProcess y sintetiza
-// una frase. Falla si no hay audio o si va groseramente lento (RTF ≥ 2: p. ej.
+// una frase. Falla si no hay audio o si va groseramente lento (RTF ≥ 3: p. ej.
 // onnxruntime cayó a un hilo). Las VMs de CI son más lentas que un equipo real:
-// entre 1 y 2 sólo avisa. Dos entradas: `smoke-entry.ts` (compilado, sin
+// entre 1 y 3 sólo avisa. Dos entradas: `smoke-entry.ts` (compilado, sin
 // empaquetar) y `main.ts` con EMMA_VOICE_SMOKE=1 (la app EMPAQUETADA: prueba
 // asar, asarUnpack y los binarios de la plataforma).
 // =============================================================================
@@ -12,7 +12,8 @@ import { generateNativeTts, warmNativeTts } from './index';
 
 const WARMUP = 'Hello there.';
 const PHRASE = 'Hi! I am Emma, your English tutor.';
-const RTF_FAIL = 2;
+// El runner macOS de GitHub midió hasta 1,88 con la sesión caliente (un Mac real: 0,24).
+const RTF_FAIL = 3;
 
 async function run(): Promise<void> {
   let t = Date.now();
