@@ -55,8 +55,10 @@ describe("resolveGateMarker", () => {
 
     const marcador = resolveGateMarker(".git/gate-dirty", worktree)!;
     expect(fs.statSync(path.dirname(marcador)).isDirectory()).toBe(true);
-    expect(fs.realpathSync(path.dirname(marcador))).toBe(
-      fs.realpathSync(path.join(principal, ".git")),
+    // `.native`: en Windows el temp puede llegar como nombre corto 8.3 (`RUNNER~1`)
+    // y el realpath de JS no lo expande; el nativo sí (#260).
+    expect(fs.realpathSync.native(path.dirname(marcador))).toBe(
+      fs.realpathSync.native(path.join(principal, ".git")),
     );
   });
 
