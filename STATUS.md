@@ -8,15 +8,16 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **v0.10.0 (en preparación, milestone 19 cerrado en issues):** nube desde la puerta de IA
+- **Último release publicado:** v0.10.0 (2026-10-24, marcada Latest, 3 instaladores; build con smoke
+  de app y de voz nativa verdes en las tres plataformas): nube desde la puerta de IA
   para equipos modestos (#261), voz nativa con onnxruntime-node en un utilityProcess (#269:
   0,68 s contra 9,6 s en WASM; verificada en la app empaquetada en Windows y macOS) y gate
   verde en Windows (#260). Notas en `docs/releases/0.10.0.md`.
-- **Último release publicado:** v0.9.2 (2026-10-13, marcada Latest, 3 instaladores): IA 100 % local. El motor
+- **v0.9.2 (2026-10-13, publicada):** IA 100 % local. El motor
   de Gemma (`@litert-lm/core`) y su WASM se sirven desde `app://-/litert/` (copiados en el
   build; #248): Gemma generó una escena en 20 s con 0 requests a jsdelivr (verificado por CDP).
   Resaltado de la escena con nombres con punto y sin el punto final de las horas (#256).
-  Deuda: Kokoro en WASM de un hilo va a RTF 1,6–1,9; con hilos (COOP/COEP) bajaría a ~0,5.
+  (La deuda de Kokoro en WASM de un hilo la resolvió la voz nativa de v0.10.0.)
 - **v0.9.1 (2026-10-13, publicada):** voz
   100 % local. Kokoro corre en un Web Worker con WASM fp32 (#245): en WebGPU competía con
   Gemma (2–16 s y un cierre inesperado). Síntesis por oración; main registra
