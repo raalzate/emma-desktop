@@ -21,6 +21,23 @@ Mecanismo: <el comando que ahora falla si alguien lo repite — o "ninguno ejecu
 
 ---
 
+### GOTCHA: `pnpm gate` rojo en Windows con el código sano (#260)
+
+Síntoma: en Windows typecheck, tests, build y smoke fallaban al instante y sin salida; el
+  self-test decía «scripts/gate.sh no es ejecutable»; `gate-marker.test.ts` moría con
+  «SyntaxError: Invalid or unexpected token». En macOS y Linux, verde.
+Causa:   cuatro supuestos de POSIX: `spawnSync("pnpm")` sin shell no lanza un `.cmd`; el
+  FS de Windows no guarda el bit de ejecución; con `core.autocrlf` un `.mjs` con shebang
+  llega en CRLF y vitest no lo importa; y las rutas (`\`, unidad `C:`, nombres 8.3 como
+  `RUNNER~1`) no se comparan como en POSIX.
+Regla:   el gate da el mismo veredicto en Windows. Scripts y hooks van en LF
+  (`.gitattributes`), las señales se lanzan con `scripts/run-signal.mjs` y los tests
+  comparan rutas con `path`/`realpathSync.native`, nunca con `/` a mano.
+Mecanismo: el workflow `gate-windows` corre `pnpm gate` en `windows-latest` en cada PR;
+  `scripts/__tests__/run-signal.test.ts` fija el shell sólo en Windows.
+
+---
+
 ### GOTCHA: subir de nivel no cambiaba nada en la app — la promoción se escribía donde nadie leía
 
 Síntoma: el aprendiz completaba la racha, el cierre decía «You moved up to …» y, al volver
