@@ -9,7 +9,7 @@ import { spawnPlan } from "../run-signal.mjs";
 
 describe("spawnPlan", () => {
   it("en macOS y Linux lanza el argv tal cual, sin shell", () => {
-    for (const platform of ["darwin", "linux"]) {
+    for (const platform of ["darwin", "linux"] as const) {
       expect(spawnPlan(["pnpm", "test"], platform)).toEqual({ command: "pnpm", args: ["test"], shell: false });
     }
   });

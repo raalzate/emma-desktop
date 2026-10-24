@@ -1,0 +1,12 @@
+# Fin de línea LF en scripts y hooks, también en un checkout de Windows (#260).
+# Con `core.autocrlf` Windows los baja en CRLF: un `.mjs` con shebang
+# (`#!/usr/bin/env node\r`) revienta al importarlo en vitest («SyntaxError:
+# Invalid or unexpected token») y bash no corre un hook con `\r`.
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.sh text eol=lf
+.githooks/* text eol=lf
+.claude/hooks/* text eol=lf
