@@ -4,10 +4,14 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-10-12
+- **Fecha del último gate completo:** 2026-10-24 (macOS y `windows-latest`, #260)
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
+- **v0.10.0 (en preparación, milestone 19 cerrado en issues):** nube desde la puerta de IA
+  para equipos modestos (#261), voz nativa con onnxruntime-node en un utilityProcess (#269:
+  0,68 s contra 9,6 s en WASM; verificada en la app empaquetada en Windows y macOS) y gate
+  verde en Windows (#260). Notas en `docs/releases/0.10.0.md`.
 - **Último release publicado:** v0.9.2 (2026-10-13, marcada Latest, 3 instaladores): IA 100 % local. El motor
   de Gemma (`@litert-lm/core`) y su WASM se sirven desde `app://-/litert/` (copiados en el
   build; #248): Gemma generó una escena en 20 s con 0 requests a jsdelivr (verificado por CDP).
