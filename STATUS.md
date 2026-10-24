@@ -96,8 +96,9 @@ sea rutina, no estreno.
   un utilityProcess. Verificado en macOS arm64 (app dev por CDP: 0,68 s para una frase que
   en WASM tardaba 9,6 s; primer sonido del onboarding a 1,7 s) y `pnpm voice:smoke` verde
   (RTF 0,28). Carga desde asar con `utilityProcess` probada con un asar mínimo. **Sin
-  verificar todavía:** un instalador empaquetado real (electron-builder lo dispara el
-  humano). Windows: `voice-smoke` verde en `windows-latest` (win32/x64, RTF 0,27 con la sesión
+  verificar todavía:** un instalador probado a mano en un equipo del cliente. El job
+  `packaged` del workflow `voice-smoke` arma la app real (`--dir`, sin publicar) en Windows
+  y macOS y exige que hable con el motor nativo desde el asar. Windows: `voice-smoke` verde en `windows-latest` (win32/x64, RTF 0,27 con la sesión
   caliente; 0,73 en la primera inferencia); falta probarlo en un equipo Windows del cliente.
 - **Nube en la puerta de IA (#261, rama `feat/v0.10-nube-y-voz`, gate verde 2026-10-23):** sin
   probar en vivo con una llave real de Gemini ni en un equipo sin WebGPU; la verificación de
