@@ -27,7 +27,8 @@ export const REMOTE_PROVIDERS: RemoteProviderInfo[] = [
   {
     id: "gemini",
     label: "Google Gemini",
-    models: ["gemini-2.5-flash", "gemini-2.5-pro"],
+    // flash-lite: cuota gratuita más holgada para equipos que dependen de la nube.
+    models: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"],
     defaultModel: "gemini-2.5-flash",
     keysUrl: "https://aistudio.google.com/app/apikey",
   },

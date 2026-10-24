@@ -5,14 +5,8 @@ import {
   deleteLitertModel,
   revealLitertModel,
 } from './services/litert-models';
-import {
-  setAiKey,
-  deleteAiKey,
-  aiKeyStatus,
-  remoteGenerate,
-  type RemoteProvider,
-  type RemoteGenerateArgs,
-} from './services/ai-remote';
+import { setAiKey, deleteAiKey, aiKeyStatus, remoteGenerate } from './services/ai-remote';
+import { parseKeySetArgs, parseRemoteGenerateArgs } from './services/ai-remote-http';
 import { getSystemInfo } from './services/system-info';
 import { generateNativeTts, warmNativeTts } from './services/tts-native';
 import { parseGenerateArgs } from './services/tts-native/protocol';
@@ -42,12 +36,16 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('litert-model-reveal', async (_e, id: string) => revealLitertModel(id));
 
   // --- IA remota (llaves cifradas + generación) ---
-  ipcMain.handle('ai-key-set', async (_e, provider: RemoteProvider, key: string) =>
-    setAiKey(provider, key)
+  // La entrada del renderer se valida con Zod antes de tocar llaves o red (Artículo 4).
+  ipcMain.handle('ai-key-set', async (_e, provider: unknown, key: unknown) => {
+    const args = parseKeySetArgs(provider, key);
+    return setAiKey(args.provider, args.key);
+  });
+  ipcMain.handle('ai-key-delete', async (_e, provider: unknown) =>
+    deleteAiKey(parseKeySetArgs(provider, '').provider)
   );
-  ipcMain.handle('ai-key-delete', async (_e, provider: RemoteProvider) => deleteAiKey(provider));
   ipcMain.handle('ai-key-status', async () => aiKeyStatus());
-  ipcMain.handle('ai-remote-generate', async (_e, args: RemoteGenerateArgs) => remoteGenerate(args));
+  ipcMain.handle('ai-remote-generate', async (_e, args: unknown) => remoteGenerate(parseRemoteGenerateArgs(args)));
 
   // --- Voz nativa: Kokoro con onnxruntime-node en un utilityProcess (#269) ---
   ipcMain.handle('tts-native-warm', async () => warmNativeTts());
