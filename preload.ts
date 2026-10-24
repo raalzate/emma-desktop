@@ -33,6 +33,11 @@ contextBridge.exposeInMainWorld('emmaAPI', {
     system?: string;
   }): Promise<string> => ipcRenderer.invoke('ai-remote-generate', args),
 
+  // --- Voz nativa (Kokoro en un utilityProcess, #269) ---
+  ttsNativeWarm: (): Promise<void> => ipcRenderer.invoke('tts-native-warm'),
+  ttsNativeGenerate: (text: string, voice: string): Promise<{ wav: Uint8Array; duration: number }> =>
+    ipcRenderer.invoke('tts-native-generate', { text, voice }),
+
   // --- Actualizaciones (spec #137) ---
   updatesCheck: (): Promise<void> => ipcRenderer.invoke('updates-check'),
   updatesDownload: (): Promise<void> => ipcRenderer.invoke('updates-download'),

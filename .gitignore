@@ -55,3 +55,6 @@ next-env.d.ts
 
 # capturas y logs locales del MCP de Playwright
 /.playwright-mcp/
+
+# Caché del modelo de voz del smoke de CI (#269)
+.cache/

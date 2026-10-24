@@ -20,6 +20,7 @@ import type { OnboardingIo } from "@/domain/onboarding/i-onboarding-repository";
 import { REQUIRED_FIELDS } from "@/domain/onboarding/agentic-onboarding";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
 import { useBackgroundVoice } from "./use-background-voice";
+import type { VoiceState } from "./background-voice";
 
 export type BubbleRole = "emma" | "user";
 export interface Bubble {
@@ -38,6 +39,8 @@ const TOTAL_STEPS = REQUIRED_FIELDS.length;
 export interface OnboardingFlow {
   messages: Bubble[];
   thinking: boolean;
+  /** La voz de Emma se prepara o suena (indicador en la UI). */
+  voiceState: VoiceState;
   done: boolean;
   /** false si el flujo terminó por tope de turnos con el perfil incompleto. */
   completed: boolean;
@@ -60,7 +63,7 @@ export function useOnboardingFlow(
   const resolveRef = useRef<((v: string) => void) | null>(null);
   const idRef = useRef(0);
   const startedRef = useRef(false);
-  const voice = useBackgroundVoice();
+  const { voice, voiceState } = useBackgroundVoice();
 
   const push = useCallback(
     (role: BubbleRole, text: string) => {
@@ -128,6 +131,7 @@ export function useOnboardingFlow(
   return {
     messages,
     thinking,
+    voiceState,
     done,
     completed,
     progress: done ? total : Math.min(captured, total),

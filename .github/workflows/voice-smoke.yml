@@ -1,0 +1,100 @@
+name: Voice smoke
+
+# La voz de Emma corre con onnxruntime-node (binario nativo) en un utilityProcess
+# (#269). Este workflow prueba que ARRANCA y sintetiza en Windows y macOS —las
+# plataformas que el cliente usa— cada vez que se toca la voz o las dependencias,
+# y que no va groseramente lento (RTF < 3: las VMs de CI son más lentas que un
+# equipo real). El gate de CI corre en Linux y no ejecuta Electron.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "main/services/tts-native/**"
+      - "src/infrastructure/tts/**"
+      - "scripts/voice-smoke.mjs"
+      - "scripts/packaged-voice-smoke.mjs"
+      - "main.ts"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/voice-smoke.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: voice-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  voice:
+    name: Voice (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      EMMA_KOKORO_CACHE: ${{ github.workspace }}/.cache/kokoro
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # Install completo: hace falta el binario de Electron para el utilityProcess.
+      - run: pnpm install --frozen-lockfile
+
+      # El modelo (~326 MB) se baja una vez y queda cacheado entre runs.
+      - uses: actions/cache@v4
+        with:
+          path: .cache/kokoro
+          key: kokoro-82m-v1.0-fp32
+
+      - name: Compilar el proceso main
+        run: pnpm exec tsc -p tsconfig.electron.json
+
+      - name: Voz nativa sintetiza
+        shell: bash
+        run: pnpm voice:smoke
+
+  # La app EMPAQUETADA de verdad (`--dir`: sin instalador y sin publicar nada):
+  # prueba asar + asarUnpack + binarios por plataforma, lo que el smoke sin
+  # empaquetar no ve. Ad-hoc en macOS, igual que el release sin certificado.
+  packaged:
+    name: Packaged voice (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+          - os: macos-latest
+            platform: mac
+    runs-on: ${{ matrix.os }}
+    env:
+      EMMA_KOKORO_CACHE: ${{ github.workspace }}/.cache/kokoro
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: .cache/kokoro
+          key: kokoro-82m-v1.0-fp32
+      - run: pnpm build
+      - name: Empaquetar sin instalador (--dir, sin publicar)
+        shell: bash
+        run: pnpm exec electron-builder --${{ matrix.platform }} --dir --publish never -c.mac.identity=- -c.mac.hardenedRuntime=false
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - name: La app empaquetada habla con el motor nativo
+        shell: bash
+        run: node scripts/packaged-voice-smoke.mjs

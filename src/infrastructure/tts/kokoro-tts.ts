@@ -1,9 +1,9 @@
 /**
  * Voz neuronal local con Kokoro-82M (kokoro-js sobre transformers.js), la voz
- * de EMMA. El modelo corre en un Web Worker (`kokoro.worker.ts`) con WASM
- * (CPU), nunca WebGPU: así no compite por la GPU con Gemma (LiteRT) ni bloquea
- * la UI. Se mide fp32 contra q8 en WASM: fp32 es más rápido (ver el worker).
- * El modelo (~326 MB) se descarga una vez y queda en la caché del navegador.
+ * de EMMA. Motor preferido: nativo, en un utilityProcess del main con
+ * onnxruntime-node (`native-engine.ts`, #269). Respaldo: un Web Worker
+ * (`kokoro.worker.ts`) con WASM (CPU), nunca WebGPU: así no compite por la GPU
+ * con Gemma (LiteRT) ni bloquea la UI. En ambos, CPU y fp32.
  *
  * El motor es un singleton con reset si la carga falla o el worker cae (un
  * fallo no deja el módulo roto para siempre). Kokoro no devuelve timings: se
@@ -13,6 +13,7 @@
 import type { WordTiming } from "@/domain/ai/llm-port";
 import { estimateWordTimings } from "@/domain/tts/word-timings";
 import { createWorkerEngineLoader } from "./kokoro-worker-client";
+import { createNativeEngineLoader, preferFirstLoader } from "./native-engine";
 
 /** Lo mínimo que usamos del RawAudio de transformers.js. */
 export interface KokoroAudio {
@@ -98,7 +99,14 @@ function spawnKokoroWorker(): Worker {
   return new Worker(new URL("./kokoro.worker.ts", import.meta.url));
 }
 
-const kokoro = createKokoroService({ load: createWorkerEngineLoader(spawnKokoroWorker), toUrl: (blob) => URL.createObjectURL(blob) });
+// Nativo primero (utilityProcess, multihilo); el Worker WASM queda de respaldo.
+const kokoro = createKokoroService({
+  load: preferFirstLoader(
+    createNativeEngineLoader(() => (typeof window !== "undefined" ? window.emmaAPI : undefined)),
+    createWorkerEngineLoader(spawnKokoroWorker),
+  ),
+  toUrl: (blob) => URL.createObjectURL(blob),
+});
 
 /** ¿Hay runtime para correr Kokoro (renderer con WebAssembly)? */
 export function kokoroAvailable(): boolean {

@@ -29,6 +29,10 @@ export interface EmmaApi {
     system?: string;
   }): Promise<string>;
 
+  /** Voz nativa (Kokoro en un utilityProcess); rechaza si el motor no arranca. */
+  ttsNativeWarm?(): Promise<void>;
+  ttsNativeGenerate?(text: string, voice: string): Promise<{ wav: Uint8Array; duration: number }>;
+
   systemInfo(): Promise<Record<string, unknown>>;
 
   // Actualizaciones (spec #137): el estado llega por onUpdateStatus.

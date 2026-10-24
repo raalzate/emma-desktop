@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEmma } from "@/interface/emma-context";
 import { OnboardingHeader } from "@/components/onboarding/onboarding-header";
@@ -45,6 +45,7 @@ export default function OnboardingPage() {
           <OnboardingBubble key={m.id} role={m.role} text={m.text} />
         ))}
         {flow.thinking && <ThinkingBubble />}
+        {!flow.thinking && flow.voiceState !== "idle" && <VoiceIndicator state={flow.voiceState} />}
       </div>
       {flow.done ? (
         <div className="space-y-2 pb-2 text-center duration-500 animate-in fade-in slide-in-from-bottom-2">
@@ -91,6 +92,16 @@ function ThinkingBubble() {
     <div className="flex items-center gap-2">
       <EmmaAvatar />
       <Skeleton className="h-8 w-32 rounded-2xl" />
+    </div>
+  );
+}
+
+/** La voz de Emma viene en camino o está sonando: sin esto la espera parecía un cuelgue. */
+function VoiceIndicator({ state }: { state: "preparing" | "speaking" }) {
+  return (
+    <div role="status" aria-live="polite" className="flex items-center gap-2 pl-12 text-xs text-muted-foreground">
+      <Volume2 className={state === "preparing" ? "h-4 w-4 animate-pulse" : "h-4 w-4 text-primary"} />
+      {state === "preparing" ? "Emma is getting ready to speak…" : "Emma is speaking…"}
     </div>
   );
 }

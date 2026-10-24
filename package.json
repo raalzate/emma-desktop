@@ -13,6 +13,7 @@
     "ts:build": "tsc -p tsconfig.electron.json",
     "ts:watch": "tsc -p tsconfig.electron.json --watch",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "voice:smoke": "node scripts/voice-smoke.mjs",
     "move-out": "rimraf build/out && mv out build/out",
     "electron-dev": "concurrently -k -n NEXT,TS,ELECTRON -c green,cyan,yellow \"npm:next-dev\" \"npm:ts:watch\" \"wait-on http://localhost:${PORT:-3000} && ELECTRON_RENDERER_URL=http://localhost:${PORT:-3000} electron .\"",
     "build": "npm run next-build && npm run ts:build && npm run move-out",
@@ -109,6 +110,11 @@
     "appId": "com.emma.desktop",
     "productName": "EMMA",
     "asar": true,
+    "asarUnpack": [
+      "**/node_modules/onnxruntime-node/**",
+      "**/node_modules/sharp/**",
+      "**/node_modules/@img/**"
+    ],
     "directories": {
       "output": "dist",
       "buildResources": "buildResources"
@@ -129,15 +135,24 @@
       "target": "dmg",
       "icon": "assets/icon-mac.png",
       "hardenedRuntime": true,
-      "gatekeeperAssess": false
+      "gatekeeperAssess": false,
+      "files": [
+        "!**/node_modules/onnxruntime-node/bin/napi-v3/{linux,win32}/**"
+      ]
     },
     "win": {
       "target": "nsis",
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "files": [
+        "!**/node_modules/onnxruntime-node/bin/napi-v3/{linux,darwin}/**"
+      ]
     },
     "linux": {
       "target": "AppImage",
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "files": [
+        "!**/node_modules/onnxruntime-node/bin/napi-v3/{darwin,win32}/**"
+      ]
     }
   }
 }

@@ -81,6 +81,16 @@ recibe `llm: LlmGenerate` en `TeachArgs`.
 El dominio solo ve `LlmGenerate`. Cada llamada respeta su presupuesto de tokens
 (`domain/shared/token-budgets.ts`).
 
+**Puerta de IA y equipos modestos (#261):** `src/interface/ai-gate.tsx` bloquea la
+app hasta que hay motor, y ofrece los dos caminos: descargar Gemma (por defecto)
+o pegar una llave de Gemini (`src/components/settings/cloud-quick-setup.tsx`, modo
+`remote`). `src/lib/ai/device-probe.ts` mide WebGPU y RAM y
+`src/domain/ai/engine-recommendation.ts` decide el orden: sin WebGPU o con menos RAM
+que el modelo más liviano, la nube va primero. En el main,
+`main/services/ai-remote-http.ts` (puro) arma las peticiones —llave de Gemini en
+`x-goog-api-key`, nunca en la URL—, verifica la llave listando modelos antes de
+cifrarla, reintenta 429/5xx con espera creciente y valida con Zod la entrada del IPC.
+
 ## Niveles: CEFR por dentro, «Level 1–5» por fuera
 
 La escala CEFR (A1…C1) sigue siendo el modelo interno: tipos, reglas de
@@ -124,9 +134,17 @@ animado importa `motion/react` directo).
   servicios. Llaves de nube cifradas con `safeStorage`. La persistencia vive aquí:
   store JSON por colección (`main/services/store.ts`, un documento por colección
   bajo `userData/emma/store/`, escritura atómica) — reemplaza a SQLite.
+- **utilityProcess «EMMA voice»** (`main/services/tts-native/host.ts`, #269): Kokoro-82M
+  con `onnxruntime-node` en CPU multihilo, ~0,25 s de cómputo por s de audio (el WASM de un
+  hilo iba a ~3,4). Proceso aparte para que un crash nativo no tumbe la app; el cliente
+  (`main/services/tts-native/client.ts`) lo relanza si muere. Modelo en
+  `userData/models/kokoro`. Los binarios van fuera del asar (`asarUnpack`) y cada
+  instalador lleva sólo los de su plataforma. Lo prueba `pnpm voice:smoke` en CI
+  (Windows y macOS, `.github/workflows/voice-smoke.yml`) y en el release.
 - **preload** (`preload.ts`): puente IPC tipado (contextBridge).
-- **renderer** (Next.js): UI, IA local WebGPU, STT (Whisper), TTS (Kokoro local en un Worker
-  WASM, con Web Speech como respaldo). Sin voces de nube: el runtime WASM de onnxruntime
+- **renderer** (Next.js): UI, IA local WebGPU, STT (Whisper), TTS: Kokoro nativo por IPC
+  (`src/infrastructure/tts/native-engine.ts`); si no arranca, Kokoro en un Worker WASM, y
+  Web Speech como último respaldo. Sin voces de nube: el runtime WASM de onnxruntime
   va empaquetado en `public/ort/` (copiado en el build por `scripts/copy-ort-wasm.mjs`).
 
 ## Dónde va cada cosa
