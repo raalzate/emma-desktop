@@ -1,0 +1,33 @@
+name: Gate (Windows)
+
+# El MISMO `pnpm gate` que corre en Linux (ci.yml), pero en Windows (#260): el
+# equipo también desarrolla en Windows y el gate tiene que dar el mismo veredicto
+# ahí. Si una regla sólo pasa en un sistema operativo, el gate miente en el otro.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: gate-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # Install completo: el smoke de producción lanza Electron.
+      - run: pnpm install --frozen-lockfile
+
+      - name: gate
+        shell: bash
+        run: pnpm gate

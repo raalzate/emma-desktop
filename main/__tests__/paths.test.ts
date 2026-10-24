@@ -7,16 +7,17 @@ import { rendererOutDir, assetsDir } from '../paths';
 // <raíz>/build/main. El export de Next lo deja `move-out` en <raíz>/build/out.
 // El release v0.1.0 salió con ventana blanca porque electron-serve apuntaba a
 // build/main/out (join(__dirname, 'out')): estos tests fijan la resolución real.
+// `path.resolve` en el esperado: en Windows antepone la unidad (`C:`) igual que el módulo (#260).
 const compiledDir = path.join(path.sep, 'app', 'build', 'main');
 
 describe('rendererOutDir', () => {
   it('resuelve build/out (destino de move-out), no build/main/out', () => {
-    expect(rendererOutDir(compiledDir)).toBe(path.join(path.sep, 'app', 'build', 'out'));
+    expect(rendererOutDir(compiledDir)).toBe(path.resolve(path.sep, 'app', 'build', 'out'));
   });
 });
 
 describe('assetsDir', () => {
   it('resuelve assets/ en la raíz (empaquetada o del repo)', () => {
-    expect(assetsDir(compiledDir)).toBe(path.join(path.sep, 'app', 'assets'));
+    expect(assetsDir(compiledDir)).toBe(path.resolve(path.sep, 'app', 'assets'));
   });
 });
