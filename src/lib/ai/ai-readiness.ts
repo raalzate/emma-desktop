@@ -4,9 +4,13 @@
  *  - modo remote → una API key configurada para el proveedor elegido.
  * Sin esto, cualquier llamada al LLM fallaría ("Failed to fetch") — así que la UI
  * primero pide descargar el modelo.
+ *
+ * Modo remote sin llave pero con un Gemma descargado vuelve a local: la puerta de
+ * IA no ofrece cambiar de modo y Ajustes queda detrás de ella, así que sin esta
+ * auto-cura la app quedaba trabada en "Get Emma ready" con el modelo ya en disco.
  */
 
-import { loadAiSettings } from "./remote-settings";
+import { loadAiSettings, saveAiSettings } from "./remote-settings";
 import { getSelectedLitertModelId, setSelectedLitertModelId } from "@/lib/litert-models";
 import type { LitertModelId } from "@/lib/litert-models";
 
@@ -16,30 +20,37 @@ export interface AiReadiness {
   reason: "ok" | "no-model" | "no-remote-key" | "no-bridge";
 }
 
+type EmmaApi = NonNullable<Window["emmaAPI"]>;
+
+/**
+ * ¿Hay un modelo local descargado? El motor usa el SELECCIONADO: si ese no está
+ * en disco pero otro sí, reapunta la selección a uno descargado.
+ */
+async function hasLocalModel(api: EmmaApi): Promise<boolean> {
+  const { models } = await api.litertModelsList();
+  const downloaded = models.filter((m) => m.downloaded);
+  if (!downloaded.length) return false;
+  if (!downloaded.some((m) => m.id === getSelectedLitertModelId())) {
+    setSelectedLitertModelId(downloaded[0].id as LitertModelId);
+  }
+  return true;
+}
+
 export async function checkAiReadiness(): Promise<AiReadiness> {
   const api = typeof window !== "undefined" ? window.emmaAPI : undefined;
-  const { mode, provider } = loadAiSettings();
+  const settings = loadAiSettings();
+  const { mode, provider } = settings;
   if (!api) return { ready: false, mode, reason: "no-bridge" };
 
   if (mode === "remote") {
     const status = await api.getAiKeyStatus();
-    return status[provider]
-      ? { ready: true, mode, reason: "ok" }
-      : { ready: false, mode, reason: "no-remote-key" };
+    if (status[provider]) return { ready: true, mode, reason: "ok" };
+    if (!(await hasLocalModel(api))) return { ready: false, mode, reason: "no-remote-key" };
+    saveAiSettings({ ...settings, mode: "local" });
+    return { ready: true, mode: "local", reason: "ok" };
   }
 
-  // local / hybrid → hace falta un modelo descargado. Además, el motor usa el
-  // modelo SELECCIONADO: si el seleccionado no está descargado pero otro sí,
-  // reapuntamos la selección a uno descargado (auto-cura la incoherencia).
-  const { models } = await api.litertModelsList();
-  const downloaded = models.filter((m) => m.downloaded);
-  if (downloaded.length) {
-    const selected = getSelectedLitertModelId();
-    if (!downloaded.some((m) => m.id === selected)) {
-      setSelectedLitertModelId(downloaded[0].id as LitertModelId);
-    }
-    return { ready: true, mode, reason: "ok" };
-  }
+  if (await hasLocalModel(api)) return { ready: true, mode, reason: "ok" };
 
   // hybrid puede caer a la nube si hay key.
   if (mode === "hybrid") {
