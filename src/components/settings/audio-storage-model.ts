@@ -4,7 +4,12 @@ import { MIN_AUDIO_CAP_BYTES } from "@/infrastructure/persistence/audio-prefs-re
 
 const MB = 1024 * 1024;
 
-export const formatMb = (bytes: number): string => `${(bytes / MB).toFixed(1)} MB`;
+/** Megas con un decimal desde 1 MB; por debajo, KB (un clip chico no es «0.0 MB»). */
+export const formatSize = (bytes: number): string =>
+  bytes < MB ? `${Math.ceil(bytes / 1024)} KB` : `${(bytes / MB).toFixed(1)} MB`;
+
+/** Tope de almacenamiento, en megas enteros. */
+export const formatCap = (capBytes: number): string => `${Math.round(capBytes / MB)} MB`;
 
 export type CapParse = { ok: true; bytes: number } | { ok: false; error: string };
 

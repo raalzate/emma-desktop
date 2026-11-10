@@ -5,6 +5,7 @@ import {
   type AudioRecallAction,
   gradeOf,
   initialAudioRecallState,
+  playbackRateFor,
   stepsFor,
   type AudioRecallState,
 } from "@/components/practice/audio-recall-state";
@@ -72,6 +73,17 @@ describe("transiciones", () => {
     const fin = reduce(rec, { type: "recordStopped", url: "blob:x" });
     expect(fin.recording).toBe(false);
     expect(fin.attemptUrl).toBe("blob:x");
+  });
+});
+
+describe("playbackRateFor", () => {
+  it("Listen y Write respetan la velocidad elegida", () => {
+    expect(playbackRateFor("listen", 0.75)).toBe(0.75);
+    expect(playbackRateFor("write", 0.75)).toBe(0.75);
+  });
+  it("la comparación A/B (Read aloud) siempre va a 1x, aunque se eligiera 0.75x", () => {
+    expect(playbackRateFor("read", 0.75)).toBe(1);
+    expect(playbackRateFor("read", 1)).toBe(1);
   });
 });
 

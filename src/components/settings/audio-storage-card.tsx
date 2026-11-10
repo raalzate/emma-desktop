@@ -16,6 +16,7 @@ export function AudioStorageCard() {
   const audio = runtime?.audio ?? null;
   const { toast } = useToast();
   const [clips, setClips] = useState<AudioClipMeta[]>([]);
+  const [capBytes, setCapBytes] = useState(DEFAULT_AUDIO_CAP_BYTES);
   const [capInput, setCapInput] = useState(String(DEFAULT_AUDIO_CAP_BYTES / MB));
   const [capError, setCapError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -41,7 +42,10 @@ export function AudioStorageCard() {
   useEffect(() => {
     if (!audio) return;
     void refresh().catch(() => {});
-    void audio.getPrefs().then((p) => setCapInput(String(Math.round(p.capBytes / MB))), () => {});
+    void audio.getPrefs().then((p) => {
+      setCapBytes(p.capBytes);
+      setCapInput(String(Math.round(p.capBytes / MB)));
+    }, () => {});
   }, [audio, refresh]);
 
   const usage = useMemo(
@@ -103,6 +107,7 @@ export function AudioStorageCard() {
     const parsed = parseCapMb(capInput);
     if (!parsed.ok) return setCapError(parsed.error);
     setCapError(null);
+    setCapBytes(parsed.bytes);
     await guard(async () => audio!.savePrefs({ ...(await audio!.getPrefs()), capBytes: parsed.bytes }), "Limit saved");
   };
 
@@ -112,7 +117,7 @@ export function AudioStorageCard() {
       usage={usage} groups={groups} clips={clips}
       expandedKeys={expandedKeys} playingId={playingId}
       onToggleGroup={toggleGroup} onPlayClip={(id) => void playClip(id)} onRemoveClip={(id) => void removeClip(id)}
-      capInput={capInput} capError={capError} busy={busy}
+      capBytes={capBytes} capInput={capInput} capError={capError} busy={busy}
       onCapInput={setCapInput} onSaveCap={() => void saveCap()}
       onRemoveConversation={(id) => void removeGroup(id)}
       onRemoveAll={() => void guard(() => audio.removeAll(), "All audio deleted")}

@@ -17,7 +17,7 @@ import {
 import type { AudioClipMeta } from "@/domain/audio/audio-clip";
 import type { AudioUsage } from "@/domain/audio/i-audio-store";
 import {
-  clipsInGroup, formatClipDate, formatDuration, formatMb, groupKey, originLabel,
+  clipsInGroup, formatClipDate, formatCap, formatDuration, formatSize, groupKey, originLabel,
   type ConversationGroup,
 } from "./audio-storage-model";
 
@@ -31,6 +31,8 @@ export interface AudioStorageViewProps {
   onToggleGroup: (key: string) => void;
   onPlayClip: (id: string) => void;
   onRemoveClip: (id: string) => void;
+  /** Tope guardado (no el borrador del campo). */
+  capBytes: number;
   capInput: string;
   capError: string | null;
   busy: boolean;
@@ -55,8 +57,8 @@ function ConfirmDelete({ title, body, onConfirm, children }: {
           <AlertDialogDescription>{body}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Delete</AlertDialogAction>
+          <AlertDialogCancel title="Cierra el aviso sin borrar nada.">Cancel</AlertDialogCancel>
+          <AlertDialogAction title="Confirma y borra; no se puede deshacer." onClick={onConfirm}>Delete</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
@@ -71,7 +73,7 @@ function ClipRow({ clip, playing, busy, onPlay, onRemove }: {
       <div className="min-w-0">
         <p className="truncate text-sm">{clip.text || "(no text)"}</p>
         <p className="text-xs text-muted-foreground">
-          {originLabel(clip.origin)} · {formatDuration(clip.durationMs)} · {formatMb(clip.bytes)} · {formatClipDate(clip.createdAt)}
+          {originLabel(clip.origin)} · {formatDuration(clip.durationMs)} · {formatSize(clip.bytes)} · {formatClipDate(clip.createdAt)}
         </p>
       </div>
       <div className="flex shrink-0 gap-1">
@@ -107,7 +109,7 @@ export function AudioStorageView(p: AudioStorageViewProps) {
         <CardDescription>
           {empty
             ? "No saved audio yet. Your voice notes and key phrases will show up here."
-            : `${plural(p.usage.count)} · ${formatMb(p.usage.bytes)} on this device.`}
+            : `${plural(p.usage.count)} · ${formatSize(p.usage.bytes)} of ${formatCap(p.capBytes)} on this device.`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -130,7 +132,7 @@ export function AudioStorageView(p: AudioStorageViewProps) {
                     <span className="block text-sm font-medium">
                       {g.conversationId ? `Conversation ${g.conversationId.slice(0, 8)}` : "Practice attempts"}
                     </span>
-                    <span className="block text-xs text-muted-foreground">{plural(g.count)} · {formatMb(g.bytes)}</span>
+                    <span className="block text-xs text-muted-foreground">{plural(g.count)} · {formatSize(g.bytes)}</span>
                   </span>
                 </button>
                 <ConfirmDelete

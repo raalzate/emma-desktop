@@ -39,6 +39,27 @@ describe("fachada de setup", () => {
     expect(repo.records[0]).toMatchObject({ at: 777, trigger: "settings" });
   });
 
+  it("dos corridas concurrentes iguales comparten una sola sonda y un solo registro (StrictMode)", async () => {
+    let sondas = 0;
+    const probe: ISetupProbe = { ...okProbe, probeVoice: async () => { sondas++; return { status: "ok", engine: "native", ms: 300 }; } };
+    const { repo, facade } = build(probe);
+    const [a, b] = await Promise.all([facade.run({ trigger: "first-run" }), facade.run({ trigger: "first-run" })]);
+    expect(a).toBe(b);
+    expect(sondas).toBe(1);
+    expect(repo.records).toHaveLength(1);
+  });
+
+  it("al terminar la corrida, otra nueva vuelve a sondear; y un origen/sonda distinto no se fusiona", async () => {
+    let sondas = 0;
+    const probe: ISetupProbe = { ...okProbe, probeVoice: async () => { sondas++; return { status: "ok", engine: "native", ms: 300 }; } };
+    const { facade } = build(probe);
+    await facade.run({ trigger: "first-run" });
+    await facade.run({ trigger: "first-run" });
+    expect(sondas).toBe(2);
+    await Promise.all([facade.run({ trigger: "settings" }), facade.run({ trigger: "live-failure" })]);
+    expect(sondas).toBe(4);
+  });
+
   it("needsFirstRun: sin chequeo previo y onboarding pendiente ⇒ true; ya completado ⇒ false", async () => {
     const { facade } = build();
     expect(await facade.needsFirstRun(false)).toBe(true);

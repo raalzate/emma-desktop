@@ -16,6 +16,18 @@ function contextOf(m: SetupCheckRecord["measurements"]): string[] {
   }
   return parts;
 }
+type ProbeEntry = SetupCheckRecord["diagnosis"]["probes"][number];
+
+/** El micrófono no mide ms: se muestra su estado, deducido de la severidad y las causas. */
+function micState(p: ProbeEntry): string {
+  if (p.severity === "ok") return "granted";
+  if (p.causes.includes("mic-denied")) return "denied";
+  if (p.causes.includes("mic-missing")) return "no device";
+  return "timed out";
+}
+
+const probeDetail = (p: ProbeEntry): string =>
+  p.probe === "mic" ? micState(p) : p.ms !== undefined ? `${p.ms} ms` : "n/a";
 const PROBE_LABEL = { voice: "Voice", ai: "AI", mic: "Mic" } as const;
 const VERDICT_LABEL = { pass: "All good", warn: "Warnings", blocked: "Blocked" } as const;
 
@@ -32,7 +44,7 @@ export function SetupHistory({ records }: { records: readonly SetupCheckRecord[]
           </time>
           {r.diagnosis.probes.map((p) => (
             <span key={p.probe} className="font-code text-xs text-muted-foreground">
-              {PROBE_LABEL[p.probe]} {p.ms !== undefined ? `${p.ms} ms` : "n/a"}
+              {PROBE_LABEL[p.probe]} {probeDetail(p)}
             </span>
           ))}
           {contextOf(r.measurements).map((c) => (

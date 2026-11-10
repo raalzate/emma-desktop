@@ -22,6 +22,7 @@ import {
   audioRecallReducer,
   gradeOf,
   initialAudioRecallState,
+  playbackRateFor,
   stepsFor,
   type AudioRecallAction,
   type AudioRecallState,
@@ -127,15 +128,22 @@ function WriteStep({
   state,
   h,
   hint,
+  canListen,
 }: {
   state: AudioRecallViewState;
   h: AudioRecallHandlers;
   hint: string | null;
+  canListen: boolean;
 }) {
   const { result } = state;
   return (
     <div className="space-y-3">
       {hint && <p className="font-code text-sm tracking-wider text-scaffold-mid">{hint}</p>}
+      {canListen && (
+        <Button variant="outline" className="gap-1" title="Vuelve a escuchar el clip sin ver el texto" aria-label="Listen again" onClick={h.onReplay}>
+          <Play className="h-4 w-4" /> Listen again
+        </Button>
+      )}
       <Input
         value={state.typed}
         onChange={(e) => h.onTyped(e.target.value)}
@@ -216,7 +224,7 @@ export function AudioRecallView({ card, clipUrl, state, handlers }: ViewProps) {
       </CardHeader>
       <CardContent>
         {state.step === "listen" && <ListenStep state={state} h={handlers} />}
-        {state.step === "write" && <WriteStep state={state} h={handlers} hint={hint} />}
+        {state.step === "write" && <WriteStep state={state} h={handlers} hint={hint} canListen={presentation.mode === "audio"} />}
         {state.step === "read" && <ReadStep state={state} h={handlers} />}
       </CardContent>
     </Card>
@@ -241,7 +249,7 @@ export function AudioRecallCard({ card, clipUrl, player, recorder, onGrade }: Pr
   );
 
   function play(url: string | null) {
-    if (url) player.play(url, state.rate);
+    if (url) player.play(url, playbackRateFor(state.step, state.rate));
   }
 
   async function stopRecording() {

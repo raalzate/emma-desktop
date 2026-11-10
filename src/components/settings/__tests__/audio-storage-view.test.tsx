@@ -8,6 +8,7 @@ const noop = () => {};
 const base: AudioStorageViewProps = {
   usage: { count: 3, bytes: 2 * 1024 * 1024 },
   groups: [{ conversationId: "c1", count: 2, bytes: 1024 * 1024 }, { conversationId: null, count: 1, bytes: 1024 * 1024 }],
+  capBytes: 100 * 1024 * 1024,
   capInput: "500",
   capError: null,
   busy: false,
@@ -22,6 +23,11 @@ describe("AudioStorageView", () => {
     const html = render();
     expect(html).toContain("3 clips");
     expect(html).toContain("2.0 MB");
+  });
+
+  it("la línea de uso incluye el tope y los clips chicos van en KB", () => {
+    const html = render({ usage: { count: 1, bytes: 13 * 1024 }, groups: [] });
+    expect(html).toContain("13 KB of 100 MB");
   });
 
   it("sin clips lo dice y no ofrece borrar todo", () => {
@@ -61,7 +67,7 @@ describe("AudioStorageView", () => {
       expect(html).toContain("EMMA");
       expect(html).toContain("Your voice");
       expect(html).toContain("0:07");
-      expect(html).toContain("0.5 MB");
+      expect(html).toContain("512 KB");
       expect(html).toContain("2026-11-10");
     });
 

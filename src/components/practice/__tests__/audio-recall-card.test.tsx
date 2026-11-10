@@ -58,6 +58,17 @@ function vista(state: Partial<AudioRecallViewState> = {}, extra: { clipUrl?: str
   );
 }
 
+describe("AudioRecallCard — volver a escuchar en Write", () => {
+  it("con clip, el paso Write ofrece «Listen again» sin mostrar el texto objetivo", () => {
+    const html = vista({ step: "write" });
+    expect(html).toContain("Listen again");
+    expect(html).not.toContain(OBJETIVO);
+  });
+  it("sin clip (modo texto) no hay botón de escuchar", () => {
+    expect(vista({ step: "write" }, { clipUrl: null })).not.toContain("Listen again");
+  });
+});
+
 describe("AudioRecallCard — stepper", () => {
   it("muestra los tres pasos en la misma vista y marca el actual con aria-current", () => {
     const html = vista({ step: "write" });

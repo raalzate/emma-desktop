@@ -33,6 +33,11 @@ export type AudioRecallAction =
   | { type: "recordStarted" }
   | { type: "recordStopped"; url: string };
 
+/** La comparación A/B (Read aloud) va siempre a 1x; la velocidad elegida aplica sólo al dictado. */
+export function playbackRateFor(step: AudioStep, rate: PlaybackRate): PlaybackRate {
+  return step === "read" ? 1 : rate;
+}
+
 export function stepsFor(hasClip: boolean): AudioStep[] {
   return hasClip ? ["listen", "write", "read"] : ["write", "read"];
 }

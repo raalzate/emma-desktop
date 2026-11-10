@@ -134,8 +134,9 @@ export function DataManagementCard() {
                   <AlertDialogDescription>{a.confirmBody}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel title="Cierra el aviso sin borrar nada.">Cancel</AlertDialogCancel>
                   <AlertDialogAction
+                    title="Confirma y borra estos datos; no se puede deshacer."
                     onClick={() => onConfirm(a)}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >

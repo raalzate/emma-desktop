@@ -31,6 +31,24 @@ describe("SetupHistory", () => {
     expect(html).toContain("900 ms");
   });
 
+  it("el micrófono muestra su estado (granted / denied / no device), no «n/a»", () => {
+    const con = (mic: "granted" | "denied" | "no-device") => ({
+      version: 1, at: 1, trigger: "settings", acknowledged: false,
+      diagnosis: diagnoseSetup({
+        os: "mac",
+        voice: { status: "ok", ms: 400, engine: "wasm" },
+        ai: { status: "ok", ms: 900, mode: "local", online: true, readiness: "ok", localModelAvailable: true },
+        mic: { status: mic, devices: mic === "no-device" ? 0 : 1 },
+      }),
+    }) as SetupCheckRecord;
+    const html = (m: "granted" | "denied" | "no-device") =>
+      renderToStaticMarkup(createElement(SetupHistory, { records: [con(m)] }));
+    expect(html("granted")).toContain("Mic granted");
+    expect(html("denied")).toContain("Mic denied");
+    expect(html("no-device")).toContain("Mic no device");
+    expect(html("granted")).not.toContain("n/a");
+  });
+
   it("muestra el motor de voz y el modo, readiness, conexión y carga de la IA", () => {
     const m = { voiceEngine: "wasm", ai: { mode: "local", readiness: "ok", online: true, loadMs: 17000 } } as const;
     const html = renderToStaticMarkup(createElement(SetupHistory, { records: [rec(1, "settings", m)] }));

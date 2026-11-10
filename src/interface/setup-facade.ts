@@ -28,10 +28,31 @@ export interface SetupFacadeDeps {
   os: () => OsName;
 }
 
+/**
+ * Single-flight por clave: mientras una corrida con la misma clave está en
+ * curso, las llamadas idénticas comparten su promesa (StrictMode monta dos
+ * veces el efecto inicial). Al terminar —con éxito o error— la clave se libera.
+ */
+export function singleFlightByKey<A, R>(key: (a: A) => string, fn: (a: A) => Promise<R>): (a: A) => Promise<R> {
+  const enCurso = new Map<string, Promise<R>>();
+  return (a) => {
+    const k = key(a);
+    const previa = enCurso.get(k);
+    if (previa) return previa;
+    const p = fn(a).finally(() => enCurso.delete(k));
+    enCurso.set(k, p);
+    return p;
+  };
+}
+
 export function createSetupFacade(deps: SetupFacadeDeps): SetupFacade {
-  return {
-    run: ({ trigger, only }) =>
+  const run = singleFlightByKey(
+    (a: { trigger: SetupCheckRecord["trigger"]; only?: ProbeName }) => `${a.trigger}:${a.only ?? "all"}`,
+    ({ trigger, only }) =>
       runSetupCheck({ probe: deps.probe, repo: deps.repo, clock: deps.clock, os: deps.os(), trigger, only }),
+  );
+  return {
+    run,
     needsFirstRun: (onboardingCompleted) => needsFirstRunCheck({ repo: deps.repo, onboardingCompleted }),
     acknowledge: () => acknowledgeSetupCheck({ repo: deps.repo }),
     last: () => deps.repo.last(),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  clipsInGroup, formatClipDate, formatDuration, formatMb, groupByConversation, groupKey, originLabel, parseCapMb,
+  clipsInGroup, formatClipDate, formatDuration, formatCap, formatSize, groupByConversation, groupKey, originLabel, parseCapMb,
 } from "@/components/settings/audio-storage-model";
 import type { AudioClipMeta } from "@/domain/audio/audio-clip";
 
@@ -8,10 +8,21 @@ const clip = (id: string, conversationId: string | undefined, bytes: number): Au
   id, origin: "learner", text: "hi", conversationId, durationMs: 1000, bytes, createdAt: 1,
 });
 
-describe("formatMb", () => {
-  it("muestra megas con un decimal", () => {
-    expect(formatMb(0)).toBe("0.0 MB");
-    expect(formatMb(1.5 * 1024 * 1024)).toBe("1.5 MB");
+describe("formatSize", () => {
+  it("muestra megas con un decimal desde 1 MB", () => {
+    expect(formatSize(1.5 * 1024 * 1024)).toBe("1.5 MB");
+    expect(formatSize(1024 * 1024)).toBe("1.0 MB");
+  });
+  it("por debajo de 1 MB muestra KB, no «0.0 MB»", () => {
+    expect(formatSize(13 * 1024)).toBe("13 KB");
+    expect(formatSize(0)).toBe("0 KB");
+    expect(formatSize(300)).toBe("1 KB");
+  });
+});
+
+describe("formatCap", () => {
+  it("el tope va en megas enteros", () => {
+    expect(formatCap(100 * 1024 * 1024)).toBe("100 MB");
   });
 });
 
