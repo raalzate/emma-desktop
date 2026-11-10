@@ -2,10 +2,10 @@
 
 /**
  * Vista presentacional del almacenamiento de audio (FR-020, FR-021): conteo y
- * megas, borrar por conversación o todo (con confirmación) y tope configurable.
+ * megas, borrar un clip, una conversación o todo (con confirmación) y tope configurable.
  */
 import type { ReactNode } from "react";
-import { Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Play, Square, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,12 +14,23 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import type { AudioClipMeta } from "@/domain/audio/audio-clip";
 import type { AudioUsage } from "@/domain/audio/i-audio-store";
-import { formatMb, type ConversationGroup } from "./audio-storage-model";
+import {
+  clipsInGroup, formatClipDate, formatDuration, formatMb, groupKey, originLabel,
+  type ConversationGroup,
+} from "./audio-storage-model";
 
 export interface AudioStorageViewProps {
   usage: AudioUsage;
   groups: ConversationGroup[];
+  /** Todos los clips; cada grupo muestra los suyos al expandirse. */
+  clips: readonly AudioClipMeta[];
+  expandedKeys: readonly string[];
+  playingId: string | null;
+  onToggleGroup: (key: string) => void;
+  onPlayClip: (id: string) => void;
+  onRemoveClip: (id: string) => void;
   capInput: string;
   capError: string | null;
   busy: boolean;
@@ -52,6 +63,41 @@ function ConfirmDelete({ title, body, onConfirm, children }: {
   );
 }
 
+function ClipRow({ clip, playing, busy, onPlay, onRemove }: {
+  clip: AudioClipMeta; playing: boolean; busy: boolean; onPlay: () => void; onRemove: () => void;
+}) {
+  return (
+    <li className="flex items-center justify-between gap-3 rounded-md bg-muted/40 p-2">
+      <div className="min-w-0">
+        <p className="truncate text-sm">{clip.text || "(no text)"}</p>
+        <p className="text-xs text-muted-foreground">
+          {originLabel(clip.origin)} · {formatDuration(clip.durationMs)} · {formatMb(clip.bytes)} · {formatClipDate(clip.createdAt)}
+        </p>
+      </div>
+      <div className="flex shrink-0 gap-1">
+        {playing ? (
+          <Button variant="outline" size="sm" aria-label="Stop clip" title="Detiene la reproducción de este clip." onClick={onPlay}>
+            <Square className="h-4 w-4" aria-hidden />
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" aria-label="Play clip" title="Escucha este clip." onClick={onPlay}>
+            <Play className="h-4 w-4" aria-hidden />
+          </Button>
+        )}
+        <ConfirmDelete
+          title="Delete this clip?"
+          body="The recording is removed from this device. Its review card keeps the text."
+          onConfirm={onRemove}
+        >
+          <Button variant="destructive" size="sm" aria-label="Delete clip" title="Borra este clip; esta acción no se puede deshacer." disabled={busy}>
+            <Trash2 className="h-4 w-4" aria-hidden />
+          </Button>
+        </ConfirmDelete>
+      </div>
+    </li>
+  );
+}
+
 export function AudioStorageView(p: AudioStorageViewProps) {
   const empty = p.usage.count === 0;
   return (
@@ -65,25 +111,51 @@ export function AudioStorageView(p: AudioStorageViewProps) {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {p.groups.map((g) => (
-          <div key={g.conversationId ?? "other"} className="flex items-center justify-between gap-4 rounded-lg border p-3">
-            <div className="min-w-0">
-              <p className="text-sm font-medium">
-                {g.conversationId ? `Conversation ${g.conversationId.slice(0, 8)}` : "Practice attempts"}
-              </p>
-              <p className="text-xs text-muted-foreground">{plural(g.count)} · {formatMb(g.bytes)}</p>
+        {p.groups.map((g) => {
+          const key = groupKey(g.conversationId);
+          const open = p.expandedKeys.includes(key);
+          const listId = `audio-group-${key}`;
+          const Chevron = open ? ChevronDown : ChevronRight;
+          return (
+            <div key={key} className="space-y-2 rounded-lg border p-3">
+              <div className="flex items-center justify-between gap-4">
+                <button
+                  type="button" aria-expanded={open} aria-controls={listId}
+                  title="Muestra u oculta los clips de este grupo."
+                  className="flex min-w-0 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => p.onToggleGroup(key)}
+                >
+                  <Chevron className="h-4 w-4 shrink-0" aria-hidden />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium">
+                      {g.conversationId ? `Conversation ${g.conversationId.slice(0, 8)}` : "Practice attempts"}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">{plural(g.count)} · {formatMb(g.bytes)}</span>
+                  </span>
+                </button>
+                <ConfirmDelete
+                  title="Delete these clips?"
+                  body="The recordings are removed from this device. Review cards keep their text."
+                  onConfirm={() => p.onRemoveConversation(g.conversationId)}
+                >
+                  <Button variant="destructive" size="sm" className="shrink-0 gap-1" title="Borra los clips de este grupo; esta acción no se puede deshacer." disabled={p.busy}>
+                    <Trash2 className="h-4 w-4" aria-hidden /> Delete
+                  </Button>
+                </ConfirmDelete>
+              </div>
+              {open && (
+                <ul id={listId} className="space-y-1">
+                  {clipsInGroup(p.clips, g.conversationId).map((c) => (
+                    <ClipRow
+                      key={c.id} clip={c} playing={p.playingId === c.id} busy={p.busy}
+                      onPlay={() => p.onPlayClip(c.id)} onRemove={() => p.onRemoveClip(c.id)}
+                    />
+                  ))}
+                </ul>
+              )}
             </div>
-            <ConfirmDelete
-              title="Delete these clips?"
-              body="The recordings are removed from this device. Review cards keep their text."
-              onConfirm={() => p.onRemoveConversation(g.conversationId)}
-            >
-              <Button variant="destructive" size="sm" className="shrink-0 gap-1" title="Borra los clips de este grupo; esta acción no se puede deshacer." disabled={p.busy}>
-                <Trash2 className="h-4 w-4" aria-hidden /> Delete
-              </Button>
-            </ConfirmDelete>
-          </div>
-        ))}
+          );
+        })}
         <div className="space-y-2">
           <label htmlFor="audio-cap" className="text-sm font-medium">Storage limit (MB)</label>
           <div className="flex items-center gap-2">

@@ -1,10 +1,10 @@
 "use client";
 
 /** Contenedor del almacenamiento de audio: lee/borra por la fachada y guarda el tope. */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useEmma } from "@/interface/emma-context";
-import type { AudioClipMeta } from "@/domain/audio/audio-clip";
+import { CLIP_MIME, type AudioClipMeta } from "@/domain/audio/audio-clip";
 import { DEFAULT_AUDIO_CAP_BYTES } from "@/domain/audio/audio-retention";
 import { AudioStorageView } from "./audio-storage-view";
 import { groupByConversation, parseCapMb } from "./audio-storage-model";
@@ -19,6 +19,19 @@ export function AudioStorageCard() {
   const [capInput, setCapInput] = useState(String(DEFAULT_AUDIO_CAP_BYTES / MB));
   const [capError, setCapError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const player = useRef<{ el: HTMLAudioElement; url: string } | null>(null);
+
+  const stopPlayback = useCallback(() => {
+    if (player.current) {
+      player.current.el.pause();
+      URL.revokeObjectURL(player.current.url);
+      player.current = null;
+    }
+    setPlayingId(null);
+  }, []);
+  useEffect(() => stopPlayback, [stopPlayback]);
 
   const refresh = useCallback(async () => {
     if (!audio) return;
@@ -59,6 +72,33 @@ export function AudioStorageCard() {
       "Audio deleted",
     );
 
+  const toggleGroup = (key: string) =>
+    setExpandedKeys((k) => (k.includes(key) ? k.filter((x) => x !== key) : [...k, key]));
+
+  const playClip = async (id: string) => {
+    const wasPlaying = playingId === id;
+    stopPlayback();
+    if (wasPlaying) return;
+    try {
+      const clip = await audio!.load(id);
+      if (!clip) return void toast({ title: "That clip is no longer available", variant: "destructive" });
+      const url = URL.createObjectURL(new Blob([clip.data as BlobPart], { type: CLIP_MIME }));
+      const el = new Audio(url);
+      el.onended = stopPlayback;
+      player.current = { el, url };
+      setPlayingId(id);
+      await el.play();
+    } catch {
+      stopPlayback();
+      toast({ title: "Could not play the clip", variant: "destructive" });
+    }
+  };
+
+  const removeClip = (id: string) => {
+    if (playingId === id) stopPlayback();
+    return guard(() => audio!.removeClips([id]), "Clip deleted");
+  };
+
   const saveCap = async () => {
     const parsed = parseCapMb(capInput);
     if (!parsed.ok) return setCapError(parsed.error);
@@ -69,7 +109,10 @@ export function AudioStorageCard() {
   if (!audio) return null;
   return (
     <AudioStorageView
-      usage={usage} groups={groups} capInput={capInput} capError={capError} busy={busy}
+      usage={usage} groups={groups} clips={clips}
+      expandedKeys={expandedKeys} playingId={playingId}
+      onToggleGroup={toggleGroup} onPlayClip={(id) => void playClip(id)} onRemoveClip={(id) => void removeClip(id)}
+      capInput={capInput} capError={capError} busy={busy}
       onCapInput={setCapInput} onSaveCap={() => void saveCap()}
       onRemoveConversation={(id) => void removeGroup(id)}
       onRemoveAll={() => void guard(() => audio.removeAll(), "All audio deleted")}

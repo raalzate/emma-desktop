@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import type { AudioClipMeta } from "@/domain/audio/audio-clip";
 import { AudioStorageView, type AudioStorageViewProps } from "@/components/settings/audio-storage-view";
 
 const noop = () => {};
@@ -10,6 +11,8 @@ const base: AudioStorageViewProps = {
   capInput: "500",
   capError: null,
   busy: false,
+  clips: [], expandedKeys: [], playingId: null,
+  onToggleGroup: noop, onPlayClip: noop, onRemoveClip: noop,
   onCapInput: noop, onSaveCap: noop, onRemoveConversation: noop, onRemoveAll: noop,
 };
 const render = (p: Partial<AudioStorageViewProps> = {}) => renderToStaticMarkup(createElement(AudioStorageView, { ...base, ...p }));
@@ -37,5 +40,41 @@ describe("AudioStorageView", () => {
     const html = render();
     expect(html).toMatch(/title="[^"]*(Guarda|guarda)[^"]*"/);
     expect(html).toMatch(/title="[^"]*(Borra|borra)[^"]*"/);
+  });
+
+  describe("clips por grupo", () => {
+    const clip = (id: string, origin: AudioClipMeta["origin"], text: string): AudioClipMeta => ({
+      id, origin, text, conversationId: "c1", durationMs: 7000, bytes: 512 * 1024, createdAt: Date.UTC(2026, 10, 10),
+    });
+    const clips = [clip("k1", "emma", "How are you today?"), clip("k2", "learner", "I am fine")];
+
+    it("colapsado: aria-expanded=false y sin clips visibles", () => {
+      const html = render({ clips });
+      expect(html).toContain('aria-expanded="false"');
+      expect(html).not.toContain("How are you today?");
+    });
+
+    it("expandido: aria-expanded=true y lista texto, origen, duración, tamaño y fecha", () => {
+      const html = render({ clips, expandedKeys: ["c1"] });
+      expect(html).toContain('aria-expanded="true"');
+      expect(html).toContain("How are you today?");
+      expect(html).toContain("EMMA");
+      expect(html).toContain("Your voice");
+      expect(html).toContain("0:07");
+      expect(html).toContain("0.5 MB");
+      expect(html).toContain("2026-11-10");
+    });
+
+    it("cada clip tiene botones de escuchar y borrar con tooltip en español", () => {
+      const html = render({ clips, expandedKeys: ["c1"] });
+      expect(html).toMatch(/title="Escucha este clip[^"]*"/);
+      expect(html).toMatch(/title="Borra este clip[^"]*"/);
+      expect(html.match(/aria-label="Play clip/g)).toHaveLength(2);
+    });
+
+    it("el clip en reproducción ofrece detener", () => {
+      const html = render({ clips, expandedKeys: ["c1"], playingId: "k1" });
+      expect(html).toMatch(/title="Detiene[^"]*"/);
+    });
   });
 });

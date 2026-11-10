@@ -1,5 +1,5 @@
 /** Lógica pura de la tarjeta de audio: formato de megas, tope y agrupación. */
-import type { AudioClipMeta } from "@/domain/audio/audio-clip";
+import type { AudioClipMeta, ClipOrigin } from "@/domain/audio/audio-clip";
 import { MIN_AUDIO_CAP_BYTES } from "@/infrastructure/persistence/audio-prefs-repository";
 
 const MB = 1024 * 1024;
@@ -36,3 +36,23 @@ export function groupByConversation(clips: readonly AudioClipMeta[]): Conversati
   const rank = (g: ConversationGroup) => (g.conversationId === null ? 1 : 0);
   return [...map.values()].sort((a, b) => rank(a) - rank(b) || b.bytes - a.bytes);
 }
+
+/** Clave estable de un grupo (los intentos sueltos no tienen conversación). */
+export const groupKey = (conversationId: string | null): string => conversationId ?? "other";
+
+/** Clips de un grupo, los más nuevos primero. */
+export function clipsInGroup(clips: readonly AudioClipMeta[], conversationId: string | null): AudioClipMeta[] {
+  return clips
+    .filter((c) => (c.conversationId ?? null) === conversationId)
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
+const ORIGIN_LABELS: Record<ClipOrigin, string> = { learner: "Your voice", emma: "EMMA", attempt: "Attempt" };
+export const originLabel = (origin: ClipOrigin): string => ORIGIN_LABELS[origin];
+
+export function formatDuration(ms: number): string {
+  const total = Math.round(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
+export const formatClipDate = (epochMs: number): string => new Date(epochMs).toISOString().slice(0, 10);
