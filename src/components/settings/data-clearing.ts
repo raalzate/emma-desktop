@@ -6,11 +6,12 @@
 
 import type { AudioFacade } from "@/interface/audio-facade";
 
-// Espeja la whitelist de colecciones del proceso principal (main/services/store.ts).
+// Espeja STORE_KEYS (main/services/store-keys.ts); una prueba falla si se desalinean.
 export const ALL_COLLECTIONS = [
   "profiles", "chatSettings", "progression", "errorStats", "pathway",
   "goals", "welcomeEvents", "sessions", "preferences", "chatConversations",
-  "setupChecks", "audioPrefs",
+  "personaTunings", "srs", "challenges", "sessionMetrics", "lessonTodos",
+  "gamification", "setupChecks", "audioPrefs",
 ];
 
 export interface ClearingDeps {

@@ -1,6 +1,7 @@
 /** T30 — «Clear chat history» y «Delete all data» también borran el audio (FR-022, SC-002). */
 
 import { describe, expect, it } from "vitest";
+import { STORE_KEYS } from "../../../../main/services/store-keys";
 import { ALL_COLLECTIONS, clearChatHistory, deleteAllData } from "../data-clearing";
 
 function armar(audioFails = false) {
@@ -39,5 +40,9 @@ describe("deleteAllData", () => {
 
   it("incluye los chequeos de setup y las preferencias de audio", () => {
     expect(ALL_COLLECTIONS).toEqual(expect.arrayContaining(["setupChecks", "audioPrefs", "chatConversations"]));
+  });
+
+  it("borra TODAS las colecciones registradas en el almacén, sin dejar ninguna afuera (#319)", () => {
+    expect([...ALL_COLLECTIONS].sort()).toEqual([...STORE_KEYS].sort());
   });
 });
