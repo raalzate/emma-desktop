@@ -9,9 +9,11 @@
 
 import { useRef, useState } from "react";
 import { transcribe } from "@/infrastructure/audio/whisper-transcribe";
+import { MAX_DURATION_MS } from "@/domain/audio/audio-config";
+import { recorderOptionsFor, type VoiceClip } from "./voice-turn";
 
-/** Decodifica un Blob de audio a PCM mono float32 a 16 kHz. */
-async function toPcm16k(blob: Blob): Promise<Float32Array> {
+/** Decodifica un Blob de audio a PCM mono float32 a 16 kHz (y su duración real). */
+async function toPcm16k(blob: Blob): Promise<{ pcm: Float32Array; durationMs: number }> {
   const buf = await blob.arrayBuffer();
   const AC: typeof AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
   const decoded = await new AC().decodeAudioData(buf);
@@ -21,7 +23,7 @@ async function toPcm16k(blob: Blob): Promise<Float32Array> {
   src.connect(offline.destination);
   src.start();
   const rendered = await offline.startRendering();
-  return rendered.getChannelData(0);
+  return { pcm: rendered.getChannelData(0), durationMs: Math.round(decoded.duration * 1000) };
 }
 
 /**
@@ -30,7 +32,7 @@ async function toPcm16k(blob: Blob): Promise<Float32Array> {
  * audio para reproducir en la burbuja).
  */
 export function useVoiceInput(
-  onResult: (text: string, audioUrl: string) => void,
+  onResult: (text: string, audioUrl: string, clip: VoiceClip) => void,
   /** Aviso en español cuando la grabación no deja nada utilizable (#169). */
   onProblem?: (mensajeEs: string) => void,
 ) {
@@ -42,6 +44,7 @@ export function useVoiceInput(
   const [stream, setStream] = useState<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const limitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function start() {
     let mediaStream: MediaStream;
@@ -55,21 +58,23 @@ export function useVoiceInput(
       return;
     }
     setStream(mediaStream);
-    const rec = new MediaRecorder(mediaStream);
+    // Opus a 32 kbps; con un tope duro de 60 s (la grabación se corta sola).
+    const rec = new MediaRecorder(mediaStream, recorderOptionsFor((m) => MediaRecorder.isTypeSupported(m)));
     chunksRef.current = [];
     rec.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
     rec.onstop = async () => {
+      if (limitRef.current) clearTimeout(limitRef.current);
       mediaStream.getTracks().forEach((t) => t.stop());
       setStream(null);
       setBusy(true);
       try {
         const blob = new Blob(chunksRef.current, { type: rec.mimeType });
         const audioUrl = URL.createObjectURL(blob);
-        const pcm = await toPcm16k(blob);
+        const { pcm, durationMs } = await toPcm16k(blob);
         const text = await transcribe(pcm);
         // Transcripción vacía: el turno NO avanza y hay que poder reintentar,
         // o el aprendiz queda atrapado en un turno hablado sin salida.
-        if (text) onResult(text, audioUrl);
+        if (text) onResult(text, audioUrl, { blob, durationMs });
         else onProblem?.("Nothing came through in the recording. Try again, closer to the microphone.");
       } catch {
         onProblem?.("The recording couldn’t be processed. Try again.");
@@ -79,11 +84,12 @@ export function useVoiceInput(
     };
     rec.start();
     recorderRef.current = rec;
+    limitRef.current = setTimeout(stop, MAX_DURATION_MS);
     setRecording(true);
   }
 
   function stop() {
-    recorderRef.current?.stop();
+    if (recorderRef.current?.state === "recording") recorderRef.current.stop();
     setRecording(false);
   }
 

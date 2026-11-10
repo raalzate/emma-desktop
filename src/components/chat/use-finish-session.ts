@@ -16,6 +16,9 @@ import { isPass } from "@/domain/progression/promotion-policy";
 import type { PracticeRecommendation } from "@/domain/tutor/practice-recommender";
 import { sessionActivities, type XpLine } from "@/domain/gamification/xp-rules";
 import { awardActivities } from "@/components/gamification/award-activity";
+import { buildSceneNarration } from "@/domain/chat/scene-narration";
+import { personaFor } from "@/domain/personas/protopersona";
+import { phrasesToKeep, type PhraseToKeep } from "@/domain/audio/scene-phrases";
 
 interface Args {
   runtime: EmmaRuntime;
@@ -26,6 +29,10 @@ interface Args {
   errors: SilentError[];
   /** Turnos de la escena: de sus tiempos y longitudes salen las métricas del método. */
   messages: ChatTurn[];
+  /** Turno → clip de voz del aprendiz: el error de ese turno lleva su audio al repaso. */
+  clipOfTurn?: Record<number, string>;
+  /** Narrativa del contrato de escena (la misma franja SCENE que vio el aprendiz). */
+  narrative?: string | null;
 }
 
 export interface FinishOutcome {
@@ -43,6 +50,27 @@ export interface FinishOutcome {
   correctionsCount: number;
   /** XP ganado en la sesión (#216, H6); null si no se pudo otorgar. */
   xp: { total: number; lines: XpLine[] } | null;
+  /** Frases de EMMA a guardar como audio al cerrar el diálogo (FR-003). */
+  phrases: PhraseToKeep[];
+}
+
+/** Frases clave de la franja SCENE + correcciones del cierre (misma definición que la UI). */
+export function phrasesOfSession(a: {
+  scenario: Scenario;
+  situation: SituationVariant | null;
+  errors: SilentError[];
+  narrative?: string | null;
+}): PhraseToKeep[] {
+  const persona = personaFor(a.scenario.scenarioType, a.scenario.emmaRole);
+  const narration = buildSceneNarration({
+    scenarioTitle: a.scenario.title,
+    scenarioDescription: a.scenario.description,
+    situation: a.situation,
+    personaName: persona.name,
+    personaRole: persona.role,
+    narrative: a.narrative,
+  });
+  return phrasesToKeep({ narration, personaName: persona.name, corrections: a.errors });
 }
 
 // Traduce el resultado de progresión a un mensaje breve para el toast.
@@ -63,7 +91,7 @@ export function useFinishSession(a: Args) {
     const { report, lesson, recommendations, correctionsCount } = await a.runtime.finishSession({
       scenario: a.scenario, metric, errors: a.errors, level: a.level,
       situation: a.situation, situationTitle: a.situation?.title,
-      messages: a.messages,
+      messages: a.messages, clipOfTurn: a.clipOfTurn,
     });
     const passed = isPass(metric, a.level);
     const prog = await a.runtime.evaluateProgression(a.level, metric);
@@ -81,6 +109,7 @@ export function useFinishSession(a: Args) {
       recommendations,
       correctionsCount,
       xp: award ? { total: award.xp, lines: award.lines } : null,
+      phrases: phrasesOfSession(a),
     });
     setRunning(false);
   };

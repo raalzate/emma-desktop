@@ -39,6 +39,7 @@ import { reportableCorrections } from "@/domain/chat/silent-error";
 import type { ChatConversation } from "@/domain/chat/chat-conversation";
 import { readStoredLesson } from "@/domain/chat/chat-conversation";
 import type { SessionLesson } from "@/domain/feedback/session-lesson";
+import { attachAudioId, clipsByTurn, saveVoiceTurn, type VoiceClip } from "./voice-turn";
 
 export interface SessionSnapshot {
   scenarioType: string;
@@ -59,6 +60,10 @@ interface Deps {
   profile: UserProfile;
   settings: ChatSettings;
   scenario: Scenario;
+  /** Dueña de los clips de audio del aprendiz (borrado en cascada). */
+  conversationId: string;
+  /** Un clip se guardó con éxito (dispara el aviso de privacidad de una sola vez). */
+  onClipSaved?: () => void;
   restore?: ChatConversation | null;
   onSnapshot?: (s: SessionSnapshot) => void;
 }
@@ -141,6 +146,9 @@ export function useChatSession(d: Deps) {
   // Un chat nuevo NUNCA arranca solo: el usuario lee la escena y pulsa comenzar.
   const [phase, setPhase] = useState<"intro" | "live">(restore?.messages?.length ? "live" : "intro");
   const system = useRef("");
+  // Turno → clip guardado: el cierre lo usa para que el error de ese turno
+  // lleve su audio al repaso (FR-011). Mutable y estable: se lee al cerrar.
+  const clipOfTurn = useRef<Record<number, string>>(clipsByTurn(restore?.messages ?? []));
   // Identidad de la conversación viva en el motor local (memoria por KV-cache).
   const llmSessionId = useRef(`llm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
   // Estado agéntico de la escena (checklist Observe→Decide→Verify); al
@@ -297,12 +305,23 @@ export function useChatSession(d: Deps) {
   // Envía un turno del aprendiz (texto o nota de voz). `audioUrl` adjunta el
   // audio grabado (WhatsApp): la IA procesa la transcripción `text`.
   const send = useCallback(
-    async (text: string, audioUrl?: string) => {
+    async (text: string, audioUrl?: string, clip?: VoiceClip) => {
       const clean = text.trim();
       if (!clean || busy || sceneComplete) return;
       const prior = messages;
       const turn = turnCount + 1;
-      setMessages([...prior, { role: "user", content: clean, at: Date.now(), audioUrl }]);
+      const userTurn: ChatTurn = { role: "user", content: clean, at: Date.now(), audioUrl };
+      setMessages([...prior, userTurn]);
+      // Turno aceptado: el clip se guarda en segundo plano, sin frenar a Emma.
+      void saveVoiceTurn({
+        audio: runtime.audio, conversationId: d.conversationId, turn, transcript: clean, clip,
+        onError: (e) => console.warn("[audio] no se pudo guardar la nota de voz", e),
+      }).then((id) => {
+        if (!id) return;
+        clipOfTurn.current[turn] = id;
+        d.onClipSaved?.();
+        setMessages((m) => attachAudioId(m, userTurn, id));
+      });
       setTurnCount(turn);
       if (audioUrl) setLastVoiceTurn(turn);
       setBusy(true);
@@ -503,7 +522,7 @@ export function useChatSession(d: Deps) {
     lesson, saveLesson,
     // Objetivos de la escena cubiertos/total (null si el escenario es libre).
     sceneGoals,
-    messages, streaming, busy, turnCount, maxTurns, errors, send, lastEmma, suggestionContext,
+    messages, streaming, busy, turnCount, maxTurns, errors, clipOfTurn: clipOfTurn.current, send, lastEmma, suggestionContext,
     // ¿Este turno se habla? La regla es del dominio; el composer sólo obedece.
     voiceRequirement: requiresVoice({
       turn: turnCount + 1,
