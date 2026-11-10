@@ -84,6 +84,11 @@ describe("puertos del chequeo", () => {
       append: async (r) => {
         store = appendHistory(store, r);
       },
+      acknowledgeLast: async () => {
+        if (!store[0]) return null;
+        store = [{ ...store[0], acknowledged: true }, ...store.slice(1)];
+        return store[0];
+      },
     };
     await repo.append(rec({ at: 7 }));
     expect((await repo.last())?.at).toBe(7);

@@ -58,3 +58,26 @@ describe("captureSessionErrors", () => {
     expect(added).toBe(0);
   });
 });
+
+describe("captureSessionErrors con clipOfTurn (FR-011)", () => {
+  it("adjunta la voz del aprendiz a la tarjeta del turno que erró", async () => {
+    const repo = createFakeRepo();
+    await captureSessionErrors({
+      repo,
+      errors: [error({ turn: 3 }), error({ original: "He go", corrected: "He goes" })],
+      today: 7,
+      clipOfTurn: { 3: "learner-conv-3" },
+    });
+
+    const [conClip, sinClip] = await repo.loadCards();
+    expect(conClip.audioId).toBe("learner-conv-3");
+    expect(conClip.audioOrigin).toBe("learner");
+    expect(sinClip.audioId).toBeUndefined();
+  });
+
+  it("sin clipOfTurn las tarjetas no traen audio", async () => {
+    const repo = createFakeRepo();
+    await captureSessionErrors({ repo, errors: [error({ turn: 3 })], today: 7 });
+    expect((await repo.loadCards())[0].audioId).toBeUndefined();
+  });
+});

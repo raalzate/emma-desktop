@@ -85,3 +85,32 @@ describe("addCards", () => {
     expect(persisted.map((c) => c.id).sort()).toEqual(["c1", "c2"]);
   });
 });
+
+describe("startReviewSession con modo (FR-010)", () => {
+  const audio = (id: string, box: SrsCard["box"] = 1) =>
+    card({ id, kind: "audio-recall", box, audioId: `clip-${id}` });
+
+  const repoMixto = () =>
+    createFakeRepo([card({ id: "t1", box: 2 }), audio("a1"), audio("a2", 3)]);
+
+  it("por defecto es modo texto: excluye los dictados", async () => {
+    const result = await startReviewSession({ repo: repoMixto(), today: 10 });
+    expect(result.map((c) => c.id)).toEqual(["t1"]);
+  });
+
+  it("modo audio devuelve solo los dictados", async () => {
+    const result = await startReviewSession({ repo: repoMixto(), today: 10, mode: "audio" });
+    expect(result.map((c) => c.id)).toEqual(["a1", "a2"]);
+  });
+
+  it("modo mixto devuelve todo, caja ascendente", async () => {
+    const result = await startReviewSession({ repo: repoMixto(), today: 10, mode: "mixed" });
+    expect(result.map((c) => c.id)).toEqual(["a1", "t1", "a2"]);
+  });
+
+  it("filtra por modo antes de cortar al límite", async () => {
+    const repo = createFakeRepo([audio("a1"), audio("a2"), card({ id: "t1", box: 2 })]);
+    const result = await startReviewSession({ repo, today: 10, limit: 1 });
+    expect(result.map((c) => c.id)).toEqual(["t1"]);
+  });
+});
