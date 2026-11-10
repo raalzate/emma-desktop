@@ -1,9 +1,21 @@
 /** Historial del chequeo (FR-035): últimas corridas con origen y ms por sonda. */
 import type { SetupCheckRecord } from "@/domain/setup/setup-check-record";
+import { firstLoadLabel } from "./setup-check-state";
 
 const TRIGGER_LABEL: Record<SetupCheckRecord["trigger"], string> = {
   "first-run": "First run", settings: "Manual", "live-failure": "After a failure",
 };
+
+/** Motor de voz y contexto de la IA que se midieron (sin audio ni prompts). */
+function contextOf(m: SetupCheckRecord["measurements"]): string[] {
+  const parts: string[] = [];
+  if (m?.voiceEngine) parts.push(`voice: ${m.voiceEngine}`);
+  if (m?.ai) {
+    parts.push(`AI: ${m.ai.mode}, ${m.ai.online ? "online" : "offline"}`);
+    if (m.ai.loadMs !== undefined) parts.push(firstLoadLabel(m.ai.loadMs));
+  }
+  return parts;
+}
 const PROBE_LABEL = { voice: "Voice", ai: "AI", mic: "Mic" } as const;
 const VERDICT_LABEL = { pass: "All good", warn: "Warnings", blocked: "Blocked" } as const;
 
@@ -22,6 +34,9 @@ export function SetupHistory({ records }: { records: readonly SetupCheckRecord[]
             <span key={p.probe} className="font-code text-xs text-muted-foreground">
               {PROBE_LABEL[p.probe]} {p.ms !== undefined ? `${p.ms} ms` : "n/a"}
             </span>
+          ))}
+          {contextOf(r.measurements).map((c) => (
+            <span key={c} className="font-code text-xs text-muted-foreground">{c}</span>
           ))}
         </li>
       ))}

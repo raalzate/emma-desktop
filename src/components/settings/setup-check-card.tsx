@@ -65,7 +65,7 @@ export function SetupCheckCard({ focus = null, onOpenTab }: SetupCheckCardProps)
           retesting={check.retesting}
           onContinue={() => {}}
           onContinueAnyway={() => {}}
-          onRunAgain={() => void check.runAll()}
+          onRunAgain={() => void check.rerunAll()}
           onRetest={(p) => void retest(p)}
           onSwitchToLocal={switchToLocal}
           onOpenSettingsTab={(tab) => onOpenTab?.(tab)}

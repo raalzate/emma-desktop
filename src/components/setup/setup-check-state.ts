@@ -4,6 +4,18 @@
  * desde el caso de uso, así que el reducer sólo lo guarda.
  */
 import type { ProbeName, SetupDiagnosis } from "@/domain/setup/diagnose-setup";
+import type { SetupCheckRecord } from "@/domain/setup/setup-check-record";
+
+/**
+ * Origen a guardar: la corrida automática inicial conserva el de la compuerta;
+ * «Run again» / «Test again» son manuales (`settings`).
+ */
+export function triggerForRun(initial: SetupCheckRecord["trigger"], repeat: boolean): SetupCheckRecord["trigger"] {
+  return repeat ? "settings" : initial;
+}
+
+/** Carga en frío del modelo, informativa (no es causa de lentitud). */
+export const firstLoadLabel = (loadMs: number): string => `first load ${Math.max(1, Math.round(loadMs / 1000))} s`;
 
 export interface SetupState {
   diagnosis: SetupDiagnosis | null;

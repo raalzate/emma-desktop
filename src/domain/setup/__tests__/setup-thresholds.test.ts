@@ -3,15 +3,15 @@ import { AI_MS, PROBE_TIMEOUT_MS, VOICE_MS, classifyLatency } from "../setup-thr
 
 describe("umbrales de latencia del chequeo", () => {
   it("fija los valores iniciales de Q3", () => {
-    expect(VOICE_MS).toEqual({ ok: 1500, slow: 5000 });
+    expect(VOICE_MS).toEqual({ ok: 2000, slow: 5000 });
     expect(AI_MS).toEqual({ ok: 5000, slow: 15000 });
-    expect(PROBE_TIMEOUT_MS).toEqual({ voice: 15000, ai: 20000, mic: 5000 });
+    expect(PROBE_TIMEOUT_MS).toEqual({ voice: 10000, ai: 20000, mic: 5000 });
   });
 
   it.each([
     [0, "ok"],
-    [1499, "ok"],
-    [1500, "slow"],
+    [1999, "ok"],
+    [2000, "slow"],
     [4999, "slow"],
     [5000, "very-slow"],
     [60000, "very-slow"],
@@ -31,5 +31,10 @@ describe("umbrales de latencia del chequeo", () => {
   it("los topes de espera superan el umbral de muy lenta", () => {
     expect(PROBE_TIMEOUT_MS.voice).toBeGreaterThanOrEqual(VOICE_MS.slow);
     expect(PROBE_TIMEOUT_MS.ai).toBeGreaterThanOrEqual(AI_MS.slow);
+  });
+
+  it("peor caso total <= 30 s (SC-003): voz y micrófono en paralelo, luego la IA", () => {
+    const peorCaso = Math.max(PROBE_TIMEOUT_MS.voice, PROBE_TIMEOUT_MS.mic) + PROBE_TIMEOUT_MS.ai;
+    expect(peorCaso).toBeLessThanOrEqual(30000);
   });
 });

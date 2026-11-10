@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  SETUP_CHECK_VERSION, SETUP_HISTORY_MAX, appendHistory, canContinue, requiresFirstRunCheck,
+  SETUP_CHECK_VERSION, SETUP_HISTORY_MAX, appendHistory, canContinue, recordMeasurements, requiresFirstRunCheck,
   type SetupCheckRecord,
 } from "../setup-check-record";
 import type { SetupDiagnosis } from "../diagnose-setup";
@@ -93,5 +93,26 @@ describe("puertos del chequeo", () => {
     await repo.append(rec({ at: 7 }));
     expect((await repo.last())?.at).toBe(7);
     expect((await probe.probeMic(new AbortController().signal)).devices).toBe(1);
+  });
+});
+
+describe("recordMeasurements", () => {
+  it("conserva sólo motor de voz y modo/readiness/online/carga de la IA, con la carga entera", () => {
+    const r = recordMeasurements({
+      voice: { status: "ok", engine: "native", ms: 900, detail: "texto" },
+      ai: {
+        status: "ok", ms: 100, loadMs: 8356.4, mode: "hybrid", online: false, readiness: "ok",
+        localModelAvailable: true, detail: "prompt?",
+      },
+    });
+    expect(r).toEqual({ voiceEngine: "native", ai: { mode: "hybrid", readiness: "ok", online: false, loadMs: 8356 } });
+  });
+
+  it("omite lo que no se midió y la carga si no hubo", () => {
+    expect(recordMeasurements({})).toEqual({});
+    const r = recordMeasurements({
+      ai: { status: "ok", mode: "local", online: true, readiness: "ok", localModelAvailable: true },
+    });
+    expect(r).toEqual({ ai: { mode: "local", readiness: "ok", online: true } });
   });
 });

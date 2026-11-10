@@ -1,12 +1,13 @@
 /**
  * Caso de uso del chequeo de setup (FR-024..FR-028, FR-035, SC-003).
- * Corre las sondas en paralelo, cada una bajo su tope; un timeout o una excepción
+ * Voz y micrófono corren en paralelo (el mic no usa GPU) y la IA después, para que no
+ * compitan por la GPU y falseen la latencia. Cada sonda va bajo su tope; un timeout o una excepción
  * se traducen a medición y nunca abortan el resto. Los puertos entran por argumento.
  */
 import { diagnoseSetup, mergeDiagnosis, type SetupDiagnosis } from "@/domain/setup/diagnose-setup";
 import type { ISetupCheckRepository } from "@/domain/setup/i-setup-check-repository";
 import type { ISetupProbe } from "@/domain/setup/i-setup-probe";
-import { SETUP_CHECK_VERSION, type SetupCheckRecord } from "@/domain/setup/setup-check-record";
+import { SETUP_CHECK_VERSION, recordMeasurements, type SetupCheckRecord } from "@/domain/setup/setup-check-record";
 import type { OsName } from "@/domain/setup/setup-remediation";
 import type { AiProbe, MicProbe, ProbeName, VoiceProbe } from "@/domain/setup/setup-probe-result";
 import { PROBE_TIMEOUT_MS } from "@/domain/setup/setup-thresholds";
@@ -44,7 +45,7 @@ async function withTimeout<T>(
   run: (signal: AbortSignal) => Promise<T>,
   ms: number,
   clock: SetupClock,
-  onTimeout: T,
+  onTimeout: () => T,
 ): Promise<T> {
   const probeCtl = new AbortController();
   const timerCtl = new AbortController();
@@ -53,7 +54,7 @@ async function withTimeout<T>(
     const result = await Promise.race([Promise.resolve().then(() => run(probeCtl.signal)), timer]);
     if (result !== EXPIRO) return result as T;
     probeCtl.abort();
-    return onTimeout;
+    return onTimeout();
   } finally {
     timerCtl.abort();
   }
@@ -65,24 +66,33 @@ function settled<T>(r: PromiseSettledResult<T>, onError: T): T {
 
 type Measurements = { voice?: VoiceProbe; ai?: AiProbe; mic?: MicProbe };
 
+/** IA bajo su tope. Si expira, conserva lo que la sonda alcanzó a informar (modo, carga del modelo). */
+async function measureAi(probe: ISetupProbe, clock: SetupClock): Promise<AiProbe> {
+  let partial: Partial<AiProbe> = {};
+  const [r] = await Promise.allSettled([
+    withTimeout(
+      (s) => probe.probeAi(s, (p) => { partial = { ...partial, ...p }; }),
+      PROBE_TIMEOUT_MS.ai, clock, () => ({ ...AI_TIMEOUT, ...partial, status: "timeout" as const }),
+    ),
+  ]);
+  return settled(r, AI_ERROR);
+}
+
 async function measure(a: RunSetupCheckArgs): Promise<Measurements> {
   const { probe, clock, only } = a;
   const want = (n: ProbeName) => !only || only === n;
-  const [voice, ai, mic] = await Promise.allSettled([
-    want("voice") ? withTimeout((s) => probe.probeVoice(s), PROBE_TIMEOUT_MS.voice, clock, VOICE_TIMEOUT) : undefined,
-    want("ai") ? withTimeout((s) => probe.probeAi(s), PROBE_TIMEOUT_MS.ai, clock, AI_TIMEOUT) : undefined,
-    want("mic") ? withTimeout((s) => probe.probeMic(s), PROBE_TIMEOUT_MS.mic, clock, MIC_TIMEOUT) : undefined,
+  // Voz y mic en paralelo (el mic no usa GPU); la IA espera para no competir con la voz.
+  const [voice, mic] = await Promise.allSettled([
+    want("voice") ? withTimeout((s) => probe.probeVoice(s), PROBE_TIMEOUT_MS.voice, clock, () => VOICE_TIMEOUT) : undefined,
+    want("mic") ? withTimeout((s) => probe.probeMic(s), PROBE_TIMEOUT_MS.mic, clock, () => MIC_TIMEOUT) : undefined,
   ]);
-  return {
-    voice: settled(voice, VOICE_ERROR),
-    ai: settled(ai, AI_ERROR),
-    mic: settled(mic, MIC_ERROR),
-  };
+  const ai = want("ai") ? await measureAi(probe, clock) : undefined;
+  return { voice: settled(voice, VOICE_ERROR), ai, mic: settled(mic, MIC_ERROR) };
 }
 
-async function lastDiagnosis(repo: ISetupCheckRepository): Promise<SetupDiagnosis | null> {
+async function lastRecord(repo: ISetupCheckRepository): Promise<SetupCheckRecord | null> {
   try {
-    return (await repo.last())?.diagnosis ?? null;
+    return await repo.last();
   } catch {
     return null;
   }
@@ -99,13 +109,17 @@ async function persist(repo: ISetupCheckRepository, record: SetupCheckRecord): P
 export async function runSetupCheck(a: RunSetupCheckArgs): Promise<SetupDiagnosis> {
   const measurements = await measure(a);
   let diagnosis = diagnoseSetup({ ...measurements, os: a.os });
+  let recorded = recordMeasurements(measurements);
   if (a.only) {
     const rerun = diagnosis.probes.find((p) => p.probe === a.only);
-    const prev = await lastDiagnosis(a.repo);
-    if (rerun && prev) diagnosis = mergeDiagnosis(prev, rerun);
+    const prev = await lastRecord(a.repo);
+    if (rerun && prev) diagnosis = mergeDiagnosis(prev.diagnosis, rerun);
+    // Re-corrida de una sonda: lo medido de las otras se conserva.
+    if (prev?.measurements) recorded = { ...prev.measurements, ...recorded };
   }
   await persist(a.repo, {
-    version: SETUP_CHECK_VERSION, at: a.clock.now(), trigger: a.trigger, diagnosis, acknowledged: false,
+    version: SETUP_CHECK_VERSION, at: a.clock.now(), trigger: a.trigger, diagnosis,
+    measurements: recorded, acknowledged: false,
   });
   return diagnosis;
 }

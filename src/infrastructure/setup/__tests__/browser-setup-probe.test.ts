@@ -19,6 +19,8 @@ function deps(over: Partial<BrowserProbeDeps> = {}): BrowserProbeDeps {
     llm: async () => "OK",
     micAccessStatus: async () => "granted",
     audioInputs: async () => 1,
+    engineLoaded: () => true,
+    warmUp: async () => {},
     ...over,
   };
 }
@@ -49,7 +51,7 @@ describe("probeVoice (FR-025)", () => {
   it("usa la frase fija y el presupuesto de la sonda", async () => {
     const synthesize = vi.fn(async () => ({ backend: "wasm" as const }));
     await createBrowserSetupProbe(deps({ synthesize })).probeVoice(live());
-    expect(synthesize).toHaveBeenCalledWith(expect.stringMatching(/\w+/), 15000);
+    expect(synthesize).toHaveBeenCalledWith(expect.stringMatching(/\w+/), 10000);
   });
 
   it("respeta el AbortSignal: abortada, devuelve timeout aunque la cadena no responda", async () => {
@@ -178,5 +180,93 @@ describe("probeMic (FR-027)", () => {
     const pending = createBrowserSetupProbe(deps({ micAccessStatus: () => new Promise(() => {}) })).probeMic(ctl.signal);
     ctl.abort();
     await expect(pending).resolves.toEqual({ status: "timeout", devices: 0 });
+  });
+});
+
+describe("ms enteros (sin decimales de performance.now)", () => {
+  const fraccion = () => {
+    let t = 1000.123;
+    return () => (t += 8356.4);
+  };
+
+  it("la voz redondea los ms al entero", async () => {
+    const r = await createBrowserSetupProbe(deps({ now: fraccion() })).probeVoice(live());
+    expect(r.ms).toBe(8356);
+  });
+
+  it("la IA redondea los ms y la carga al entero", async () => {
+    const r = await createBrowserSetupProbe(deps({ now: fraccion(), engineLoaded: () => false })).probeAi(live());
+    expect(r.ms).toBe(8356);
+    expect(r.loadMs).toBe(8356);
+  });
+});
+
+describe("probeAi — carga en frío separada de la inferencia", () => {
+  it("motor local sin cargar: calienta ANTES del prompt y mide loadMs aparte de ms", async () => {
+    const orden: string[] = [];
+    const r = await createBrowserSetupProbe(
+      deps({
+        engineLoaded: () => false,
+        warmUp: async () => { orden.push("warmUp"); },
+        llm: async () => (orden.push("llm"), "OK"),
+      }),
+    ).probeAi(live());
+    expect(orden).toEqual(["warmUp", "llm"]);
+    // now() avanza 120 por llamada: carga = 120, inferencia = 120 (no 240)
+    expect(r).toMatchObject({ status: "ok", loadMs: 120, ms: 120 });
+  });
+
+  it("motor ya cargado: no calienta ni reporta loadMs", async () => {
+    const warmUp = vi.fn(async () => {});
+    const r = await createBrowserSetupProbe(deps({ engineLoaded: () => true, warmUp })).probeAi(live());
+    expect(warmUp).not.toHaveBeenCalled();
+    expect(r.loadMs).toBeUndefined();
+  });
+
+  it("modo remoto: no calienta el motor local", async () => {
+    const warmUp = vi.fn(async () => {});
+    await createBrowserSetupProbe(
+      deps({ engineLoaded: () => false, warmUp, readiness: async () => ({ ready: true, mode: "remote", reason: "ok" }) }),
+    ).probeAi(live());
+    expect(warmUp).not.toHaveBeenCalled();
+  });
+
+  it("modo híbrido sin modelo local: no calienta", async () => {
+    const warmUp = vi.fn(async () => {});
+    await createBrowserSetupProbe(
+      deps({
+        engineLoaded: () => false, warmUp, localModelAvailable: async () => false,
+        readiness: async () => ({ ready: true, mode: "hybrid", reason: "ok" }),
+      }),
+    ).probeAi(live());
+    expect(warmUp).not.toHaveBeenCalled();
+  });
+
+  it("abortada durante la carga: timeout con loadingModel y avisa por progress", async () => {
+    const ctl = new AbortController();
+    const progress = vi.fn();
+    const probe = createBrowserSetupProbe(deps({ engineLoaded: () => false, warmUp: () => new Promise(() => {}) }));
+    const pending = probe.probeAi(ctl.signal, progress);
+    await new Promise((r) => setTimeout(r, 0));
+    expect(progress).toHaveBeenCalledWith(expect.objectContaining({ loadingModel: true, mode: "local" }));
+    ctl.abort();
+    await expect(pending).resolves.toMatchObject({ status: "timeout", loadingModel: true });
+  });
+
+  it("abortada durante la inferencia (motor ya cargado): timeout sin loadingModel", async () => {
+    const ctl = new AbortController();
+    const pending = createBrowserSetupProbe(deps({ llm: () => new Promise(() => {}) })).probeAi(ctl.signal);
+    await new Promise((r) => setTimeout(r, 0));
+    ctl.abort();
+    const r = await pending;
+    expect(r.status).toBe("timeout");
+    expect(r.loadingModel).toBeUndefined();
+  });
+
+  it("si el calentamiento falla ⇒ error con detalle", async () => {
+    const r = await createBrowserSetupProbe(
+      deps({ engineLoaded: () => false, warmUp: async () => { throw new Error("sin GPU"); } }),
+    ).probeAi(live());
+    expect(r).toMatchObject({ status: "error", detail: "sin GPU" });
   });
 });

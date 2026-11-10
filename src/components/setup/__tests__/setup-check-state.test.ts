@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialSetupState, setupReducer } from "@/components/setup/setup-check-state";
+import { initialSetupState, setupReducer, triggerForRun } from "@/components/setup/setup-check-state";
 import { diagnoseSetup } from "@/domain/setup/diagnose-setup";
 
 const verde = () =>
@@ -36,5 +36,20 @@ describe("setupReducer", () => {
   it("un error inesperado apaga los indicadores y lo marca", () => {
     const s = setupReducer({ ...initialSetupState, running: true, retesting: "ai" }, { type: "run-failed" });
     expect(s).toMatchObject({ running: false, retesting: null, failed: true });
+  });
+});
+
+describe("triggerForRun", () => {
+  it("la corrida automática inicial conserva el origen de la compuerta", () => {
+    expect(triggerForRun("first-run", false)).toBe("first-run");
+  });
+
+  it("«Run again» y «Test again» son manuales (settings), aunque la compuerta sea first-run", () => {
+    expect(triggerForRun("first-run", true)).toBe("settings");
+  });
+
+  it("una repetición no degrada un origen explícito ya manual", () => {
+    expect(triggerForRun("settings", true)).toBe("settings");
+    expect(triggerForRun("settings", false)).toBe("settings");
   });
 });

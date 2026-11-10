@@ -37,8 +37,8 @@ describe("diagnoseSetup — todo bien", () => {
 
 describe("diagnoseSetup — voz", () => {
   it.each([
-    [1499, "ok", "ok"],
-    [1500, "warning", "slow"],
+    [1999, "ok", "ok"],
+    [2000, "warning", "slow"],
     [5000, "warning", "very-slow"],
   ] as const)("voz nativa a %i ms es %s (%s)", (ms, severity, speed) => {
     const p = probe(diagnoseSetup({ voice: { ...voiceOk, ms }, os: "mac" }), "voice");
@@ -255,5 +255,37 @@ describe("mergeDiagnosis (Test again de una prueba, H5)", () => {
     d = mergeDiagnosis(d, probe(diagnoseSetup({ voice: voiceOk, os: "mac" }), "voice"));
     d = mergeDiagnosis(d, probe(diagnoseSetup({ ai: aiOk, os: "mac" }), "ai"));
     expect(d.verdict).toBe("pass");
+  });
+});
+
+describe("diagnoseSetup — ms enteros y carga en frío", () => {
+  it("redondea ms de voz, IA y carga al entero", () => {
+    const d = diagnoseSetup({
+      voice: { ...voiceOk, ms: 8356.399999976158 }, ai: ai({ ms: 1234.6, loadMs: 17000.4 }), os: "mac",
+    });
+    expect(probe(d, "voice").ms).toBe(8356);
+    expect(probe(d, "ai").ms).toBe(1235);
+    expect(probe(d, "ai").loadMs).toBe(17000);
+  });
+
+  it("la carga del modelo NO cuenta como lentitud: sólo la inferencia se clasifica", () => {
+    const p = probe(diagnoseSetup({ ai: ai({ ms: 900, loadMs: 17000 }), os: "mac" }), "ai");
+    expect(p.severity).toBe("ok");
+    expect(p.speed).toBe("ok");
+    expect(p.causes).toEqual([]);
+    expect(p.loadMs).toBe(17000);
+  });
+
+  it("inferencia lenta sigue siendo ai-slow-local aunque haya carga", () => {
+    const p = probe(diagnoseSetup({ ai: ai({ ms: 6000, loadMs: 17000 }), os: "mac" }), "ai");
+    expect(p.causes).toEqual(["ai-slow-local"]);
+  });
+
+  it("timeout durante la carga: ai-loading (warning), sin ai-slow-local ni «smaller model»", () => {
+    const p = probe(diagnoseSetup({ ai: ai({ status: "timeout", ms: undefined, loadingModel: true }), os: "mac" }), "ai");
+    expect(p.severity).toBe("warning");
+    expect(p.causes).toEqual(["ai-loading"]);
+    expect(p.summary).toMatch(/still loading/i);
+    expect(p.remediations.map((r) => r.action)).toEqual([{ kind: "retest", probe: "ai" }]);
   });
 });

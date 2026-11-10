@@ -9,7 +9,7 @@ describe("catálogo de remediación", () => {
     expect(CAUSAS.sort()).toEqual(
       [
         "no-webgpu", "low-ram", "ai-slow-local", "ai-slow-remote", "ai-no-response", "ai-empty",
-        "ai-timeout", "ai-offline", "voice-fallback", "voice-slow", "voice-timeout",
+        "ai-timeout", "ai-loading", "ai-offline", "voice-fallback", "voice-slow", "voice-timeout",
         "mic-denied", "mic-missing",
       ].sort(),
     );

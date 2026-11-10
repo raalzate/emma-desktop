@@ -14,6 +14,7 @@ import type { ProbeDiagnosis, Severity, SetupDiagnosis } from "@/domain/setup/di
 import type { ProbeName } from "@/domain/setup/setup-probe-result";
 import type { Speed } from "@/domain/setup/setup-thresholds";
 import { RemediationButton } from "./remediation-button";
+import { firstLoadLabel } from "./setup-check-state";
 
 export interface SetupCheckReportProps {
   diagnosis: SetupDiagnosis | null;
@@ -47,8 +48,9 @@ const SEVERITY_ICON: Record<Severity, { Icon: LucideIcon; tone: string }> = {
 };
 
 function measure(p: ProbeDiagnosis): string | null {
-  if (p.ms === undefined) return null;
-  return p.speed ? `${p.ms} ms · ${SPEED_LABEL[p.speed]}` : `${p.ms} ms`;
+  const load = p.loadMs !== undefined ? firstLoadLabel(p.loadMs) : null;
+  const latency = p.ms === undefined ? null : p.speed ? `${p.ms} ms · ${SPEED_LABEL[p.speed]}` : `${p.ms} ms`;
+  return [latency, load].filter(Boolean).join(" · ") || null;
 }
 
 type RowActions = Pick<

@@ -17,7 +17,7 @@ function FirstRunCheck({ onDismiss }: { onDismiss: () => void }) {
   const { runtime } = useEmma();
   const setup = runtime?.setup ?? null;
   const check = useSetupCheck(setup, "first-run");
-  const { runAll, retest } = check;
+  const { runAll, rerunAll, retest } = check;
 
   useEffect(() => {
     void runAll();
@@ -44,12 +44,12 @@ function FirstRunCheck({ onDismiss }: { onDismiss: () => void }) {
         retesting={check.retesting}
         onContinue={() => void proceed()}
         onContinueAnyway={() => void proceed()}
-        onRunAgain={() => void runAll()}
+        onRunAgain={() => void rerunAll()}
         onRetest={(p) => void retest(p)}
         onSwitchToLocal={switchToLocal}
         // Con la app bloqueada no hay ajustes a los que ir: los diálogos de remediación cubren esos casos.
         onOpenSettingsTab={() => {}}
-        onCloudReady={() => void runAll()}
+        onCloudReady={() => void rerunAll()}
       />
     </main>
   );

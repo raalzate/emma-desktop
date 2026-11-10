@@ -8,7 +8,7 @@ import type { ProbeName } from "./setup-probe-result";
 
 export type SetupCause =
   | "no-webgpu" | "low-ram" | "ai-slow-local" | "ai-slow-remote" | "ai-no-response"
-  | "ai-empty" | "ai-timeout" | "ai-offline" | "voice-fallback" | "voice-slow"
+  | "ai-empty" | "ai-timeout" | "ai-loading" | "ai-offline" | "voice-fallback" | "voice-slow"
   | "voice-timeout" | "mic-denied" | "mic-missing";
 
 export type OsName = "mac" | "windows" | "linux";
@@ -82,6 +82,7 @@ export const REMEDIATIONS: Record<SetupCause, readonly Remediation[]> = {
   ],
   "ai-empty": [retestAi, smallerModel],
   "ai-timeout": [smallerModel, useCloud, retestAi],
+  "ai-loading": [retestAi],
   "ai-offline": [
     {
       label: "Switch to the local model",

@@ -27,7 +27,7 @@ export function createIssueHandler(deps: IssueHandlerDeps): (failure: LiveFailur
 
 const PROBE_OF_CAUSE: Record<SetupCause, ProbeName> = {
   "no-webgpu": "ai", "low-ram": "ai", "ai-slow-local": "ai", "ai-slow-remote": "ai", "ai-no-response": "ai",
-  "ai-empty": "ai", "ai-timeout": "ai", "ai-offline": "ai",
+  "ai-empty": "ai", "ai-timeout": "ai", "ai-loading": "ai", "ai-offline": "ai",
   "voice-fallback": "voice", "voice-slow": "voice", "voice-timeout": "voice",
   "mic-denied": "mic", "mic-missing": "mic",
 };

@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { PROBE_TIMEOUT_MS } from "@/domain/setup/setup-thresholds";
 import { SETUP_CHECK_VERSION } from "@/domain/setup/setup-check-record";
 import { runSetupCheck } from "../run-setup-check-use-case";
-import { IA_OK, MIC_OK, colgada, relojFalso, repoFalso, sondaFalsa } from "./fakes";
+import type { MicProbe, VoiceProbe } from "@/domain/setup/setup-probe-result";
+import { IA_OK, MIC_OK, VOZ_OK, colgada, relojFalso, repoFalso, sondaFalsa } from "./fakes";
 
 const base = { os: "mac", trigger: "settings" } as const;
 const tick = () => new Promise<void>((r) => setTimeout(r, 0));
@@ -19,22 +20,45 @@ describe("runSetupCheck", () => {
     });
   });
 
-  it("lanza las tres sondas en paralelo (todas arrancan antes de que alguna termine)", async () => {
+  it("voz y micrófono arrancan juntos; la IA espera a que ambas terminen (no compite por GPU con la voz)", async () => {
     const iniciadas: string[] = [];
+    let terminarVoz: (v: VoiceProbe) => void = () => {};
+    let terminarMic: (m: MicProbe) => void = () => {};
     const probe = sondaFalsa({
-      probeVoice: () => { iniciadas.push("voice"); return colgada(); },
-      probeAi: () => { iniciadas.push("ai"); return colgada(); },
-      probeMic: () => { iniciadas.push("mic"); return colgada(); },
+      probeVoice: () => { iniciadas.push("voice"); return new Promise<VoiceProbe>((r) => { terminarVoz = r; }); },
+      probeAi: async () => { iniciadas.push("ai"); return IA_OK; },
+      probeMic: () => { iniciadas.push("mic"); return new Promise<MicProbe>((r) => { terminarMic = r; }); },
     });
     const clock = relojFalso();
     const p = runSetupCheck({ ...base, probe, repo: repoFalso(), clock });
     await tick();
-    expect(iniciadas).toEqual(["voice", "ai", "mic"]);
-    expect(clock.pendientes().sort()).toEqual(
-      [PROBE_TIMEOUT_MS.mic, PROBE_TIMEOUT_MS.voice, PROBE_TIMEOUT_MS.ai].sort(),
-    );
-    for (const ms of Object.values(PROBE_TIMEOUT_MS)) clock.disparar(ms);
+    expect(iniciadas).toEqual(["voice", "mic"]);
+    expect(clock.pendientes().sort()).toEqual([PROBE_TIMEOUT_MS.mic, PROBE_TIMEOUT_MS.voice].sort());
+
+    terminarMic(MIC_OK);
+    await tick();
+    expect(iniciadas).toEqual(["voice", "mic"]); // la voz aún no termina
+    terminarVoz(VOZ_OK);
+    await tick();
+    expect(iniciadas).toEqual(["voice", "mic", "ai"]);
     await p;
+  });
+
+  it("peor caso: todas colgadas, el tiempo total de topes es <= 30 s (SC-003)", async () => {
+    const probe = sondaFalsa({ probeVoice: () => colgada(), probeAi: () => colgada(), probeMic: () => colgada() });
+    const clock = relojFalso();
+    const p = runSetupCheck({ ...base, probe, repo: repoFalso(), clock });
+    await tick();
+    const fase1 = clock.pendientes();
+    clock.disparar(PROBE_TIMEOUT_MS.mic);
+    clock.disparar(PROBE_TIMEOUT_MS.voice);
+    await tick();
+    const fase2 = clock.pendientes();
+    expect(fase2).toEqual([PROBE_TIMEOUT_MS.ai]);
+    clock.disparar(PROBE_TIMEOUT_MS.ai);
+    await p;
+    // voz y mic en paralelo (cuenta la mayor) + IA después
+    expect(Math.max(...fase1) + Math.max(...fase2)).toBeLessThanOrEqual(30000);
   });
 
   it("una sonda que agota su tope se marca timeout y no aborta las demás", async () => {
@@ -87,6 +111,60 @@ describe("runSetupCheck", () => {
     const repo = { ...repoFalso(), append: async () => { throw new Error("disco"); } };
     const d = await runSetupCheck({ ...base, probe: sondaFalsa(), repo, clock: relojFalso() });
     expect(d.verdict).toBe("pass");
+  });
+
+  describe("IA: avance parcial al agotar el tope", () => {
+    it("si el tope se agota mientras el modelo carga: ai-loading, no ai-slow-local", async () => {
+      const probe = sondaFalsa({
+        probeAi: (_s, progress) => { progress?.({ ...IA_OK, loadingModel: true }); return colgada(); },
+      });
+      const clock = relojFalso();
+      const p = runSetupCheck({ ...base, probe, repo: repoFalso(), clock });
+      await tick();
+      clock.disparar(PROBE_TIMEOUT_MS.ai);
+      const ai = (await p).probes.find((x) => x.probe === "ai");
+      expect(ai?.causes).toEqual(["ai-loading"]);
+      expect(ai?.severity).toBe("warning");
+    });
+
+    it("conserva el modo informado: un timeout remoto sigue siendo remoto", async () => {
+      const probe = sondaFalsa({
+        probeAi: (_s, progress) => { progress?.({ ...IA_OK, mode: "remote", localModelAvailable: false, loadingModel: false }); return colgada(); },
+      });
+      const clock = relojFalso();
+      const p = runSetupCheck({ ...base, probe, repo: repoFalso(), clock });
+      await tick();
+      clock.disparar(PROBE_TIMEOUT_MS.ai);
+      const ai = (await p).probes.find((x) => x.probe === "ai");
+      expect(ai?.causes).toContain("ai-slow-remote");
+      expect(ai?.severity).toBe("blocking");
+    });
+  });
+
+  describe("medición guardada en el registro (FR-035)", () => {
+    it("guarda motor de voz y modo/readiness/online/carga de la IA, sin audio ni prompts", async () => {
+      const repo = repoFalso();
+      const probe = sondaFalsa({
+        probeVoice: async () => ({ ...VOZ_OK, engine: "wasm", detail: "texto libre" }),
+        probeAi: async () => ({ ...IA_OK, loadMs: 17000, detail: "otro texto" }),
+      });
+      await runSetupCheck({ ...base, probe, repo, clock: relojFalso() });
+      expect(repo.registros[0].measurements).toEqual({
+        voiceEngine: "wasm",
+        ai: { mode: "local", readiness: "ok", online: true, loadMs: 17000 },
+      });
+    });
+
+    it("con `only` conserva lo medido antes de las otras sondas", async () => {
+      const repo = repoFalso();
+      await runSetupCheck({ ...base, probe: sondaFalsa(), repo, clock: relojFalso() });
+      const probe = sondaFalsa({ probeVoice: async () => ({ ...VOZ_OK, engine: "web-speech" }) });
+      await runSetupCheck({ ...base, probe, repo, clock: relojFalso(), only: "voice" });
+      expect(repo.registros[1].measurements).toEqual({
+        voiceEngine: "web-speech",
+        ai: { mode: "local", readiness: "ok", online: true },
+      });
+    });
   });
 
   describe("only", () => {

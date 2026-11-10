@@ -104,6 +104,20 @@ describe("SetupCheckReport", () => {
     expect(html).toContain("Checking");
     expect(html).toContain("disabled");
   });
+
+  it("carga en frío: muestra «first load» informativo y no la marca como lenta", () => {
+    const d = diagnoseSetup({
+      os: "mac",
+      voice: { status: "ok", ms: 400, engine: "wasm" },
+      ai: { status: "ok", ms: 900, loadMs: 17000, mode: "local", online: true, readiness: "ok", localModelAvailable: true },
+      mic: { status: "granted", devices: 1 },
+    });
+    const html = render({ diagnosis: d });
+    expect(html).toContain("first load 17 s");
+    expect(html).toContain("900 ms");
+    expect(html).toContain("Fast");
+    expect(html).not.toContain("smaller local model");
+  });
 });
 
 describe("RemediationButton", () => {

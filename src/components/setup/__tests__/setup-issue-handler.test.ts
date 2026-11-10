@@ -36,6 +36,7 @@ describe("probeOfCause / settingsUrlFor", () => {
     expect(probeOfCause("voice-fallback")).toBe("voice");
     expect(probeOfCause("ai-timeout")).toBe("ai");
     expect(probeOfCause("no-webgpu")).toBe("ai");
+    expect(probeOfCause("ai-loading")).toBe("ai");
     expect(probeOfCause("mic-denied")).toBe("mic");
   });
   it("la URL abre la pestaña de audio con la sonda a enfocar", () => {

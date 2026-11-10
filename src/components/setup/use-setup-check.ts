@@ -9,7 +9,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { SetupFacade } from "@/interface/setup-facade";
 import type { ProbeName } from "@/domain/setup/setup-probe-result";
 import type { SetupCheckRecord } from "@/domain/setup/setup-check-record";
-import { initialSetupState, setupReducer } from "./setup-check-state";
+import { initialSetupState, setupReducer, triggerForRun } from "./setup-check-state";
 
 type Trigger = SetupCheckRecord["trigger"];
 
@@ -39,7 +39,14 @@ export function useSetupCheck(setup: SetupFacade | null, trigger: Trigger, onDon
 
   return {
     ...state,
+    /** Corrida automática inicial: conserva el origen recibido (p. ej. first-run). */
     runAll: useCallback(() => exec(), [exec]),
-    retest: useCallback((probe: ProbeName, as?: Trigger) => exec(probe, as), [exec]),
+    /** «Run again»: corrida manual completa. */
+    rerunAll: useCallback(() => exec(undefined, triggerForRun(trigger, true)), [exec, trigger]),
+    /** «Test again» de una sonda: manual, salvo que se indique otro origen (live-failure). */
+    retest: useCallback(
+      (probe: ProbeName, as?: Trigger) => exec(probe, as ?? triggerForRun(trigger, true)),
+      [exec, trigger],
+    ),
   };
 }

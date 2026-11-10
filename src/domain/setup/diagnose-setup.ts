@@ -17,6 +17,8 @@ export interface ProbeDiagnosis {
   severity: Severity;
   speed?: Speed;
   ms?: number;
+  /** Carga en frío del modelo local (informativa). */
+  loadMs?: number;
   summary: string;
   causes: SetupCause[];
   remediations: Remediation[];
@@ -44,6 +46,7 @@ const SUMMARY: Record<SetupCause, string> = {
   "ai-no-response": "The AI engine did not respond.",
   "ai-empty": "The AI engine returned an empty answer.",
   "ai-timeout": "The AI engine took too long to answer.",
+  "ai-loading": "The local model is still loading. Test again in a few seconds.",
   "ai-offline": "You are offline and the cloud model is selected.",
   "voice-fallback": "EMMA's voice fell back to the basic system voice.",
   "voice-slow": "EMMA's voice takes a while to start.",
@@ -51,6 +54,9 @@ const SUMMARY: Record<SetupCause, string> = {
   "mic-denied": "Microphone access is denied.",
   "mic-missing": "No microphone was found.",
 };
+
+/** Los ms se guardan y muestran enteros. */
+const whole = (ms: number | undefined): number | undefined => (ms === undefined ? undefined : Math.round(ms));
 
 function unique<T>(items: readonly T[]): T[] {
   return [...new Set(items)];
@@ -69,7 +75,7 @@ function build(
   severity: Severity,
   causes: SetupCause[],
   keep: (r: Remediation) => boolean = () => true,
-  extra: Pick<ProbeDiagnosis, "speed" | "ms"> = {},
+  extra: Pick<ProbeDiagnosis, "speed" | "ms" | "loadMs"> = {},
 ): ProbeDiagnosis {
   const uniq = unique(causes);
   const summary = uniq.length > 0 ? SUMMARY[uniq[0]] : "Working as expected.";
@@ -79,12 +85,13 @@ function build(
 function diagnoseVoice(v: VoiceProbe): ProbeDiagnosis {
   if (v.status === "timeout") return build("voice", "warning", ["voice-timeout"]);
   if (v.status === "error") return build("voice", "warning", ["voice-fallback"]);
-  const speed = v.ms === undefined ? undefined : classifyLatency(v.ms, VOICE_MS);
+  const ms = whole(v.ms);
+  const speed = ms === undefined ? undefined : classifyLatency(ms, VOICE_MS);
   const causes: SetupCause[] = [];
   if (v.engine === "web-speech") causes.push("voice-fallback");
   if (speed && speed !== "ok") causes.push("voice-slow");
   const severity: Severity = causes.length > 0 ? "warning" : "ok";
-  return build("voice", severity, causes, () => true, { speed, ms: v.ms });
+  return build("voice", severity, causes, () => true, { speed, ms });
 }
 
 function diagnoseMic(m: MicProbe, os: OsName): ProbeDiagnosis {
@@ -135,8 +142,11 @@ function failureCauses(a: AiProbe): SetupCause[] {
 
 function diagnoseAi(a: AiProbe): ProbeDiagnosis {
   const noLocalSwitch = (r: Remediation) => a.localModelAvailable || r.action.kind !== "switch-to-local";
-  const speed = a.ms === undefined || a.status !== "ok" ? undefined : classifyLatency(a.ms, AI_MS);
-  const extra = { speed, ms: a.ms };
+  const ms = whole(a.ms);
+  // La clasificación usa sólo la inferencia: la carga en frío es informativa.
+  const speed = ms === undefined || a.status !== "ok" ? undefined : classifyLatency(ms, AI_MS);
+  const extra = { speed, ms, loadMs: whole(a.loadMs) };
+  if (a.status === "timeout" && a.loadingModel) return build("ai", "warning", ["ai-loading"], noLocalSwitch, extra);
 
   if (a.status === "ok" && a.readiness === "ok") {
     const causes: SetupCause[] = speed && speed !== "ok" ? [slowCause(a)] : [];
