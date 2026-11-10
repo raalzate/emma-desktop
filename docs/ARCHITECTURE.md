@@ -67,8 +67,25 @@ El dominio define **puertos** (interfaces); afuera viven los **adaptadores**.
   que anuncia el premio con el evento de ventana `emma:xp-awarded`: la capa de
   celebración y la tarjeta de la barra lateral lo escuchan sin store global.
 
+- `src/domain/audio/i-audio-store.ts` → `IAudioStore` (`save`/`load`/`remove`/
+  `removeByConversation`/`removeAll`/`list`/`usage`): el audio guardado del repaso
+  (#281). El binario **no** viaja por el store JSON. Adaptador:
+  `src/infrastructure/audio/ipc-audio-store.ts` sobre los canales `audio-clip-*` del
+  main, con la respuesta validada con Zod también a la vuelta.
+- `src/domain/setup/i-setup-probe.ts` → `ISetupProbe` (`probeVoice`/`probeAi`/
+  `probeMic`, cada una con su `AbortSignal`): el chequeo de setup mide con las MISMAS
+  piezas que usa la práctica. Adaptador: `src/infrastructure/setup/browser-setup-probe.ts`
+  (nunca abre el micrófono: el permiso lo consulta el main con `systemPreferences`).
+- `src/domain/setup/i-setup-check-repository.ts` → `ISetupCheckRepository`
+  (`last`/`history`/`append`/`acknowledgeLast`): historial del chequeo (colección
+  `setupChecks`, tope de 20, sólo mediciones y diagnósticos). Adaptador:
+  `src/infrastructure/persistence/setup-check-repository.ts`.
+
 El perfil de nivel y el historial se cablean en `src/interface/di/repositories.ts`
-(`profileLevel`, `chatHistory`).
+(`profileLevel`, `chatHistory`). El audio y el chequeo se exponen a la UI por dos
+fachadas que atan casos de uso y puertos: `src/interface/audio-facade.ts` (con una
+cola para las escrituras de tarjetas: el store JSON es leer-modificar-escribir) y
+`src/interface/setup-facade.ts` (`run`/`needsFirstRun`/`acknowledge`).
 
 **Inyección:** los casos de uso reciben el puerto por argumento, nunca lo importan
 concreto. Ejemplo canónico: `application/english-teacher/teach-use-case.ts`
@@ -128,12 +145,73 @@ para `prefers-reduced-motion`). Freno:
 `src/components/__tests__/movimiento-centralizado.test.ts` (falla si un componente
 animado importa `motion/react` directo).
 
+## Audio guardado y chequeo de setup (#281)
+
+**Árbol de providers** (`src/interface/app-providers.tsx`), de afuera hacia adentro:
+
+```
+MotionProvider
+└─ EmmaProvider            runtime, perfil, repos
+   ├─ AiGate               bloquea hasta que hay motor de IA (local o nube)
+   │  └─ SetupCheckGate    primer arranque: chequeo de voz, IA y micrófono
+   │     └─ children       onboarding / app
+   ├─ SetupIssueListener   fallos en vivo → sugiere el chequeo (máx. 1 cada 10 min)
+   ├─ Toaster
+   └─ CelebrationLayer
+```
+
+`SetupCheckGate` vive **dentro** de `AiGate` (siempre hay un motor que probar) y
+devuelve `null` hasta que el runtime está listo, para no montar el onboarding ni
+calentar la voz mientras la sonda mide. Corre sólo si no hay un chequeo reconocido
+(`needsFirstRunCheck`); un perfil con el onboarding completo o un historial ilegible
+no bloquean. Veredicto `blocked` ⇒ sin botón para seguir; `warn` ⇒ «Continue anyway».
+Durante la práctica, `use-karaoke.ts` reporta la caída a la voz del sistema por el bus
+`emma:setup-issue` (`src/interface/live-failure-bus.ts`).
+
+**Almacén de audio en el main** (`main/services/audio-store.ts`, handlers en
+`main/services/audio-ipc.ts`, Zod en `main/services/audio-protocol.ts`). Misma base
+que el store JSON (`EMMA_DB_DIR` o `userData/emma`):
+
+```
+userData/emma/
+├─ store/                 colecciones JSON (srs, setupChecks, audioPrefs, …)
+└─ audio/
+   ├─ index.json          metadatos de cada clip: única fuente de verdad, escritura atómica
+   └─ clips/<id>.webm     binario Opus/WebM
+```
+
+Al arrancar, `reconcile()` borra archivos huérfanos y entradas sin archivo. Hay tres
+orígenes de clip: la nota de voz del aprendiz (`learner`, al enviar un turno hablado),
+las frases de Emma (`emma`, al cerrar el diálogo de la lección, en serie y cancelable:
+Kokoro atiende una síntesis a la vez) y la lectura en voz alta del repaso (`attempt`,
+una vigente por tarjeta). Las dos primeras crean una tarjeta `audio-recall`. Tope por
+defecto 500 MB (`DEFAULT_AUDIO_CAP_BYTES`): al llenarse sólo se desalojan clips de
+tarjetas dominadas (caja 5); si no alcanza, el clip nuevo se rechaza. Sin clip, la
+tarjeta se degrada a texto (`presentAudioCard`). Borrar una conversación borra sus
+clips después del historial (`src/components/chat/delete-conversation.ts`); «Clear
+chat history» y «Delete all data» borran todo el audio.
+
+**Formato y transcodificación.** Todo se graba con el mismo `MediaRecorder`
+(Opus a 32 kbps, tope duro de 60 s; `src/infrastructure/audio/clip-recorder-options.ts`).
+Kokoro entrega WAV a 24 kHz: `src/infrastructure/audio/wav-to-opus.ts` lo decodifica con
+Web Audio, lo reproduce hacia un `MediaStreamAudioDestinationNode` (no suena por los
+parlantes) y lo graba con ese mismo `MediaRecorder`, en tiempo real y en segundo plano.
+Sin ffmpeg ni dependencias nativas nuevas.
+
+**Privacidad: el audio nunca sale del equipo.** No hay canal de audio hacia la nube:
+ni el router/proveedores de IA (`src/lib/ai/**`) ni el adaptador remoto
+(`main/services/ai-remote*`) pueden importar módulos de audio ni tocar canales
+`audio-*`. Freno: `src/lib/ai/__tests__/audio-no-sale.test.ts` (con prueba de vida
+sobre un cebo). El historial del chequeo tampoco guarda audio ni prompts.
+
 ## Procesos Electron
 
 - **main** (`main.ts`, `main/`): ventana, config, IPC, esquemas, logger,
   servicios. Llaves de nube cifradas con `safeStorage`. La persistencia vive aquí:
   store JSON por colección (`main/services/store.ts`, un documento por colección
-  bajo `userData/emma/store/`, escritura atómica) — reemplaza a SQLite.
+  bajo `userData/emma/store/`, escritura atómica) — reemplaza a SQLite. El audio
+  guardado vive aparte, en `userData/emma/audio/` (ver «Audio guardado y chequeo de
+  setup»), y el permiso real del micrófono se consulta aquí (`mic-access-status`).
 - **utilityProcess «EMMA voice»** (`main/services/tts-native/host.ts`, #269): Kokoro-82M
   con `onnxruntime-node` en CPU multihilo, ~0,25 s de cómputo por s de audio (el WASM de un
   hilo iba a ~3,4). Proceso aparte para que un crash nativo no tumbe la app; el cliente

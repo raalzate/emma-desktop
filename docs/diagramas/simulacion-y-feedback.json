@@ -2,8 +2,8 @@
   "vista": "Simulación y feedback",
   "notacion": "bpmn",
   "proyecto": "EMMA · Conversación",
-  "revisado": "2026-10-10",
-  "resumen": "La sesión completa de punta a punta: entrar a la escena (con el bloqueo por lecciones pendientes), la antesala, cada turno con su juez de coherencia y tres intentos de respuesta, la corrección silenciosa en paralelo y el cierre: reporte, nivel, XP y el plan de lecciones. El detalle de cada tramo vive en «BPMN · Turno de chat» y «BPMN · Ruta y progresión».",
+  "revisado": "2026-11-10",
+  "resumen": "La sesión completa de punta a punta: entrar a la escena (con el bloqueo por lecciones pendientes), la antesala, cada turno con su juez de coherencia y tres intentos de respuesta, la corrección silenciosa en paralelo y el cierre: reporte, tarjetas de repaso (con la voz del aprendiz cuando el error fue hablado), nivel, XP y el plan de lecciones. Al cerrar la lección, las frases clave de Emma se guardan como audio en segundo plano; borrar una conversación borra también sus audios. El detalle de cada tramo vive en «BPMN · Turno de chat», «BPMN · Voz y pronunciación» y «BPMN · Ruta y progresión».",
   "elementos": [
     {"id": "estudiante", "nombre": "Estudiante", "tipo": "Carril", "descripcion": "Quien practica: elige la escena, conversa en inglés y lee su lección.", "codigo": "src/components/chat/chat-view.tsx:ChatView"},
     {"id": "emma-simulacion", "nombre": "Tutora EMMA", "tipo": "Carril", "descripcion": "Arma la escena, dirige cada turno, corrige en silencio y cierra la sesión.", "codigo": "src/interface/emma-runtime.ts:createEmmaRuntime"},
@@ -38,6 +38,13 @@
     {"id": "lee-el-reporte", "nombre": "Lee su lección", "tipo": "Tarea", "descripcion": "La lección con audio, la decisión de nivel y el XP ganado.", "codigo": "src/components/chat/lesson-dialog.tsx:LessonDialog"},
     {"id": "gw-cierre", "nombre": "¿Hubo correcciones?", "tipo": "Compuerta Exclusiva", "descripcion": "Con correcciones las lecciones se asignan solas; sin ellas se pregunta qué hacer.", "codigo": "src/domain/lessons/closing-plan.ts:closingPlanFor"},
     {"id": "asigna-lecciones", "nombre": "Asigna las lecciones", "tipo": "Tarea", "descripcion": "Las prácticas de remediación y el reto de la unidad van a My lessons, sin duplicarse.", "codigo": "src/application/lessons/lesson-todo-use-cases.ts:assignSessionLessons"},
-    {"id": "sesion-cerrada", "nombre": "Practica o continúa", "tipo": "Evento de Fin", "descripcion": "Sin nada que corregir, elige practicar otra vez o seguir.", "codigo": "src/components/chat/closing-plan-panel.tsx:onPracticeAgain"}
+    {"id": "sesion-cerrada", "nombre": "Practica o continúa", "tipo": "Evento de Fin", "descripcion": "Sin nada que corregir, elige practicar otra vez o seguir.", "codigo": "src/components/chat/closing-plan-panel.tsx:onPracticeAgain"},
+    {"id": "crea-tarjetas-con-voz", "nombre": "Crea las tarjetas", "tipo": "Tarea", "descripcion": "Los errores callados se vuelven tarjetas de repaso. Si el error salió de una nota de voz, la tarjeta lleva ese audio del aprendiz para escucharse a sí mismo al repasar. Un fallo al guardar no impide cerrar la sesión.", "codigo": "src/interface/emma-runtime.ts:captureSessionErrors"},
+    {"id": "audios-guardados", "nombre": "Audios guardados", "tipo": "Almacén de Datos", "descripcion": "Notas de voz del aprendiz y frases de Emma, en archivos del equipo ligados a la conversación. Nunca se envían a ningún servicio.", "codigo": "src/domain/audio/i-audio-store.ts:IAudioStore"},
+    {"id": "guarda-frases-emma", "nombre": "Guarda frases de Emma", "tipo": "Tarea", "descripcion": "Al cerrar la lección, las frases clave de la escena y las correcciones se generan con la voz de Emma, una por vez y en segundo plano, y cada una queda como tarjeta de dictado. Si se abre otra lección, la captura se cancela: la voz es de la lección.", "codigo": "src/components/chat/use-end-session.ts:emmaPhraseCapture"},
+    {"id": "ini-borra", "nombre": "Borra la conversación", "tipo": "Evento de Inicio", "descripcion": "Desde la lista de conversaciones elige borrar una.", "codigo": "src/components/chat/chat-view.tsx:deleteConversation"},
+    {"id": "borra-historial", "nombre": "Borra el historial", "tipo": "Tarea", "descripcion": "Primero los mensajes, y se espera a que termine antes de abrir otra sesión.", "codigo": "src/components/chat/delete-conversation.ts:deleteConversation"},
+    {"id": "borra-audios", "nombre": "Borra sus audios", "tipo": "Tarea", "descripcion": "En cascada, los audios de esa conversación. Si el disco falla, el historial ya borrado no vuelve: se avisa y se sigue. Las tarjetas sin audio se repasan como texto. Borrar el historial o todos los datos desde Settings también borra todos los audios.", "codigo": "src/components/chat/delete-conversation.ts:removeConversation"},
+    {"id": "fin-borrada", "nombre": "Conversación borrada", "tipo": "Evento de Fin", "descripcion": "No queda ni el texto ni la voz de esa conversación en el equipo.", "codigo": "src/components/chat/delete-conversation.ts:deleteConversation"}
   ]
 }

@@ -10,6 +10,8 @@ flowchart LR
     resamplea("Prepara el audio<br><i>Tarea</i>")
     gw_texto{"¿Se entendió algo?<br><i>Compuerta Exclusiva</i>"}
     onda_en_vivo("Muestra la onda<br><i>Tarea</i>")
+    guarda_la_nota_de_voz("Guarda la nota de voz<br><i>Tarea</i>")
+    audios_guardados[("Audios guardados<br><i>Almacén de Datos</i>")]
   end
   subgraph agg_Dictado_local["Dictado local"]
     whisper("Transcribe sin subir nada<br><i>Tarea</i>")
@@ -26,11 +28,12 @@ flowchart LR
     elige_palabra("Elige lo que oyó<br><i>Tarea</i>")
     suma_xp_par("Suma XP<br><i>Tarea</i>")
   end
-  subgraph agg_Voz_de_Emma["Voz de Emma"]
-    ini_play(("Pulsa reproducir<br><i>Evento de Inicio</i>"))
-    voz_neuronal("Voz neuronal en el equipo<br><i>Tarea</i>")
-    voz_sistema("Voz del sistema<br><i>Tarea</i>")
-    fin_escucha(("Escucha a Emma<br><i>Evento de Fin</i>"))
+  subgraph voz_de_emma["Voz de Emma"]
+    pulsa_reproducir(("Pulsa reproducir<br><i>Evento de Inicio</i>"))
+    voz_neuronal_en_el_equipo("Voz neuronal en el equipo<br><i>Tarea</i>")
+    voz_del_sistema("Voz del sistema<br><i>Tarea</i>")
+    sugiere_el_chequeo("Sugiere el chequeo<br><i>Tarea</i>")
+    escucha_a_emma(("Escucha a Emma<br><i>Evento de Fin</i>"))
   end
   nota_voz -->|"texto y audio"| fin_chat
   deuda_casos_uso ---|"comprobación omitida"| whisper
@@ -52,7 +55,10 @@ flowchart LR
   escucha_oracion -->|"elige"| elige_palabra
   elige_palabra -->|"acierto o intento"| suma_xp_par
   suma_xp_par -->|"ve si acertó"| fin_veredicto
-  ini_play -->|"pide la voz"| voz_neuronal
-  voz_neuronal -->|"lista a tiempo"| fin_escucha
-  voz_neuronal -->|"aún descargando o falló"| voz_sistema
-  voz_sistema -->|"habla sin esperar"| fin_escucha
+  pulsa_reproducir -->|"pide la voz"| voz_neuronal_en_el_equipo
+  voz_neuronal_en_el_equipo -->|"lista a tiempo"| escucha_a_emma
+  voz_neuronal_en_el_equipo -->|"aún descargando o falló"| voz_del_sistema
+  voz_del_sistema -->|"avisa la caída"| sugiere_el_chequeo
+  sugiere_el_chequeo -->|"suena igual"| escucha_a_emma
+  nota_voz -->|"en segundo plano"| guarda_la_nota_de_voz
+  guarda_la_nota_de_voz -->|"clip + tarjeta de dictado"| audios_guardados

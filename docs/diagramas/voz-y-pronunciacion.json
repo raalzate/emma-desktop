@@ -2,8 +2,8 @@
   "vista": "BPMN · Voz y pronunciación",
   "notacion": "bpmn",
   "proyecto": "EMMA · Conversación",
-  "revisado": "2026-10-13",
-  "resumen": "Un mismo mecanismo de micrófono sirve al chat y al laboratorio: mientras se graba se ve la onda de la voz, se transcribe sin salir del equipo y, según desde dónde se grabó, el texto entra como nota de voz o se compara con lo que había que pronunciar. En el laboratorio, el par mínimo se escucha dentro de una oración del nivel del aprendiz, se elige qué palabra sonó y cada respuesta suma XP. La voz de Emma es local: una voz neuronal que se genera en el equipo y, solo como respaldo mientras baja el modelo o si falla, la voz del sistema. Queda declarada la deuda: la comprobación de duración mínima no corre en el camino real.",
+  "revisado": "2026-11-10",
+  "resumen": "Un mismo mecanismo de micrófono sirve al chat y al laboratorio: mientras se graba se ve la onda de la voz, se transcribe sin salir del equipo y, según desde dónde se grabó, el texto entra como nota de voz (y su audio se guarda en el equipo para volver como tarjeta de dictado) o se compara con lo que había que pronunciar. En el laboratorio, el par mínimo se escucha dentro de una oración del nivel del aprendiz, se elige qué palabra sonó y cada respuesta suma XP. La voz de Emma es local: una voz neuronal que se genera en el equipo y, solo como respaldo mientras baja el modelo o si falla, la voz del sistema; caer a ese respaldo sugiere correr el chequeo de voz, IA y micrófono. Queda declarada la deuda: la comprobación de duración mínima no corre en el camino real.",
   "elementos": [
     {
       "id": "aprendiz",
@@ -65,7 +65,7 @@
       "id": "resamplea",
       "nombre": "Prepara el audio",
       "tipo": "Tarea",
-      "descripcion": "Se deja en el formato que el dictado entiende y se guarda una copia reproducible para la burbuja.",
+      "descripcion": "Se graba comprimido (con un tope de 60 s que corta solo), se deja en el formato que el dictado entiende y se guarda una copia reproducible para la burbuja.",
       "codigo": "src/components/chat/use-voice-input.ts:toPcm16k"
     },
     {
@@ -93,7 +93,7 @@
       "id": "nota-voz",
       "nombre": "Va como nota de voz",
       "tipo": "Tarea",
-      "descripcion": "Lo transcrito entra como mensaje del turno y el audio queda reproducible en la burbuja.",
+      "descripcion": "Lo transcrito entra como mensaje del turno y el audio queda reproducible en la burbuja; además se guarda en segundo plano.",
       "codigo": "src/components/chat/use-voice-input.ts:audioUrl"
     },
     {
@@ -167,39 +167,60 @@
       "codigo": "src/components/practice/minimal-pair-lab.tsx:awardActivities"
     },
     {
-      "id": "voz-emma",
+      "id": "voz-de-emma",
       "nombre": "Voz de Emma",
       "tipo": "Carril",
       "descripcion": "Lee en voz alta las notas de Emma con una voz que se genera en el equipo, y resalta la oración que suena.",
       "codigo": "src/components/chat/use-karaoke.ts:useKaraoke"
     },
     {
-      "id": "ini-play",
+      "id": "pulsa-reproducir",
       "nombre": "Pulsa reproducir",
       "tipo": "Evento de Inicio",
       "descripcion": "Escucha una nota de Emma o repite una oración con un clic.",
       "codigo": "src/components/chat/use-karaoke.ts:playFrom"
     },
     {
-      "id": "voz-neuronal",
+      "id": "voz-neuronal-en-el-equipo",
       "nombre": "Voz neuronal en el equipo",
       "tipo": "Tarea",
       "descripcion": "La voz de Emma: una voz natural que se genera sin salir de la máquina, con una voz distinta para cada personaje. Lo único que se descarga es el modelo, la primera vez (unos 326 MB), y queda guardado.",
       "codigo": "src/infrastructure/tts/kokoro-tts.ts:synthesizeKokoro"
     },
     {
-      "id": "voz-sistema",
+      "id": "voz-del-sistema",
       "nombre": "Voz del sistema",
       "tipo": "Tarea",
       "descripcion": "Responde mientras el modelo se descarga o si falla, para no dejar a la persona esperando. La descarga sigue en segundo plano y queda lista para el próximo clic.",
       "codigo": "src/infrastructure/tts/web-speech-tts.ts:speak"
     },
     {
-      "id": "fin-escucha",
+      "id": "escucha-a-emma",
       "nombre": "Escucha a Emma",
       "tipo": "Evento de Fin",
       "descripcion": "Suena la nota con el resaltado palabra a palabra; con la voz del sistema el resaltado es aproximado y no se puede saltar a una oración.",
       "codigo": "src/components/chat/use-karaoke.ts:useKaraoke"
+    },
+    {
+      "id": "guarda-la-nota-de-voz",
+      "nombre": "Guarda la nota de voz",
+      "tipo": "Tarea",
+      "descripcion": "En segundo plano, sin frenar a Emma: el audio del turno (comprimido, hasta 60 s) queda en el equipo ligado a la conversación y se vuelve una tarjeta de dictado. Si falla, la conversación sigue igual.",
+      "codigo": "src/components/chat/voice-turn.ts:saveVoiceTurn"
+    },
+    {
+      "id": "audios-guardados",
+      "nombre": "Audios guardados",
+      "tipo": "Almacén de Datos",
+      "descripcion": "Archivos de audio en el equipo, aparte de los demás datos. Nunca se envían a ningún servicio; se borran con la conversación o desde Settings.",
+      "codigo": "src/domain/audio/i-audio-store.ts:IAudioStore"
+    },
+    {
+      "id": "sugiere-el-chequeo",
+      "nombre": "Sugiere el chequeo",
+      "tipo": "Tarea",
+      "descripcion": "Caer a la voz del sistema es una pista de que algo del equipo no va bien: aparece un aviso que ofrece correr el chequeo de voz, IA y micrófono. Como mucho una vez cada 10 minutos, y nunca corta la reproducción.",
+      "codigo": "src/components/chat/use-karaoke.ts:reportLiveFailure"
     }
   ]
 }
