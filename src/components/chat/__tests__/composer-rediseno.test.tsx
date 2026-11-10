@@ -93,8 +93,9 @@ describe("Composer (rediseño Café sereno)", () => {
     expect(src).toContain("useSuggestions({");
     // La nota de voz sigue llegando a `onSend` con su audio; desde #169 el hook
     // recibe además un segundo argumento para avisar en español cuando la
-    // grabación no deja nada utilizable.
-    expect(src).toMatch(/useVoiceInput\(\s*\n\s*\(t, audioUrl\) => \{/);
-    expect(src).toContain("onSend(t, audioUrl);");
+    // grabación no deja nada utilizable. Con el audio guardado (T27) el
+    // callback recibe además el clip (blob + duración) y lo reenvía a `onSend`.
+    expect(src).toMatch(/useVoiceInput\(\s*\n\s*\(t, audioUrl, clip\) => \{/);
+    expect(src).toContain("onSend(t, audioUrl, clip);");
   });
 });

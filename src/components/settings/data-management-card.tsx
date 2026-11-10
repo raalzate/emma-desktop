@@ -18,13 +18,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useEmma } from "@/interface/emma-context";
 import { getEmmaApi } from "./emma-api";
-
-// Espeja la whitelist de colecciones del proceso principal (main/services/store.ts).
-const ALL_COLLECTIONS = [
-  "profiles", "chatSettings", "progression", "errorStats", "pathway",
-  "goals", "welcomeEvents", "sessions", "preferences", "chatConversations",
-];
+import { clearChatHistory, deleteAllData } from "./data-clearing";
 
 interface Action {
   key: string;
@@ -38,6 +34,7 @@ interface Action {
 
 export function DataManagementCard() {
   const { toast } = useToast();
+  const { runtime } = useEmma();
   const [busy, setBusy] = useState<string | null>(null);
 
   const clear = async (keys: string[]) => {
@@ -46,16 +43,23 @@ export function DataManagementCard() {
     for (const k of keys) await api.storeSet(k, {});
   };
 
+  // Las grabaciones viven en disco, aparte del almacén JSON: sin runtime no se
+  // pueden borrar y es mejor fallar que dejarlas atrás.
+  const clearing = () => {
+    if (!runtime) throw new Error("EMMA is still starting up. Try again in a moment.");
+    return { clear, audio: runtime.audio };
+  };
+
   const actions: Action[] = [
     {
       key: "chats",
       icon: <Trash2 className="h-4 w-4" />,
       title: "Clear chat history",
-      description: "Deletes every saved conversation. Your profile and progress are not affected.",
+      description: "Deletes every saved conversation and its voice recordings. Your profile and progress are not affected.",
       confirmTitle: "Clear the whole chat history?",
-      confirmBody: "Every conversation will be deleted. This action cannot be undone.",
+      confirmBody: "Every conversation and its voice recordings will be deleted. This action cannot be undone.",
       run: async () => {
-        await clear(["chatConversations"]);
+        await clearChatHistory(clearing());
         toast({ title: "History cleared", description: "Every conversation was deleted." });
       },
     },
@@ -75,11 +79,11 @@ export function DataManagementCard() {
       key: "all",
       icon: <AlertTriangle className="h-4 w-4" />,
       title: "Delete all data",
-      description: "Deletes profile, progress, settings and history. EMMA will be as if freshly installed.",
+      description: "Deletes profile, progress, settings, history and recordings. EMMA will be as if freshly installed.",
       confirmTitle: "Delete ALL data?",
-      confirmBody: "Everything will be deleted: profile, progress, settings and chat history. This action is irreversible.",
+      confirmBody: "Everything will be deleted: profile, progress, settings, chat history and voice recordings. This action is irreversible.",
       run: async () => {
-        await clear(ALL_COLLECTIONS);
+        await deleteAllData(clearing());
         window.location.href = "/onboarding";
       },
     },
@@ -130,8 +134,9 @@ export function DataManagementCard() {
                   <AlertDialogDescription>{a.confirmBody}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel title="Cierra el aviso sin borrar nada.">Cancel</AlertDialogCancel>
                   <AlertDialogAction
+                    title="Confirma y borra estos datos; no se puede deshacer."
                     onClick={() => onConfirm(a)}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >

@@ -60,6 +60,7 @@ export function createWorkerEngineLoader(spawn: () => WorkerLike): () => Promise
       });
 
     const engine: KokoroEngine = {
+      backend: "wasm",
       isDead: () => dead,
       async generate(text, { voice }): Promise<KokoroAudio> {
         const response = await request({ type: "generate", text, voice });

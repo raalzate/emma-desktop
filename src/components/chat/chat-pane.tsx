@@ -11,7 +11,7 @@
  * salida discreta para terminar antes.
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { GraduationCap, Loader2 } from "lucide-react";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
 import type { UserProfile } from "@/domain/profile/user-profile";
@@ -31,6 +31,8 @@ import { LessonDialog } from "./lesson-dialog";
 import { SceneIntro } from "./scene-intro";
 import { TeachPanel } from "./teach-panel";
 import { TranslateDialog } from "./translate-dialog";
+import { createAudioNoticeGate } from "@/components/audio/audio-notice-gate";
+import { AudioPrivacyNotice } from "@/components/audio/audio-privacy-notice";
 
 interface Props {
   /** Id de la conversación: ata las lecciones asignadas al cierre (#211). */
@@ -48,7 +50,9 @@ interface Props {
 export function ChatPane({
   conversationId, runtime, profile, settings, scenario, scenarios, onSelectScenario, restore, onSnapshot,
 }: Props) {
-  const s = useChatSession({ runtime, profile, settings, scenario, restore, onSnapshot });
+  const noticeGate = useMemo(() => createAudioNoticeGate(runtime.audio), [runtime.audio]);
+  const onClipSaved = useCallback(() => void noticeGate.clipSaved(), [noticeGate]);
+  const s = useChatSession({ runtime, profile, settings, scenario, conversationId, onClipSaved, restore, onSnapshot });
   const { toast } = useToast();
   const [teachText, setTeachText] = useState<string | null>(null);
   const [translateText, setTranslateText] = useState<string | null>(null);
@@ -72,6 +76,9 @@ export function ChatPane({
       toast({ title: "Session reviewed", description: lesson.verdict });
     },
     autoFinish: s.sceneComplete && !s.restoredComplete,
+    clipOfTurn: s.clipOfTurn,
+    narrative: s.narrative,
+    onClipSaved,
   });
 
   // Etiqueta del cierre: revisar lo guardado no cuesta una generación nueva.
@@ -80,6 +87,7 @@ export function ChatPane({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-1 overflow-hidden">
       <main className="flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background">
+        <AudioPrivacyNotice gate={noticeGate} />
         <div className="flex items-center gap-2 pr-4">
           <div className="flex-1">
             <ChatHeader

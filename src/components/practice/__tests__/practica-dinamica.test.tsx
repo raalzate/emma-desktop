@@ -150,7 +150,8 @@ describe("repaso SRS", () => {
   it("andamiaje del dominio: la frase con huecos es la consigna, la pista da primeras letras y se corrige palabra a palabra", () => {
     expect(src).toContain("recallPromptEs(current.kind, current)");
     expect(src).toContain("recallHint(current)");
-    expect(src).toContain("wordDiff(expected, given)");
+    // La corrección palabra a palabra vive en CorrectionLine (extraída).
+    expect(src).toContain("<CorrectionLine expected={recallTarget(current, typed)} given={typed} />");
     expect(src).toContain("Hint");
     expect(src).toContain("recallFront(current)");
     // Contexto de lo que dijo el aprendiz junto a la frase con huecos.
@@ -160,7 +161,7 @@ describe("repaso SRS", () => {
     expect(src).toContain("recallTarget(current, typed)");
     expect(src).toContain("Type the missing words");
     // Las tarjetas que nacieron de una reformulación no se repasan.
-    expect(src).toContain("due.filter(isTeachableCard)");
+    expect(src).toContain("text.filter(isTeachableCard)");
   });
 });
 

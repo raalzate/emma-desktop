@@ -6,7 +6,7 @@ function fakeAudio(seconds: number): KokoroAudio {
 }
 
 function service(over: { engine?: KokoroEngine; load?: () => Promise<KokoroEngine> } = {}) {
-  const engine: KokoroEngine = over.engine ?? { generate: vi.fn(async () => fakeAudio(2)) };
+  const engine: KokoroEngine = over.engine ?? { backend: "wasm", generate: vi.fn(async () => fakeAudio(2)) };
   const load = over.load ?? vi.fn(async () => engine);
   const svc = createKokoroService({ load, toUrl: () => "blob:fake" });
   return { svc, engine, load };
@@ -21,9 +21,14 @@ describe("createKokoroService", () => {
     expect(r.timings[r.timings.length - 1].end).toBeCloseTo(2, 6);
   });
 
+  it("propaga el backend del motor que respondió", async () => {
+    const { svc } = service({ engine: { backend: "native", generate: async () => fakeAudio(1) } });
+    expect((await svc.synthesize("hi", "af_heart")).backend).toBe("native");
+  });
+
   it("pasa la voz al motor", async () => {
     const generate = vi.fn(async () => fakeAudio(1));
-    const { svc } = service({ engine: { generate } });
+    const { svc } = service({ engine: { backend: "wasm", generate } });
     await svc.synthesize("hi", "bf_emma");
     expect(generate).toHaveBeenCalledWith("hi", { voice: "bf_emma" });
   });
@@ -42,13 +47,13 @@ describe("createKokoroService", () => {
     expect(svc.state()).toBe("idle");
     const warm = svc.warm();
     expect(svc.state()).toBe("loading");
-    release({ generate: async () => fakeAudio(1) });
+    release({ backend: "wasm", generate: async () => fakeAudio(1) });
     await warm;
     expect(svc.state()).toBe("ready");
   });
 
   it("si la carga falla, rechaza, vuelve a idle y el siguiente intento recarga", async () => {
-    const engine: KokoroEngine = { generate: async () => fakeAudio(1) };
+    const engine: KokoroEngine = { backend: "wasm", generate: async () => fakeAudio(1) };
     const load = vi.fn().mockRejectedValueOnce(new Error("sin red")).mockResolvedValue(engine);
     const { svc } = service({ load });
     await expect(svc.synthesize("hi", "af_heart")).rejects.toThrow("sin red");
@@ -67,22 +72,22 @@ describe("createKokoroService", () => {
       activas--;
       return fakeAudio(1);
     });
-    const { svc } = service({ engine: { generate } });
+    const { svc } = service({ engine: { backend: "wasm", generate } });
     await Promise.all([svc.synthesize("a", "af_heart"), svc.synthesize("b", "af_heart"), svc.synthesize("c", "af_heart")]);
     expect(maxActivas).toBe(1);
   });
 
   it("una generación fallida no bloquea las siguientes", async () => {
     const generate = vi.fn().mockRejectedValueOnce(new Error("boom")).mockResolvedValue(fakeAudio(1));
-    const { svc } = service({ engine: { generate } });
+    const { svc } = service({ engine: { backend: "wasm", generate } });
     await expect(svc.synthesize("a", "af_heart")).rejects.toThrow("boom");
     await expect(svc.synthesize("b", "af_heart")).resolves.toBeDefined();
   });
 
   it("si el motor quedó muerto (el worker cayó), la siguiente síntesis recarga en vez de reusarlo", async () => {
     let muerto = false;
-    const vivo: KokoroEngine = { generate: async () => fakeAudio(1), isDead: () => muerto };
-    const nuevo: KokoroEngine = { generate: async () => fakeAudio(1) };
+    const vivo: KokoroEngine = { backend: "wasm", generate: async () => fakeAudio(1), isDead: () => muerto };
+    const nuevo: KokoroEngine = { backend: "wasm", generate: async () => fakeAudio(1) };
     const load = vi.fn().mockResolvedValueOnce(vivo).mockResolvedValue(nuevo);
     const { svc } = service({ load });
     await svc.synthesize("a", "af_heart");

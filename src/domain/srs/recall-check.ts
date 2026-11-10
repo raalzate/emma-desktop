@@ -10,6 +10,7 @@ import { isActionableCorrection, isRephrase, isTrivialCorrection } from "@/domai
 import { classifyError } from "@/domain/chat/error-taxonomy";
 import { BOX_INTERVALS_DAYS, reviewCard, type LeitnerBox } from "./leitner";
 import {
+  AUDIO_RECALL_FRONT,
   LEGACY_PRODUCTION_PREFIXES,
   PRODUCTION_FRONT_PREFIX,
   type SrsCard,
@@ -135,7 +136,9 @@ export function isTeachableCard(card: Pick<SrsCard, "kind" | "front" | "back">):
 
 /** Tipos de tarjeta que se escriben; los de sonido se practican en voz alta. */
 export function isTypedRecall(kind: SrsCardKind): boolean {
-  return kind === "sentence-production" || kind === "chunk-cloze" || kind === "collocation";
+  return (
+    kind === "sentence-production" || kind === "chunk-cloze" || kind === "collocation" || kind === "audio-recall"
+  );
 }
 
 const PROMPT_ES: Record<SrsCardKind, string> = {
@@ -144,6 +147,7 @@ const PROMPT_ES: Record<SrsCardKind, string> = {
   collocation: "Write the full combination in English.",
   "minimal-pair": "Say it out loud, then reveal and mark whether you knew it.",
   "word-stress": "Say it out loud stressing the strong syllable; reveal and mark whether you knew it.",
+  "audio-recall": AUDIO_RECALL_FRONT,
 };
 
 const GAPS_PROMPT = "Fill in the gaps to fix what you said: type the missing words, or the whole sentence.";
@@ -173,6 +177,19 @@ export function recallHint(card: Pick<SrsCard, "kind" | "front" | "back">): stri
       .join(" ");
   }
   return words(card.back).map(firstLetterScaffold).join(" ");
+}
+
+export type AudioCardPresentation = { mode: "audio" } | { mode: "text"; front: string; hint: string };
+
+const AUDIO_FALLBACK_FRONT = "Write this sentence from memory:";
+
+/** Sin clip (borrado o perdido) la tarjeta no rompe el repaso: se degrada a texto con pista. */
+export function presentAudioCard(
+  card: Pick<SrsCard, "kind" | "front" | "back">,
+  clipAvailable: boolean,
+): AudioCardPresentation {
+  if (clipAvailable) return { mode: "audio" };
+  return { mode: "text", front: AUDIO_FALLBACK_FRONT, hint: recallHint(card) };
 }
 
 export interface WordVerdict {

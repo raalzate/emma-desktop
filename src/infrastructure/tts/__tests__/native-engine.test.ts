@@ -15,6 +15,11 @@ describe("createNativeEngineLoader", () => {
     expect(audio.toBlob().type).toBe("audio/wav");
   });
 
+  it("el motor nativo declara backend native (FR-025)", async () => {
+    const api = { ttsNativeWarm: async () => {}, ttsNativeGenerate: async () => ({ wav, duration: 1 }) };
+    expect((await createNativeEngineLoader(() => api)()).backend).toBe("native");
+  });
+
   it("sin puente nativo (navegador, preload viejo) rechaza para caer al Worker", async () => {
     await expect(createNativeEngineLoader(() => undefined)()).rejects.toThrow();
     await expect(createNativeEngineLoader(() => ({}))()).rejects.toThrow();
@@ -23,6 +28,7 @@ describe("createNativeEngineLoader", () => {
 
 describe("preferFirstLoader", () => {
   const engine = (name: string): KokoroEngine => ({
+    backend: "wasm",
     generate: async () => ({ duration: 1, toBlob: () => new Blob([name]) }),
   });
 
