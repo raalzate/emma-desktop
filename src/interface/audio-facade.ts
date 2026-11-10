@@ -5,7 +5,7 @@
  * dos capturas en paralelo se pisarían (riesgo 7 del plan).
  */
 
-import type { AudioClip } from "@/domain/audio/audio-clip";
+import type { AudioClip, AudioClipMeta } from "@/domain/audio/audio-clip";
 import { DEFAULT_AUDIO_CAP_BYTES } from "@/domain/audio/audio-retention";
 import type { AudioUsage, IAudioStore } from "@/domain/audio/i-audio-store";
 import type { IPhraseVoicer } from "@/domain/audio/i-phrase-voicer";
@@ -42,6 +42,8 @@ export interface AudioFacade {
   /** De los ids dados, los que tienen clip en disco (una sola lectura del índice). */
   has(ids: readonly string[]): Promise<Set<string>>;
   usage(): Promise<AudioUsage>;
+  /** Metadatos de todos los clips (Settings agrupa por conversación). */
+  list(): Promise<AudioClipMeta[]>;
   removeClips(ids: readonly string[]): Promise<number>;
   removeConversation(conversationId: string): Promise<number>;
   removeAll(): Promise<void>;
@@ -94,6 +96,7 @@ export function createAudioFacade(deps: AudioFacadeDeps): AudioFacade {
       return new Set((await store.list()).map((c) => c.id).filter((id) => wanted.has(id)));
     },
     usage: () => audioUsage({ store }),
+    list: () => store.list(),
     removeClips: (ids) => removeClips({ store, ids }),
     removeConversation: (conversationId) => removeConversationClips({ store, conversationId }),
     removeAll: () => removeAllClips({ store }),

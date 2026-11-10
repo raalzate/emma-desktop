@@ -7,6 +7,8 @@
  * componente para respetar el límite de tamaño por archivo.
  */
 
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PersonalityForm } from "@/components/settings/personality-form";
 import { PersonaTuningForm } from "@/components/settings/persona-tuning-form";
@@ -15,10 +17,19 @@ import { RemoteAiConfig } from "@/components/settings/remote-ai-config";
 import { SystemInfoCard } from "@/components/settings/system-info-card";
 import { UpdatesCard } from "@/components/settings/updates-card";
 import { DataManagementCard } from "@/components/settings/data-management-card";
+import { AudioStorageCard } from "@/components/settings/audio-storage-card";
+import { SetupCheckCard } from "@/components/settings/setup-check-card";
+import type { ProbeName } from "@/domain/setup/setup-probe-result";
 import { AppShell } from "@/components/nav/app-shell";
 import { PageHeader } from "@/components/nav/page-header";
 
-export default function SettingsPage() {
+const FOCUS_PROBES: readonly ProbeName[] = ["voice", "ai", "mic"];
+
+function SettingsContent() {
+  // `?tab=audio&focus=voice|ai|mic` llega desde el toast de fallo en vivo.
+  const params = useSearchParams();
+  const [tab, setTab] = useState(params.get("tab") ?? "personality");
+  const focus = FOCUS_PROBES.find((p) => p === params.get("focus")) ?? null;
   return (
     <AppShell>
     <PageHeader title="Settings" />
@@ -32,13 +43,14 @@ export default function SettingsPage() {
         </p>
       </header>
 
-      <Tabs defaultValue="personality">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex-wrap">
           <TabsTrigger value="personality" title="Tono, actitud y estilo con que Emma te enseña">Emma (tutor)</TabsTrigger>
           <TabsTrigger value="personas" title="Personajes con los que practicás en cada escena y cómo se comportan">Protopersonas</TabsTrigger>
           <TabsTrigger value="local" title="Modelo de IA que corre en tu equipo, sin internet">Local model</TabsTrigger>
           <TabsTrigger value="remote" title="Proveedor en la nube opcional, con tu propia clave">Cloud AI</TabsTrigger>
           <TabsTrigger value="system" title="Datos de tu equipo, versión instalada y actualizaciones de la app">System</TabsTrigger>
+          <TabsTrigger value="audio" title="Audio guardado para repasar, su espacio y el chequeo de voz, IA y micrófono">Audio and setup</TabsTrigger>
           <TabsTrigger value="data" title="Borra chats, reinicia el onboarding o elimina todos tus datos locales">Data</TabsTrigger>
         </TabsList>
 
@@ -59,11 +71,24 @@ export default function SettingsPage() {
 
           <UpdatesCard />
         </TabsContent>
+        <TabsContent value="audio" className="space-y-6">
+          <AudioStorageCard />
+          <SetupCheckCard focus={focus} onOpenTab={setTab} />
+        </TabsContent>
         <TabsContent value="data">
           <DataManagementCard />
         </TabsContent>
       </Tabs>
     </div>
     </AppShell>
+  );
+}
+
+export default function SettingsPage() {
+  // `useSearchParams` exige Suspense con export estático.
+  return (
+    <Suspense fallback={null}>
+      <SettingsContent />
+    </Suspense>
   );
 }

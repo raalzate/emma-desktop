@@ -128,3 +128,12 @@ describe("fachada de audio", () => {
     expect(saved).toEqual([{ capBytes: 2, noticeSeen: true }]);
   });
 });
+
+describe("fachada de audio: listado", () => {
+  it("list devuelve los metadatos de los clips guardados (para borrar por conversación)", async () => {
+    const { facade } = build();
+    await facade.saveLearnerTurn({ conversationId: "c1", turn: 1, transcript: "hello there", data: bytes, durationMs: 2000 });
+    const list = await facade.list();
+    expect(list.map((m) => m.conversationId)).toEqual(["c1"]);
+  });
+});
