@@ -58,6 +58,17 @@ contextBridge.exposeInMainWorld('emmaAPI', {
   storeSet: (key: string, value: Record<string, unknown>): Promise<{ ok: boolean }> =>
     ipcRenderer.invoke('store-set', key, value),
 
+  // --- Audio guardado del repaso (T13) ---
+  audioSave: (args: unknown): Promise<unknown> => ipcRenderer.invoke('audio-clip-save', args),
+  audioRead: (id: string): Promise<unknown> => ipcRenderer.invoke('audio-clip-read', id),
+  audioRemove: (ids: string[]): Promise<unknown> => ipcRenderer.invoke('audio-clip-remove', ids),
+  audioRemoveConversation: (conversationId: string): Promise<unknown> =>
+    ipcRenderer.invoke('audio-clip-remove-conversation', conversationId),
+  audioRemoveAll: (): Promise<unknown> => ipcRenderer.invoke('audio-clip-remove-all'),
+  audioList: (): Promise<unknown> => ipcRenderer.invoke('audio-clip-list'),
+  audioUsage: (): Promise<unknown> => ipcRenderer.invoke('audio-usage'),
+  micAccessStatus: (): Promise<string> => ipcRenderer.invoke('mic-access-status'),
+
   // --- Navegación desde el menú nativo ---
   navigate: (callback: (route: string) => void) => {
     const listener = (_e: any, route: string) => callback(route);
