@@ -6,4 +6,6 @@ export interface ISetupCheckRepository {
   /** Más nuevo primero. */
   history(): Promise<SetupCheckRecord[]>;
   append(record: SetupCheckRecord): Promise<void>;
+  /** Marca reconocido el más nuevo en su lugar (sin sumar entrada); null si no hay. */
+  acknowledgeLast(): Promise<SetupCheckRecord | null>;
 }
