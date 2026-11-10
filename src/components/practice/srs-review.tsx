@@ -48,6 +48,7 @@ const KIND_LABEL_ES: Record<SrsCardKind, string> = {
   "minimal-pair": "Minimal pair",
   "word-stress": "Word stress",
   collocation: "Collocation",
+  "audio-recall": "Listen and type",
 };
 
 function BoxIndicator({ box }: { box: LeitnerBox }) {

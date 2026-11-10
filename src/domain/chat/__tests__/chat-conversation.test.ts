@@ -101,4 +101,18 @@ describe("stripForStorage", () => {
     ]);
     expect(guardado).toEqual([{ role: "user", content: "hi", at: 1 }]);
   });
+
+  // Contrato cambiado (FR-004): el mensaje persistido referencia el clip por id.
+  it("conserva audioId (referencia al clip) y sigue descartando audioUrl", () => {
+    const guardado = stripForStorage([
+      { role: "user", content: "hi", at: 1, audioUrl: "blob:x", audioId: "learner-c1-1" },
+    ]);
+    expect(guardado).toEqual([{ role: "user", content: "hi", at: 1, audioId: "learner-c1-1" }]);
+    expect(guardado[0]).not.toHaveProperty("audioUrl");
+  });
+
+  it("no agrega la clave audioId a mensajes sin clip", () => {
+    const [m] = stripForStorage([{ role: "assistant", content: "ok", at: 2 }]);
+    expect("audioId" in m).toBe(false);
+  });
 });

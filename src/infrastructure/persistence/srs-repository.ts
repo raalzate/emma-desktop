@@ -20,6 +20,7 @@ const VALID_KINDS: readonly SrsCardKind[] = [
   "minimal-pair",
   "word-stress",
   "collocation",
+  "audio-recall",
 ];
 
 /** Valida el shape mínimo de una tarjeta SRS leída de disco. */
@@ -37,12 +38,24 @@ function isValidSrsCard(value: unknown): value is SrsCard {
   );
 }
 
+/**
+ * Los campos de audio son opcionales: si vienen mal tipados se descartan y la
+ * tarjeta se conserva (sin clip degrada a texto). Tarjetas viejas: misma referencia.
+ */
+function sanitizeAudioFields(card: SrsCard): SrsCard {
+  const { audioId, audioOrigin, ...rest } = card;
+  if (audioId === undefined && audioOrigin === undefined) return card;
+  if (typeof audioId !== "string" || audioId === "") return rest;
+  const origin = audioOrigin === "learner" || audioOrigin === "emma" ? { audioOrigin } : {};
+  return { ...rest, audioId, ...origin };
+}
+
 export function createSrsRepository(): ISrsRepository {
   return {
     async loadCards() {
       const stored = await readOne<unknown[]>(KEY);
       if (!Array.isArray(stored)) return [];
-      return stored.filter(isValidSrsCard);
+      return stored.filter(isValidSrsCard).map(sanitizeAudioFields);
     },
     async saveCards(cards) {
       await writeOne(KEY, cards);
