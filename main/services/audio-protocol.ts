@@ -17,7 +17,7 @@ const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const clipIdSchema = z.string().regex(CLIP_ID);
 const conversationIdSchema = z.string().regex(SAFE_ID);
 
-const metaSchema = z
+export const clipMetaSchema = z
   .object({
     id: clipIdSchema,
     origin: z.enum(['learner', 'emma', 'attempt']),
@@ -31,7 +31,7 @@ const metaSchema = z
   })
   .strict();
 
-export type AudioClipMetaWire = z.infer<typeof metaSchema>;
+export type AudioClipMetaWire = z.infer<typeof clipMetaSchema>;
 
 const EBML_MAGIC = [0x1a, 0x45, 0xdf, 0xa3];
 
@@ -42,7 +42,7 @@ export function hasWebmMagic(data: Uint8Array): boolean {
 
 const saveArgsSchema = z
   .object({
-    meta: metaSchema,
+    meta: clipMetaSchema,
     mime: z.enum(['audio/webm;codecs=opus', 'audio/webm']),
     data: z.instanceof(Uint8Array),
   })

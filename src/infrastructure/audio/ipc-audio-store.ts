@@ -6,7 +6,7 @@
  */
 
 import { z } from "zod";
-import { CLIP_ID_PATTERN, CLIP_MIME, type AudioClip, type AudioClipMeta } from "@/domain/audio/audio-clip";
+import { CLIP_ID_PATTERN, CLIP_MIME, MAX_CLIP_BYTES, MAX_CLIP_SECONDS, type AudioClip, type AudioClipMeta } from "@/domain/audio/audio-clip";
 import type { AudioUsage, IAudioStore } from "@/domain/audio/i-audio-store";
 import type { EmmaApi } from "@/types/emma-api";
 
@@ -15,19 +15,28 @@ export type AudioBridge = Pick<
   "audioSave" | "audioRead" | "audioRemove" | "audioRemoveConversation" | "audioRemoveAll" | "audioList" | "audioUsage"
 >;
 
-const metaSchema = z.object({
-  id: z.string().regex(CLIP_ID_PATTERN),
-  origin: z.enum(["learner", "emma", "attempt"]),
-  text: z.string(),
-  voice: z.string().optional(),
-  conversationId: z.string().optional(),
-  cardId: z.string().optional(),
-  durationMs: z.number().nonnegative(),
-  bytes: z.number().nonnegative(),
-  createdAt: z.number().nonnegative(),
-});
+const SAFE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
-const clipSchema = z.object({ meta: metaSchema, data: z.instanceof(Uint8Array) });
+/**
+ * Espejo del esquema de `main/services/audio-protocol.ts` (main no usa `@/`):
+ * mismas reglas, para que una entrada que main rechazaría tampoco entre por
+ * aquí. `audio-protocol-espejo.test.ts` fija que no diverjan.
+ */
+export const audioClipMetaSchema = z
+  .object({
+    id: z.string().regex(CLIP_ID_PATTERN),
+    origin: z.enum(["learner", "emma", "attempt"]),
+    text: z.string().min(1).max(2000),
+    voice: z.string().regex(SAFE_ID).optional(),
+    conversationId: z.string().regex(SAFE_ID).optional(),
+    cardId: z.string().max(200).optional(),
+    durationMs: z.number().int().positive().max(MAX_CLIP_SECONDS * 1000),
+    bytes: z.number().int().positive().max(MAX_CLIP_BYTES),
+    createdAt: z.number().int().nonnegative(),
+  })
+  .strict();
+
+const clipSchema = z.object({ meta: audioClipMetaSchema, data: z.instanceof(Uint8Array) });
 const removedSchema = z.object({ removed: z.number().int().nonnegative() });
 const usageSchema = z.object({ count: z.number().int().nonnegative(), bytes: z.number().nonnegative() });
 
@@ -76,7 +85,7 @@ export function createIpcAudioStore(getBridge: () => AudioBridge | undefined = d
       if (!Array.isArray(raw)) return [];
       const metas: AudioClipMeta[] = [];
       for (const entry of raw) {
-        const parsed = metaSchema.safeParse(entry);
+        const parsed = audioClipMetaSchema.safeParse(entry);
         if (parsed.success) metas.push(parsed.data);
       }
       return metas;

@@ -23,7 +23,8 @@ import { polishChatReply } from "@/domain/chat/chat-brevity";
 import { CHAT_MAX_TOKENS } from "@/domain/shared/token-budgets";
 
 /** Mensaje de degradación cuando el modelo se cuelga: en personaje, no técnico. */
-const FALLBACK = "EMMA is having trouble responding right now. Please try again.";
+export const CHAT_FALLBACK = "EMMA is having trouble responding right now. Please try again.";
+const FALLBACK = CHAT_FALLBACK;
 
 /** Tope de brevedad: EMMA responde en simulación con máximo 3 oraciones. */
 const CHAT_REPLY_MAX_SENTENCES = 3;

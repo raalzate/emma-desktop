@@ -12,6 +12,8 @@ import type { IChatHistoryRepository } from "@/domain/chat/i-chat-history-reposi
 import type { IProfileLevelRepository } from "@/domain/profile/i-profile-level-repository";
 import type { IGoalRepository } from "@/domain/goals/i-goal-repository";
 import type { ISrsRepository } from "@/domain/srs/i-srs-repository";
+import type { IAudioStore } from "@/domain/audio/i-audio-store";
+import type { ISetupCheckRepository } from "@/domain/setup/i-setup-check-repository";
 import { createProfileRepository } from "@/infrastructure/persistence/profile-repository";
 import { createChatHistoryRepository } from "@/infrastructure/persistence/chat-history-repository";
 import { createProgressionRepository } from "@/infrastructure/persistence/progression-repository";
@@ -19,6 +21,12 @@ import { createErrorStatsRepository } from "@/infrastructure/persistence/error-s
 import { createPathwayRepository } from "@/infrastructure/persistence/pathway-repository";
 import { createGoalRepository, loadGoals } from "@/infrastructure/persistence/goal-repository";
 import { createSrsRepository } from "@/infrastructure/persistence/srs-repository";
+import { createSetupCheckRepository } from "@/infrastructure/persistence/setup-check-repository";
+import {
+  createAudioPrefsRepository,
+  type IAudioPrefsRepository,
+} from "@/infrastructure/persistence/audio-prefs-repository";
+import { createIpcAudioStore } from "@/infrastructure/audio/ipc-audio-store";
 
 /** Usuario local único de la app de escritorio. */
 export const USER_ID = 1;
@@ -32,6 +40,10 @@ export interface Repositories {
   pathway: IPathwayRepository;
   goals: IGoalRepository;
   srs: ISrsRepository;
+  /** Clips de voz en disco (binario fuera del store JSON). */
+  audio: IAudioStore;
+  setupChecks: ISetupCheckRepository;
+  audioPrefs: IAudioPrefsRepository;
 }
 
 export async function createRepositories(): Promise<Repositories> {
@@ -46,5 +58,8 @@ export async function createRepositories(): Promise<Repositories> {
     pathway: createPathwayRepository(),
     goals,
     srs: createSrsRepository(),
+    audio: createIpcAudioStore(),
+    setupChecks: createSetupCheckRepository(),
+    audioPrefs: createAudioPrefsRepository(),
   };
 }
