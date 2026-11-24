@@ -4,7 +4,8 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-10-24 (macOS y `windows-latest`, #260)
+- **Fecha del último gate completo:** 2026-11-24 (macOS local; CI de `main` rojo por el 404 de los
+  binarios CUDA de onnxruntime-node, corregido saltando esa descarga en los workflows)
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)

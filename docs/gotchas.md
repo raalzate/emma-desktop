@@ -281,3 +281,15 @@ Regla:   `scripts/copy-litert-runtime.mjs` copia el ESM, `wasm-utils` y el WASM 
   Vitest se niega a importar un archivo de `public/` y rompe la suite que carga el módulo.
 Mecanismo: `src/lib/ai/__tests__/litert-sin-cdn.test.ts` (sin URLs de CDN, ruta local del WASM, el
   build lo copia) y `scripts/__tests__/copy-litert-runtime.test.ts`.
+
+---
+
+### GOTCHA: CI de `main` rojo en `pnpm install` sin cambiar el repo (404 de onnxruntime)
+
+Síntoma: `onnxruntime-node postinstall: Error: Failed to download the binaries: 404 Not Found.` en
+  ubuntu-latest; el mismo commit había pasado en su PR dos semanas antes.
+Causa:   en Linux x64 el postinstall de onnxruntime-node baja `onnxruntime-linux-x64-gpu-1.21.0.tgz`
+  de GitHub Releases, y ese asset ya no existe. El proveedor CUDA nunca se usa: la voz corre en CPU.
+Regla:   todo workflow que instala dependencias declara `ONNXRUNTIME_NODE_INSTALL_CUDA: skip` en su
+  `env:` global (cubre cada job, también los que se agreguen).
+Mecanismo: `scripts/__tests__/workflows-sin-cuda.test.ts`.
