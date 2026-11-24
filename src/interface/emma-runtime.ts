@@ -53,12 +53,28 @@ import { OnboardingStateEngine } from "@/application/onboarding/onboarding-state
 import { runAgenticOnboarding } from "@/application/onboarding/agentic-onboarding-use-case";
 import type { OnboardingIo } from "@/domain/onboarding/i-onboarding-repository";
 import { createLlmGenerate } from "@/lib/ai/llm-adapter";
+import type { ISetupProbe } from "@/domain/setup/i-setup-probe";
+import { createDefaultSetupProbe } from "@/infrastructure/setup/browser-setup-probe";
+import { createAudioFacade, type AudioFacade } from "./audio-facade";
+import { currentOs, createSetupClock, createSetupFacade, type SetupFacade } from "./setup-facade";
+import { watchChatTurn } from "./live-failure-bus";
 import { createRepositories, USER_ID, type Repositories } from "./di/repositories";
 import { todayAsDays } from "./today";
+
+/** Piezas sustituibles (pruebas): lo que no se da se construye con los concretos. */
+export interface EmmaRuntimeDeps {
+  llm?: LlmGenerate;
+  repos?: Repositories;
+  probe?: ISetupProbe;
+}
 
 export interface EmmaRuntime {
   llm: LlmGenerate;
   repos: Repositories;
+  /** Audio guardado: notas de voz, frases de EMMA, intentos y gestión (repaso con audio). */
+  audio: AudioFacade;
+  /** Chequeo de setup: voz, IA y micrófono. */
+  setup: SetupFacade;
   buildSystemPrompt(a: {
     scenario: Scenario;
     situation?: SituationVariant | null;
@@ -110,6 +126,8 @@ export interface EmmaRuntime {
      * olvidara registraría métricas en cero sin que nada avisara.
      */
     messages: ChatTurn[];
+    /** Turno → id del clip de voz del aprendiz: se adjunta a la tarjeta del error de ese turno. */
+    clipOfTurn?: Record<number, string>;
   }): Promise<{
     report: string;
     lesson: string | null;
@@ -141,9 +159,9 @@ export interface EmmaRuntime {
 }
 
 /** Construye el runtime (hidrata repos). Llamar una vez por sesión de UI. */
-export async function createEmmaRuntime(): Promise<EmmaRuntime> {
-  const llm = createLlmGenerate();
-  const repos = await createRepositories();
+export async function createEmmaRuntime(deps: EmmaRuntimeDeps = {}): Promise<EmmaRuntime> {
+  const llm = deps.llm ?? createLlmGenerate();
+  const repos = deps.repos ?? (await createRepositories());
 
   const evaluate = new EvaluateProgressionUseCase(
     repos.progression,
@@ -157,6 +175,20 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
   const markPassed = new MarkScenarioPassedUseCase(repos.pathway);
   const recommend = new RecommendNextScenarioUseCase(repos.pathway, repos.goals, repos.errorStats);
   const sessionMetricsRepo = createSessionMetricsRepository();
+  const audio = createAudioFacade({
+    store: repos.audio,
+    srs: repos.srs,
+    prefs: repos.audioPrefs,
+    now: () => Date.now(),
+    today: todayAsDays,
+    onError: (err) => console.error("Audio store error", err),
+  });
+  const setup = createSetupFacade({
+    probe: deps.probe ?? createDefaultSetupProbe(llm),
+    repo: repos.setupChecks,
+    clock: createSetupClock(),
+    os: currentOs,
+  });
 
 
   // Nivel del perfil, o "A1" si aún no existe (mismo respaldo que emptyProfile).
@@ -176,6 +208,8 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
   return {
     llm,
     repos,
+    audio,
+    setup,
     buildSystemPrompt: (a) => {
       // La unidad del libro que corresponde a este escenario+nivel ancla la
       // sesión: sus chunks son objetivos, sus trampas la vigilancia silenciosa.
@@ -187,7 +221,8 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
       const awareness = buildTutorAwareness(a.weakErrorCategories ?? []);
       return awareness ? `${system}\n\n${awareness}` : system;
     },
-    chatTurn: (a) => runChatTurn({ llm, ...a }),
+    // Un fallo del LLM sugiere el chequeo (FR-034) sin tocar el turno.
+    chatTurn: (a) => watchChatTurn(() => runChatTurn({ llm, ...a })),
     kickoff: (system, sessionId, learnerName) =>
       runKickoff({ llm, system, sessionId, learnerName }),
     observeTurn: (a) => observeTurn({ llm, ...a }),
@@ -236,6 +271,7 @@ export async function createEmmaRuntime(): Promise<EmmaRuntime> {
           errors,
           today,
           idPrefix: `session-${Date.now()}`,
+          clipOfTurn: a.clipOfTurn,
         });
       } catch (err) {
         console.error("Could not save the session's SRS cards", err);

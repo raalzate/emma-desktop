@@ -6,6 +6,7 @@
 
 import { dueCards, reviewCard } from "@/domain/srs/leitner";
 import type { SrsCard } from "@/domain/srs/srs-card";
+import { filterByMode, type ReviewMode } from "@/domain/srs/review-mode";
 import type { ISrsRepository } from "@/domain/srs/i-srs-repository";
 
 /** Límite diario de tarjetas por sesión, según el libro (new/day = 15). */
@@ -13,19 +14,22 @@ const DEFAULT_SESSION_LIMIT = 15;
 
 /**
  * Carga las tarjetas vencidas del repo, las ordena por caja ascendente
- * (las más frágiles primero) y corta al límite indicado.
+ * (las más frágiles primero) y corta al límite indicado. El modo filtra antes
+ * de cortar; por defecto `text` (sin dictados) reproduce el comportamiento previo.
  */
 export async function startReviewSession({
   repo,
   today,
   limit = DEFAULT_SESSION_LIMIT,
+  mode = "text",
 }: {
   repo: ISrsRepository;
   today: number;
   limit?: number;
+  mode?: ReviewMode;
 }): Promise<SrsCard[]> {
   const cards = await repo.loadCards();
-  const due = dueCards(cards, today) as SrsCard[];
+  const due = filterByMode(dueCards(cards, today) as SrsCard[], mode);
   const sorted = [...due].sort((a, b) => a.box - b.box);
   return sorted.slice(0, limit);
 }

@@ -1,4 +1,5 @@
-import { ipcMain, IpcMainInvokeEvent, clipboard } from 'electron';
+import path from 'path';
+import { ipcMain, IpcMainInvokeEvent, clipboard, app, systemPreferences } from 'electron';
 import {
   listLitertModels,
   downloadLitertModel,
@@ -18,6 +19,8 @@ import {
   openDownloadPage,
 } from './services/auto-update';
 import { storeGet, storeSet } from './services/store';
+import { createAudioStore } from './services/audio-store';
+import { createAudioHandlers } from './services/audio-ipc';
 
 /**
  * IPC del proceso main de EMMA. La IA local (Gemma) corre en el RENDERER
@@ -62,6 +65,30 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('store-set', async (_e, key: string, value: Record<string, unknown>) =>
     storeSet(key, value)
   );
+
+  // --- Audio guardado del repaso (binario fuera del store JSON; Zod en el borde) ---
+  // Misma base que store.ts (EMMA_DB_DIR o userData/emma): audio/ queda junto a store/.
+  const audioRoot = process.env.EMMA_DB_DIR || path.join(app.getPath('userData'), 'emma');
+  const audioStore = createAudioStore(audioRoot);
+  try {
+    // Limpia huérfanos de un cierre a medias (SC-002).
+    audioStore.reconcile();
+  } catch (error) {
+    console.error('[audio] reconcile falló:', error);
+  }
+  const audio = createAudioHandlers({
+    store: audioStore,
+    log: (...args) => console.error(...args),
+    micStatus: () => systemPreferences.getMediaAccessStatus('microphone'),
+  });
+  ipcMain.handle('audio-clip-save', async (_e, args: unknown) => audio.save(args));
+  ipcMain.handle('audio-clip-read', async (_e, id: unknown) => audio.read(id));
+  ipcMain.handle('audio-clip-remove', async (_e, ids: unknown) => audio.remove(ids));
+  ipcMain.handle('audio-clip-remove-conversation', async (_e, id: unknown) => audio.removeConversation(id));
+  ipcMain.handle('audio-clip-remove-all', async () => audio.removeAll());
+  ipcMain.handle('audio-clip-list', async () => audio.list());
+  ipcMain.handle('audio-usage', async () => audio.usage());
+  ipcMain.handle('mic-access-status', async () => audio.micStatus());
 
   // --- Portapapeles ---
   ipcMain.handle('copy-to-clipboard', async (_e, text: string) => {

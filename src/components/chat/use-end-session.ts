@@ -28,6 +28,9 @@ import { createChallengeRepository } from "@/infrastructure/persistence/challeng
 import { createLessonTodoRepository } from "@/infrastructure/persistence/lesson-todo-repository";
 import { LESSON_TODOS_CHANGED } from "@/components/lessons/use-lesson-todos";
 import { useFinishSession, type FinishOutcome } from "./use-finish-session";
+import { emmaPhraseCapture } from "./phrase-capture-job";
+import { createAppPhraseVoicer } from "@/infrastructure/audio/app-phrase-voicer";
+import { EMMA_VOICE } from "@/domain/tts/kokoro-voice";
 
 /** Pausa antes del cierre automático: da tiempo a leer la despedida del personaje. */
 const AUTO_FINISH_DELAY_MS = 2500;
@@ -68,6 +71,12 @@ interface Args {
   onLessonReady: (lesson: SessionLesson) => void;
   /** El agente cerró la escena: dispara la lección sin pulsar nada. */
   autoFinish: boolean;
+  /** Turno → clip de voz del aprendiz (lo adjunta el cierre a las tarjetas de error). */
+  clipOfTurn?: Record<number, string>;
+  /** Narrativa del contrato de escena, para elegir las frases clave de la franja SCENE. */
+  narrative?: string | null;
+  /** Se guardó al menos una frase de EMMA (aviso de privacidad de una sola vez). */
+  onClipSaved?: () => void;
 }
 
 /** Reto de la unidad de la escena; tolerante a fallo: sin reto, sin draft de reto. */
@@ -98,6 +107,8 @@ export function useEndSession(a: Args) {
     turns: a.turns,
     errors: a.errors,
     messages: a.messages,
+    clipOfTurn: a.clipOfTurn,
+    narrative: a.narrative,
   });
   const [open, setOpen] = useState(false);
   // La lección se guarda UNA vez: el efecto corre en cada render con outcome.
@@ -197,12 +208,32 @@ export function useEndSession(a: Args) {
     void finish();
   }, [a.storedLesson, finish]);
 
+  // Con el diálogo abierto Kokoro es de la lección: cualquier captura en curso
+  // (de otra escena) se cancela y la nueva empieza sólo al cerrar.
+  useEffect(() => {
+    if (open) emmaPhraseCapture.cancel();
+  }, [open]);
+
   const close = useCallback(() => {
     setOpen(false);
+    // Frases de EMMA a audio, en segundo plano y en serie (ya no habla la lección).
+    if (outcome) {
+      const { phrases } = outcome;
+      void emmaPhraseCapture.start(phrases, async (signal) => {
+        const result = await a.runtime.audio.captureEmmaPhrases({
+          voicer: createAppPhraseVoicer((e) => console.warn("[audio] frase sin clip", e)),
+          phrases,
+          voiceKey: EMMA_VOICE,
+          conversationId: a.conversationId,
+          signal,
+        });
+        if (result.saved > 0) a.onClipSaved?.();
+      });
+    }
     // La lección generada se descarta del estado vivo, no del histórico: ya se
     // persistió, y al reabrir la sesión vuelve como `storedLesson`.
     reset();
-  }, [reset]);
+  }, [reset, outcome, a.runtime, a.conversationId]);
 
   return { view, open, running, review, close, hasStoredLesson: a.storedLesson !== null };
 }

@@ -22,7 +22,11 @@ export interface KokoroAudio {
   toBlob(): Blob;
 }
 
+/** Motor que corrió el modelo: proceso nativo (onnxruntime-node) o Worker WASM. */
+export type KokoroBackend = "native" | "wasm";
+
 export interface KokoroEngine {
+  backend: KokoroBackend;
   generate(text: string, options: { voice: string }): Promise<KokoroAudio>;
   /** El proceso detrás del motor murió: no sirve más y hay que recargar. */
   isDead?(): boolean;
@@ -31,6 +35,7 @@ export interface KokoroEngine {
 export interface KokoroSpeech {
   audioUrl: string;
   timings: WordTiming[];
+  backend: KokoroBackend;
 }
 
 export type KokoroState = "idle" | "loading" | "ready";
@@ -81,7 +86,7 @@ export function createKokoroService(deps: KokoroDeps): KokoroService {
     const job = queue.then(async () => {
       const engine = await getEngine();
       const raw = await engine.generate(text, { voice });
-      return { audioUrl: deps.toUrl(raw.toBlob()), timings: estimateWordTimings(text, raw.duration) };
+      return { audioUrl: deps.toUrl(raw.toBlob()), timings: estimateWordTimings(text, raw.duration), backend: engine.backend };
     });
     queue = job.catch(() => undefined);
     return job;

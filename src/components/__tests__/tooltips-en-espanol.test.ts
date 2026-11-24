@@ -35,13 +35,22 @@ function listarTsx(dir: string): string[] {
 
 const conservarLineas = (s: string) => s.replace(/[^\n]/g, " ");
 
+/** Componentes que pintan un botón: nativos y envoltorios de `src/components/ui`. */
+const BOTONES = [
+  "Button", "button", "TabsTrigger", "AlertDialogAction", "AlertDialogCancel", "DialogClose",
+  "SheetClose", "ToastAction", "ToastClose", "AccordionTrigger", "SidebarTrigger", "SidebarMenuButton",
+];
+const PATRON_BOTON = new RegExp(`<(${BOTONES.join("|")})\\b((?:[^>]|=>)*?)>`, "g");
+
 function botonesSinTooltip(rel: string): string[] {
-  const src = fs
-    .readFileSync(path.join(RAIZ, rel), "utf8")
-    .replace(/\/\*[\s\S]*?\*\//g, conservarLineas);
+  return hallazgosEnFuente(rel, fs.readFileSync(path.join(RAIZ, rel), "utf8"));
+}
+
+export function hallazgosEnFuente(rel: string, fuente: string): string[] {
+  const src = fuente.replace(/\/\*[\s\S]*?\*\//g, conservarLineas);
   const hallazgos: string[] = [];
   // `(?:[^>]|=>)` deja pasar el `=>` de un `onClick={() => …}` sin cerrar el tag.
-  for (const m of src.matchAll(/<(Button|button|TabsTrigger)\b((?:[^>]|=>)*?)>/g)) {
+  for (const m of src.matchAll(PATRON_BOTON)) {
     const attrs = m[2];
     const antes = src.slice(Math.max(0, m.index - 200), m.index);
     const conTitle = /\btitle=/.test(attrs);
@@ -52,6 +61,13 @@ function botonesSinTooltip(rel: string): string[] {
   }
   return hallazgos;
 }
+
+describe("el freno detecta botones sin tooltip (prueba de vida con cebo)", () => {
+  it.each(BOTONES)("<%s> sin title se reporta y con title no", (tag) => {
+    expect(hallazgosEnFuente("x.tsx", `<${tag} onClick={() => f()}>Ok</${tag}>`)).toHaveLength(1);
+    expect(hallazgosEnFuente("x.tsx", `<${tag} title="Hace algo." onClick={() => f()}>Ok</${tag}>`)).toEqual([]);
+  });
+});
 
 describe("todo botón lleva tooltip en español (Artículo 9)", () => {
   it("ningún <Button>, <button> ni <TabsTrigger> queda sin title ni TooltipTrigger", () => {

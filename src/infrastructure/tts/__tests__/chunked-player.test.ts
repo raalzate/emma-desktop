@@ -32,7 +32,7 @@ const chunks: SpeechChunk[] = [
 
 /** Speech de n palabras de 1 s cada una: dura n segundos. */
 function speechOf(url: string, words: number, engine: Speech["engine"] = "kokoro"): Speech {
-  return { audioUrl: url, engine, timings: Array.from({ length: words }, (_, i) => ({ word: `w${i}`, start: i, end: i + 1 })) };
+  return { audioUrl: url, engine, backend: "wasm", timings: Array.from({ length: words }, (_, i) => ({ word: `w${i}`, start: i, end: i + 1 })) };
 }
 
 function deferred<T>() {

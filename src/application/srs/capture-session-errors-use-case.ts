@@ -17,12 +17,15 @@ export async function captureSessionErrors({
   errors,
   today,
   idPrefix = DEFAULT_ID_PREFIX,
+  clipOfTurn,
 }: {
   repo: ISrsRepository;
   errors: SilentError[];
   today: number;
   idPrefix?: string;
+  /** Turno → clip de voz del aprendiz, para adjuntarlo a la tarjeta (FR-011). */
+  clipOfTurn?: Readonly<Record<number, string>>;
 }): Promise<number> {
-  const cards = buildCardsFromErrors(errors, idPrefix, today);
+  const cards = buildCardsFromErrors(errors, idPrefix, today, clipOfTurn && ((turn) => clipOfTurn[turn]));
   return addCards({ repo, cards });
 }

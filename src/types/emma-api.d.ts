@@ -12,6 +12,27 @@ export interface LitertModelStatus {
   sizeBytes: number;
 }
 
+export type MicAccessStatus = "granted" | "denied" | "restricted" | "not-determined" | "unknown";
+
+/** Clip en el cable del IPC (espeja `AudioClipMetaWire` del main). */
+export interface AudioClipWireMeta {
+  id: string;
+  origin: "learner" | "emma" | "attempt";
+  text: string;
+  voice?: string;
+  conversationId?: string;
+  cardId?: string;
+  durationMs: number;
+  bytes: number;
+  createdAt: number;
+}
+
+export interface AudioSaveArgs {
+  meta: AudioClipWireMeta;
+  mime: "audio/webm;codecs=opus" | "audio/webm";
+  data: Uint8Array;
+}
+
 export interface EmmaApi {
   litertModelsList(): Promise<{ totalRamGB: number; models: LitertModelStatus[] }>;
   litertModelDownload(id: string): Promise<{ ok: boolean; error?: string }>;
@@ -45,6 +66,17 @@ export interface EmmaApi {
 
   storeGet(key: string): Promise<Record<string, unknown>>;
   storeSet(key: string, value: Record<string, unknown>): Promise<{ ok: boolean }>;
+
+  /** Audio guardado del repaso. Las respuestas se validan otra vez en el renderer (ipc-audio-store). */
+  audioSave(args: AudioSaveArgs): Promise<{ ok: true } | { ok: false; error: "invalid" | "io" }>;
+  audioRead(id: string): Promise<{ meta: AudioClipWireMeta; data: Uint8Array } | null>;
+  audioRemove(ids: string[]): Promise<{ removed: number }>;
+  audioRemoveConversation(conversationId: string): Promise<{ removed: number }>;
+  audioRemoveAll(): Promise<{ ok: boolean }>;
+  audioList(): Promise<AudioClipWireMeta[]>;
+  audioUsage(): Promise<{ count: number; bytes: number }>;
+  /** Permiso del micrófono según el SO (no abre el micrófono). */
+  micAccessStatus(): Promise<MicAccessStatus>;
 
   navigate(cb: (route: string) => void): () => void;
   copyToClipboard(text: string): Promise<boolean>;

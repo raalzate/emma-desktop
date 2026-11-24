@@ -31,6 +31,8 @@ export const LITERT_SAMPLER_PARAMS = { k: 40, p: 0.95, temperature: 0.6 } as con
 let libPromise: Promise<any> | null = null;
 let enginePromise: Promise<any> | null = null;
 let currentModelFile = "";
+/** Modelo cuyo engine terminó de cargar (vacío = ninguno en memoria). */
+let loadedModelFile = "";
 let logFilterInstalled = false;
 
 /**
@@ -91,6 +93,7 @@ export function resetLitertEngine(): void {
   const prev = enginePromise;
   enginePromise = null;
   currentModelFile = "";
+  loadedModelFile = "";
   prev?.then((e) => e?.delete?.()).catch(() => {});
 }
 
@@ -120,6 +123,7 @@ export async function getEngine(modelFile: string): Promise<any> {
     prev.then((e) => e?.delete?.()).catch(() => {});
   }
   currentModelFile = modelFile;
+  loadedModelFile = "";
   enginePromise = (async () => {
     const lib = await loadLib();
     // maxNumTokens = ventana de contexto+salida, configurable en Ajustes.
@@ -130,11 +134,28 @@ export async function getEngine(modelFile: string): Promise<any> {
       mainExecutorSettings: { maxNumTokens },
     });
   })();
+  const creating = enginePromise;
+  creating.then(
+    () => {
+      if (enginePromise === creating) loadedModelFile = modelFile;
+    },
+    () => {}, // el rechazo lo atiende el catch de abajo y quien espera el engine
+  );
   // Si falla, permite reintentar la próxima vez.
-  enginePromise.catch(() => {
-    enginePromise = null;
+  creating.catch(() => {
+    if (enginePromise === creating) enginePromise = null;
   });
-  return enginePromise;
+  return creating;
+}
+
+/** ¿El engine de este modelo ya está cargado en memoria? (la sonda de setup separa carga de inferencia) */
+export function isLitertEngineLoaded(modelFile: string): boolean {
+  return loadedModelFile === modelFile && enginePromise !== null;
+}
+
+/** Carga el engine sin inferir. */
+export async function warmLitertEngine(modelFile: string): Promise<void> {
+  await getEngine(modelFile);
 }
 
 /**

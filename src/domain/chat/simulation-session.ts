@@ -85,6 +85,8 @@ export interface ChatTurn {
   at?: number;
   /** URL del audio grabado (nota de voz del aprendiz). Sólo en sesión, no persiste. */
   audioUrl?: string;
+  /** Id del clip guardado en el almacén de audio; sí persiste (referencia, nunca la URL). */
+  audioId?: string;
 }
 
 /** Contador de turnos + búfer de errores + historial de una simulación. */

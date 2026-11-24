@@ -19,6 +19,7 @@ import { AppShell } from "@/components/nav/app-shell";
 import { ChatSidebar } from "./chat-sidebar";
 import { ChatPane } from "./chat-pane";
 import { useChatHistory } from "./use-chat-history";
+import { deleteConversation } from "./delete-conversation";
 import type { SessionSnapshot } from "./use-chat-session";
 import { Button } from "@/components/ui/button";
 import { PendingLessonsNotice } from "@/components/progress/pending-lessons-notice";
@@ -123,10 +124,13 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
   // panel activo solapado con el borrado reescribiría la conversación eliminada.
   const handleDelete = useCallback(
     async (id: string) => {
-      await history.remove(id);
+      await deleteConversation({
+        id, history, audio: runtime.audio,
+        onError: (e) => console.warn("[audio] could not delete the conversation clips", e),
+      });
       if (id === sessionId) startNew(scenario);
     },
-    [history, sessionId, scenario, startNew],
+    [history, runtime.audio, sessionId, scenario, startNew],
   );
 
   // UNA sola sidebar: la del shell. Las sesiones viajan por la ranura `extra`.

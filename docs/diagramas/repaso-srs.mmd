@@ -2,16 +2,26 @@ flowchart LR
   subgraph agg_Aprendiz["Aprendiz"]
     ini_practica(("Termina la práctica<br><i>Evento de Inicio</i>"))
     ini_repaso(("Abre el repaso<br><i>Evento de Inicio</i>"))
+    elige_el_modo("Elige el modo<br><i>Tarea</i>")
     responde("Intenta producirla<br><i>Tarea</i>")
+    escucha_el_audio("Escucha el audio<br><i>Tarea</i>")
+    escribe_lo_que_oyo("Escribe lo que oyó<br><i>Tarea</i>")
+    lee_en_voz_alta("Lee en voz alta<br><i>Tarea</i>")
     fin_repaso(("Tanda completa<br><i>Evento de Fin</i>"))
   end
   subgraph agg_Pantalla_de_repaso["Pantalla de repaso"]
     muestra_tarjeta("Muestra la tarjeta<br><i>Tarea</i>")
+    es_de_dictado{"¿Es de dictado?<br><i>Compuerta Exclusiva</i>"}
+    esta_el_audio{"¿Está el audio?<br><i>Compuerta Exclusiva</i>"}
+    guarda_la_lectura("Guarda la lectura<br><i>Tarea</i>")
     fin_sin_vencidas(("Nada por repasar<br><i>Evento de Fin</i>"))
     suma_xp_tarjeta("Suma XP<br><i>Tarea</i>")
   end
   subgraph agg_Repaso_espaciado["Repaso espaciado"]
     crea_tarjetas("Convierte errores en tarjetas<br><i>Tarea</i>")
+    queda_un_audio(("Queda un audio<br><i>Evento de Inicio</i>"))
+    guarda_el_audio("Guarda el audio<br><i>Tarea</i>")
+    crea_tarjeta_dictado("Crea tarjeta dictado<br><i>Tarea</i>")
     guarda_nuevas("Guarda sólo lo nuevo<br><i>Tarea</i>")
     arma_sesion("Arma la tanda del día<br><i>Tarea</i>")
     gw_vencidas{"¿Hay algo vencido?<br><i>Compuerta Exclusiva</i>"}
@@ -22,22 +32,38 @@ flowchart LR
   end
   subgraph agg_Datos_del_aprendiz["Datos del aprendiz"]
     store_tarjetas[("Tarjetas de repaso<br><i>Almacén de Datos</i>")]
+    audios_guardados[("Audios guardados<br><i>Almacén de Datos</i>")]
   end
-  crea_tarjetas -->|"tarjetas de la sesión"| guarda_nuevas
-  arma_sesion -->|"vencidas para hoy"| gw_vencidas
-  gw_acierta -->|"le salió"| sube_caja
-  gw_acierta -->|"no le salió"| baja_caja
   ini_practica -->|"errores callados"| crea_tarjetas
+  crea_tarjetas -->|"tarjetas de la sesión"| guarda_nuevas
+  queda_un_audio -->|"nota o frase"| guarda_el_audio
+  guarda_el_audio -->|"en el equipo"| audios_guardados
+  guarda_el_audio -->|"audio guardado"| crea_tarjeta_dictado
+  crea_tarjeta_dictado -->|"tarjeta de dictado"| guarda_nuevas
   guarda_nuevas -->|"guarda en el equipo"| store_tarjetas
-  ini_repaso -->|"pide la tanda"| arma_sesion
+  ini_repaso -->|"pide la tanda"| elige_el_modo
+  elige_el_modo -->|"Text / Audio / Mixed"| arma_sesion
   store_tarjetas -->|"tarjetas guardadas"| arma_sesion
+  arma_sesion -->|"vencidas para hoy"| gw_vencidas
   gw_vencidas -->|"ninguna vencida"| fin_sin_vencidas
   gw_vencidas -->|"hasta 15, frágiles primero"| muestra_tarjeta
-  muestra_tarjeta -->|"pide producción"| responde
+  muestra_tarjeta -->|"según el tipo"| es_de_dictado
+  es_de_dictado -->|"no: texto o sonido"| responde
+  es_de_dictado -->|"sí: dictado"| esta_el_audio
+  audios_guardados -->|"audio de la tarjeta"| esta_el_audio
+  esta_el_audio -->|"sí"| escucha_el_audio
+  esta_el_audio -->|"no: se degrada a texto"| escribe_lo_que_oyo
+  escucha_el_audio -->|"Write it"| escribe_lo_que_oyo
+  escribe_lo_que_oyo -->|"ve la corrección"| lee_en_voz_alta
+  lee_en_voz_alta -->|"Finish"| guarda_la_lectura
+  guarda_la_lectura -->|"lectura vigente"| audios_guardados
+  guarda_la_lectura -->|"se califica el dictado"| suma_xp_tarjeta
+  responde -->|"se califica"| suma_xp_tarjeta
+  suma_xp_tarjeta --> gw_acierta
+  gw_acierta -->|"le salió"| sube_caja
+  gw_acierta -->|"no le salió"| baja_caja
   sube_caja -->|"nueva fecha"| store_tarjetas
   baja_caja -->|"vuelve pronto"| store_tarjetas
   store_tarjetas -->|"tarjeta actualizada"| gw_quedan
   gw_quedan -->|"sí: siguiente"| muestra_tarjeta
   gw_quedan -->|"no: sesión completa"| fin_repaso
-  responde -->|"se califica"| suma_xp_tarjeta
-  suma_xp_tarjeta --> gw_acierta

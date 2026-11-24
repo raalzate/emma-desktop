@@ -47,3 +47,11 @@ describe("kokoroVoiceFor", () => {
     expect(kokoroVoiceFor("raro", "masculine")).toMatch(/^am_/);
   });
 });
+
+describe("EMMA_VOICE", () => {
+  it("es la clave de voz reservada de Emma y mapea a su voz Kokoro", async () => {
+    const { EMMA_VOICE, EMMA_KOKORO_VOICE } = await import("../kokoro-voice");
+    expect(EMMA_VOICE).toBe("en-US-EmmaNeural");
+    expect(kokoroVoiceFor(EMMA_VOICE, "feminine")).toBe(EMMA_KOKORO_VOICE);
+  });
+});

@@ -150,7 +150,7 @@ export function StudyPlanView({ activeUnit, completedChallengeIds }: Props) {
         <h3 className="text-sm font-semibold">The 7-step cycle and the 10 rules of the method</h3>
         <Accordion type="multiple" className="w-full">
           <AccordionItem value="cycle">
-            <AccordionTrigger>7-step cycle</AccordionTrigger>
+            <AccordionTrigger title="Muestra u oculta el ciclo de 7 pasos.">7-step cycle</AccordionTrigger>
             <AccordionContent>
               <ol className="space-y-2">
                 {SEVEN_STEP_CYCLE.map((step) => (
@@ -165,7 +165,7 @@ export function StudyPlanView({ activeUnit, completedChallengeIds }: Props) {
             </AccordionContent>
           </AccordionItem>
           <AccordionItem value="rules">
-            <AccordionTrigger>10 rules of the method</AccordionTrigger>
+            <AccordionTrigger title="Muestra u oculta las 10 reglas del método.">10 rules of the method</AccordionTrigger>
             <AccordionContent>
               <ol className="space-y-2">
                 {METHOD_RULES.map((rule) => (

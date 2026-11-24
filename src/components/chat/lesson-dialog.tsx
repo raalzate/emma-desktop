@@ -30,11 +30,11 @@ import { XpBreakdown } from "@/components/gamification/xp-breakdown";
 import { useKaraoke, type Karaoke } from "./use-karaoke";
 import { KaraokeTranscript } from "./karaoke-transcript";
 import { ClosingPlanPanel } from "./closing-plan-panel";
+import { EMMA_VOICE } from "@/domain/tts/kokoro-voice";
 import { hasSpeakableContent } from "@/domain/tts/speakable-text";
 import { splitReportAtLesson } from "@/domain/feedback/report-sections";
 
 /** Voz reservada de Emma (tutora): siempre femenina, en-US-EmmaNeural. */
-const EMMA_VOICE = "en-US-EmmaNeural";
 
 interface Props {
   view: LessonView | null;

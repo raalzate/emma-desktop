@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { synthesizeChain, type ChainDeps, type EngineSpeech } from "../speech-chain";
 import type { KokoroState } from "../kokoro-tts";
 
-const speech = (tag: string): EngineSpeech => ({ audioUrl: `url:${tag}`, timings: [] });
+const speech = (tag: string): EngineSpeech => ({ audioUrl: `url:${tag}`, timings: [], backend: "wasm" });
 
 /** Cadena con fakes: Kokoro disponible; el sleep nunca vence salvo que se pida. */
 function build(over: {
@@ -28,6 +28,13 @@ function build(over: {
 describe("synthesizeChain", () => {
   it("marca engine kokoro cuando responde Kokoro", async () => {
     expect((await synthesizeChain(build())).engine).toBe("kokoro");
+  });
+
+  it("propaga el backend native o wasm del motor que respondió (FR-025)", async () => {
+    for (const backend of ["native", "wasm"] as const) {
+      const deps = build({ kokoro: { synthesize: async () => ({ ...speech("k"), backend }) } });
+      expect((await synthesizeChain(deps)).backend).toBe(backend);
+    }
   });
 
   it("si Kokoro tampoco está disponible rechaza para que el llamador use Web Speech", async () => {

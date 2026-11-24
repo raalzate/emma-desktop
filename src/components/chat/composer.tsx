@@ -17,10 +17,11 @@ import { useSuggestions } from "./use-suggestions";
 import { SuggestionChips } from "./suggestion-chips";
 import { useVoiceInput } from "./use-voice-input";
 import { LiveWaveform } from "./live-waveform";
+import type { VoiceClip } from "./voice-turn";
 import type { VoiceRequirement } from "@/domain/chat/voice-requirement";
 
 interface Props {
-  onSend: (text: string, audioUrl?: string) => void;
+  onSend: (text: string, audioUrl?: string, clip?: VoiceClip) => void;
   busy: boolean;
   /** Última línea de la persona: es lo que el aprendiz tiene que responder. */
   context: string;
@@ -63,9 +64,9 @@ export function Composer({
   const { ghost, clearGhost } = useTypeahead(runtime!, context, text, busy, level);
   // Nota de voz (WhatsApp): al terminar de grabar, envía audio + transcripción a la IA.
   const voice = useVoiceInput(
-    (t, audioUrl) => {
+    (t, audioUrl, clip) => {
       setAviso(null);
-      onSend(t, audioUrl);
+      onSend(t, audioUrl, clip);
     },
     setAviso,
   );

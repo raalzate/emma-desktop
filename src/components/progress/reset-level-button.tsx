@@ -50,8 +50,8 @@ export function ResetLevelButton({ repo, level, onReset }: Props) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleReset} disabled={busy}>
+          <AlertDialogCancel title="Cierra el aviso sin reiniciar el nivel." disabled={busy}>Cancel</AlertDialogCancel>
+          <AlertDialogAction title="Confirma y reinicia tu progreso en este nivel." onClick={handleReset} disabled={busy}>
             Reset
           </AlertDialogAction>
         </AlertDialogFooter>

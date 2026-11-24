@@ -9,7 +9,7 @@
  */
 
 import type { WordTiming } from "@/domain/ai/llm-port";
-import type { KokoroState } from "./kokoro-tts";
+import type { KokoroBackend, KokoroState } from "./kokoro-tts";
 
 /** Motor neuronal que produjo el audio. */
 export type SpeechEngine = "kokoro";
@@ -18,6 +18,8 @@ export type SpeechEngine = "kokoro";
 export interface EngineSpeech {
   audioUrl: string;
   timings: WordTiming[];
+  /** Motor Kokoro que sintetizó: nativo o WASM (lo usa la sonda del chequeo). */
+  backend: KokoroBackend;
 }
 
 export interface Speech extends EngineSpeech {

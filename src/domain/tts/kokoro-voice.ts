@@ -8,7 +8,8 @@
 import type { VoiceGender } from "@/domain/chat-settings/chat-settings";
 
 export const EMMA_KOKORO_VOICE = "af_heart";
-const EMMA_VOICE_KEY = "en-US-EmmaNeural";
+/** Clave de voz reservada de Emma (la que usa la UI y el guardado de audio). */
+export const EMMA_VOICE = "en-US-EmmaNeural";
 
 const POOLS = {
   usFemale: ["af_bella", "af_nicole", "af_sarah", "af_sky", "af_nova", "af_river", "af_jessica", "af_kore", "af_alloy", "af_aoede"],
@@ -26,7 +27,7 @@ function hash(text: string): number {
 
 export function kokoroVoiceFor(voiceId?: string, gender?: VoiceGender): string {
   const feminine = gender !== "masculine";
-  if (feminine && (!voiceId || voiceId === EMMA_VOICE_KEY)) return EMMA_KOKORO_VOICE;
+  if (feminine && (!voiceId || voiceId === EMMA_VOICE)) return EMMA_KOKORO_VOICE;
 
   const british = /^en-GB-/i.test(voiceId ?? "");
   const pool = british

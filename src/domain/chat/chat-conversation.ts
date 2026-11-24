@@ -1,8 +1,8 @@
 /**
  * Conversación de chat persistida: una simulación con Emma que el aprendiz puede
  * retomar. El aprendiz puede tener varias (distintas simulaciones) y gestionarlas
- * (renombrar, eliminar). El audio de las notas de voz NO persiste (URLs de sesión);
- * sí la transcripción, que es lo que la IA procesa.
+ * (renombrar, eliminar). La URL de las notas de voz NO persiste (es de sesión); sí la
+ * transcripción, que es lo que la IA procesa, y el `audioId` que apunta al clip guardado.
  */
 
 import { CEFR_LADDER, isCefrLevel, type CefrLevel } from "@/domain/cefr/cefr-ladder";
@@ -49,9 +49,14 @@ export function deriveTitle(fallback: string, messages: ChatTurn[]): string {
   return firstUser.length > 40 ? `${firstUser.slice(0, 40)}…` : firstUser;
 }
 
-/** Descarta campos no serializables (audioUrl de sesión) antes de guardar. */
+/** Descarta campos no serializables (audioUrl de sesión) y conserva la referencia `audioId`. */
 export function stripForStorage(messages: ChatTurn[]): ChatTurn[] {
-  return messages.map(({ role, content, at }) => ({ role, content, at }));
+  return messages.map(({ role, content, at, audioId }) => ({
+    role,
+    content,
+    at,
+    ...(audioId ? { audioId } : {}),
+  }));
 }
 
 /** `archived` validado en el borde: lo mal formado se ignora (como si no estuviera archivada). */

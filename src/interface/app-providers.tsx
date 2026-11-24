@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { EmmaProvider } from "./emma-context";
 import { AiGate } from "./ai-gate";
+import { SetupCheckGate } from "./setup-check-gate";
+import { SetupIssueListener } from "@/components/setup/setup-issue-listener";
 import { useMenuNavigation } from "@/hooks/use-menu-navigation";
 import { Toaster } from "@/components/ui/toaster";
 import { MotionProvider } from "@/components/motion";
@@ -19,7 +21,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <MotionProvider>
       <EmmaProvider>
         <MenuNav />
-        <AiGate>{children}</AiGate>
+        <AiGate>
+          <SetupCheckGate>{children}</SetupCheckGate>
+        </AiGate>
+        <SetupIssueListener />
         <Toaster />
         <CelebrationLayer />
       </EmmaProvider>

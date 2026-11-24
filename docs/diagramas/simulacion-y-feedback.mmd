@@ -6,6 +6,8 @@ flowchart LR
     lee_antesala_es("Lee la antesala<br><i>Tarea</i>")
     habla_escribe_en("Habla o escribe<br><i>Tarea</i>")
     lee_el_reporte("Lee su lección<br><i>Tarea</i>")
+    ini_borra(("Borra la conversación<br><i>Evento de Inicio</i>"))
+    fin_borrada(("Conversación borrada<br><i>Evento de Fin</i>"))
     sesion_cerrada(("Practica o continúa<br><i>Evento de Fin</i>"))
   end
   subgraph agg_Tutora_EMMA["Tutora EMMA"]
@@ -25,9 +27,14 @@ flowchart LR
     fin_de_sesion{"¿Termina la escena?<br><i>Compuerta Exclusiva</i>"}
     persiste_errores("Guarda los errores<br><i>Tarea</i>")
     arma_reporte_feedback("Arma la lección<br><i>Tarea</i>")
+    crea_tarjetas_con_voz("Crea las tarjetas<br><i>Tarea</i>")
+    guarda_frases_emma("Guarda frases de Emma<br><i>Tarea</i>")
+    borra_historial("Borra el historial<br><i>Tarea</i>")
+    borra_audios("Borra sus audios<br><i>Tarea</i>")
     evalua_progresion("Decide el nivel<br><i>Tarea</i>")
     suma_xp("Suma XP<br><i>Tarea</i>")
     perfil_sqlite[("Datos del aprendiz<br><i>Almacén de Datos</i>")]
+    audios_guardados[("Audios guardados<br><i>Almacén de Datos</i>")]
     gw_cierre{"¿Hubo correcciones?<br><i>Compuerta Exclusiva</i>"}
     asigna_lecciones("Asigna las lecciones<br><i>Tarea</i>")
   end
@@ -65,7 +72,11 @@ flowchart LR
   bufer_de_errores -->|"errores de la sesión"| arma_reporte_feedback
   persiste_errores -->|"guarda errores"| perfil_sqlite
   persiste_errores -->|"luego"| arma_reporte_feedback
-  arma_reporte_feedback -->|"luego"| evalua_progresion
+  arma_reporte_feedback -->|"luego"| crea_tarjetas_con_voz
+  crea_tarjetas_con_voz -->|"luego"| evalua_progresion
+  crea_tarjetas_con_voz -->|"tarjetas de repaso"| perfil_sqlite
+  audios_guardados -->|"audio de cada turno"| crea_tarjetas_con_voz
+  habla_escribe_en -->|"nota de voz, de fondo"| audios_guardados
   evalua_progresion -->|"racha y nivel"| perfil_sqlite
   evalua_progresion -->|"resultado"| suma_xp
   suma_xp -->|"guarda el XP"| perfil_sqlite
@@ -74,3 +85,9 @@ flowchart LR
   gw_cierre -->|"hubo correcciones"| asigna_lecciones
   asigna_lecciones -->|"Start my lessons"| fin_a_lecciones
   gw_cierre -->|"nada que corregir"| sesion_cerrada
+  lee_el_reporte -->|"al cerrar la lección"| guarda_frases_emma
+  guarda_frases_emma -->|"frases + tarjetas"| audios_guardados
+  ini_borra -->|"confirma"| borra_historial
+  borra_historial -->|"en cascada"| borra_audios
+  borra_audios -->|"quita sus clips"| audios_guardados
+  borra_audios -->|"listo"| fin_borrada

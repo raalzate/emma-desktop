@@ -36,10 +36,13 @@ import {
   recallPromptEs,
   recallTarget,
   summarizeReview,
-  wordDiff,
   type RecallVerdict,
   type ReviewResult,
 } from "@/domain/srs/recall-check";
+import { countDueByMode, type ModeCounts, type ReviewMode } from "@/domain/srs/review-mode";
+import { CorrectionLine } from "@/components/practice/correction-line";
+import { AudioRecallLoader } from "@/components/practice/audio-recall-loader";
+import { ReviewModeSelector } from "@/components/practice/review-mode-selector";
 import { startReviewSession, answerCard } from "@/application/srs/review-session-use-case";
 
 const KIND_LABEL_ES: Record<SrsCardKind, string> = {
@@ -48,6 +51,7 @@ const KIND_LABEL_ES: Record<SrsCardKind, string> = {
   "minimal-pair": "Minimal pair",
   "word-stress": "Word stress",
   collocation: "Collocation",
+  "audio-recall": "Listen and type",
 };
 
 function BoxIndicator({ box }: { box: LeitnerBox }) {
@@ -67,21 +71,26 @@ function BoxIndicator({ box }: { box: LeitnerBox }) {
   );
 }
 
-/** La respuesta correcta con las palabras que el aprendiz no acertó resaltadas. */
-function CorrectionLine({ expected, given }: { expected: string; given: string }) {
-  const parts = wordDiff(expected, given);
-  const allOk = parts.every((p) => p.ok);
+function VerdictBox({ graded }: { graded: Graded }) {
+  const style =
+    graded.verdict === "near"
+      ? "border-scaffold-mid/40 bg-scaffold-mid-bg text-scaffold-mid"
+      : graded.correct
+        ? "border-scaffold-easy/40 bg-scaffold-easy-bg text-scaffold-easy"
+        : "border-scaffold-hard/40 bg-scaffold-hard-bg text-scaffold-hard";
   return (
-    <p className="flex flex-wrap gap-1 rounded-md bg-primary-soft p-2 text-primary">
-      {parts.map((part, i) => (
-        <span
-          key={`${part.word}-${i}`}
-          className={part.ok || allOk ? "" : "rounded bg-scaffold-hard-bg px-1 font-semibold text-scaffold-hard"}
-        >
-          {part.word}
-        </span>
-      ))}
-    </p>
+    <div className={`rounded-bubble border p-3 text-sm ${style}`}>
+      <p className="font-medium">
+        {graded.verdict === "near"
+          ? "Almost exact: it counts, but mind the form."
+          : graded.correct
+            ? "You've got it."
+            : "Not yet. The highlighted words are the ones you missed."}
+      </p>
+      <p className="text-muted-foreground">
+        {graded.correct ? `Back in ${graded.inDays} day(s).` : "Back tomorrow in box 1."}
+      </p>
+    </div>
   );
 }
 
@@ -100,7 +109,9 @@ interface Props {
 }
 
 export function SrsReview({ runtime, onChange }: Props) {
-  const [cards, setCards] = useState<SrsCard[] | null>(null);
+  const [pool, setPool] = useState<Record<ReviewMode, SrsCard[]> | null>(null);
+  const [counts, setCounts] = useState<ModeCounts | null>(null);
+  const [mode, setMode] = useState<ReviewMode>("text");
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("recall");
   const [typed, setTyped] = useState("");
@@ -110,6 +121,7 @@ export function SrsReview({ runtime, onChange }: Props) {
   const [results, setResults] = useState<ReviewResult[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const lessons = useLessonTodos();
+  const cards = pool ? pool[mode] : null;
   const finished = cards !== null && cards.length > 0 && index >= cards.length;
 
   // Repaso terminado ⇒ la lección «Review your cards» se cierra sola (#172):
@@ -122,10 +134,22 @@ export function SrsReview({ runtime, onChange }: Props) {
   useEffect(() => {
     let alive = true;
     void (async () => {
-      const due = await startReviewSession({ repo: runtime.repos.srs, today: todayAsDays() });
+      const load = (m: ReviewMode) => startReviewSession({ repo: runtime.repos.srs, today: todayAsDays(), mode: m });
+      const [text, audio, mixed, all] = await Promise.all([
+        load("text"),
+        load("audio"),
+        load("mixed"),
+        runtime.repos.srs.loadCards(),
+      ]);
       if (!alive) return;
+      // Los conteos del selector no llevan el tope de 15 de la sesión.
+      setCounts(countDueByMode(all as SrsCard[], todayAsDays()));
       // Las tarjetas nacidas de una reformulación del corrector no enseñan nada.
-      setCards(due.filter(isTeachableCard));
+      setPool({
+        text: text.filter(isTeachableCard),
+        audio: audio.filter(isTeachableCard),
+        mixed: mixed.filter(isTeachableCard),
+      });
     })();
     return () => {
       alive = false;
@@ -136,20 +160,40 @@ export function SrsReview({ runtime, onChange }: Props) {
     if (phase === "recall") inputRef.current?.focus();
   }, [phase, index]);
 
-  if (cards === null) {
+  if (cards === null || pool === null || counts === null) {
     return <p className="text-sm text-muted-foreground">Loading cards…</p>;
+  }
+
+  const selector = counts.mixed > 0 && <ReviewModeSelector mode={mode} counts={counts} onChange={changeMode} />;
+
+  function changeMode(next: ReviewMode) {
+    setMode(next);
+    setIndex(0);
+    setResults([]);
+    resetCard();
+  }
+
+  function resetCard() {
+    setTyped("");
+    setRevealed(false);
+    setHinted(false);
+    setGraded(null);
+    setPhase("recall");
   }
 
   if (cards.length === 0) {
     return (
-      <Card className="rounded-bubble">
-        <CardContent className="space-y-1 p-4 text-sm">
-          <p className="font-medium">No cards due today.</p>
-          <p className="text-muted-foreground">
-            They come from your conversation mistakes and the items you miss in Exercises.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        {selector}
+        <Card className="rounded-bubble">
+          <CardContent className="space-y-1 p-4 text-sm">
+            <p className="font-medium">No cards due today.</p>
+            <p className="text-muted-foreground">
+              They come from your conversation mistakes and the items you miss in Exercises.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -197,11 +241,7 @@ export function SrsReview({ runtime, onChange }: Props) {
   }
 
   function next() {
-    setTyped("");
-    setRevealed(false);
-    setHinted(false);
-    setGraded(null);
-    setPhase("recall");
+    resetCard();
     setIndex((i) => i + 1);
   }
 
@@ -212,16 +252,43 @@ export function SrsReview({ runtime, onChange }: Props) {
     else next();
   }
 
-  const verdictStyle =
-    graded?.verdict === "near"
-      ? "border-scaffold-mid/40 bg-scaffold-mid-bg text-scaffold-mid"
-      : graded?.correct
-        ? "border-scaffold-easy/40 bg-scaffold-easy-bg text-scaffold-easy"
-        : "border-scaffold-hard/40 bg-scaffold-hard-bg text-scaffold-hard";
+  const nextButton = (
+    <Button title={index + 1 < cards.length ? "Pasa a la siguiente tarjeta" : "Muestra el resumen del repaso"} onClick={next} className="gap-1">
+      {index + 1 < cards.length ? "Next" : "See summary"}
+      <ArrowRight className="h-4 w-4" />
+    </Button>
+  );
+
+  if (current.kind === "audio-recall") {
+    return (
+      <div className="space-y-3">
+        {index === 0 && phase === "recall" && selector}
+        <ItemTransition itemKey={index}>
+          {phase === "recall" ? (
+            <AudioRecallLoader
+              key={current.id}
+              card={current}
+              audio={runtime.audio}
+              onGrade={(correct, verdict) => void grade(correct, verdict)}
+            />
+          ) : (
+            <Card className="rounded-bubble">
+              <CardContent className="space-y-3 p-4">
+                {graded && <VerdictBox graded={graded} />}
+                {nextButton}
+              </CardContent>
+            </Card>
+          )}
+        </ItemTransition>
+      </div>
+    );
+  }
 
   const showAnswer = phase === "graded" || revealed;
 
   return (
+    <div className="space-y-3">
+    {index === 0 && phase === "recall" && selector}
     <ItemTransition itemKey={index}>
     <Card className="rounded-bubble">
       <CardHeader className="space-y-3">
@@ -279,22 +346,7 @@ export function SrsReview({ runtime, onChange }: Props) {
           </FlipReveal>
         )}
 
-        {graded && (
-          <div className={`rounded-bubble border p-3 text-sm ${verdictStyle}`}>
-            <p className="font-medium">
-              {graded.verdict === "near"
-                ? "Almost exact: it counts, but mind the form."
-                : graded.correct
-                  ? "You've got it."
-                  : "Not yet. The highlighted words are the ones you missed."}
-            </p>
-            <p className="text-muted-foreground">
-              {graded.correct
-                ? `Back in ${graded.inDays} day(s).`
-                : "Back tomorrow in box 1."}
-            </p>
-          </div>
-        )}
+        {graded && <VerdictBox graded={graded} />}
 
         <div className="flex flex-wrap gap-2">
           {phase === "recall" && typedMode && !revealed && (
@@ -323,15 +375,11 @@ export function SrsReview({ runtime, onChange }: Props) {
               I don't remember
             </Button>
           )}
-          {phase === "graded" && (
-            <Button title={index + 1 < cards.length ? "Pasa a la siguiente tarjeta" : "Muestra el resumen del repaso"} onClick={next} className="gap-1">
-              {index + 1 < cards.length ? "Next" : "See summary"}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          )}
+          {phase === "graded" && nextButton}
         </div>
       </CardContent>
     </Card>
     </ItemTransition>
+    </div>
   );
 }

@@ -21,6 +21,7 @@ export function createNativeEngineLoader(bridge: () => NativeTtsBridge | undefin
     const generate = api.ttsNativeGenerate.bind(api);
     await api.ttsNativeWarm();
     return {
+      backend: "native",
       async generate(text, { voice }) {
         const { wav, duration } = await generate(text, voice);
         return { duration, toBlob: () => new Blob([new Uint8Array(wav)], { type: "audio/wav" }) };

@@ -18,6 +18,7 @@ import { planSpeechChunks } from "@/domain/tts/speech-chunks";
 import type { WordTiming } from "@/domain/ai/llm-port";
 import type { VoiceGender } from "@/domain/chat-settings/chat-settings";
 import { hasSpeakableContent } from "@/domain/tts/speakable-text";
+import { reportLiveFailure } from "@/interface/live-failure-bus";
 import {
   buildKaraokeScript,
   sentenceIndexAtWord,
@@ -119,6 +120,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
         setPlaying(true);
         await player.playFrom(startTime, stopAt);
       } catch {
+        reportLiveFailure({ kind: "voice-fallback" });
         playWebSpeech(); // sin voz neuronal (o aún descargando Kokoro) → Web Speech
       } finally {
         setLoading(false);

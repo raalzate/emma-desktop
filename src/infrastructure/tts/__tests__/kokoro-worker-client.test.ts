@@ -53,6 +53,11 @@ describe("createWorkerEngineLoader", () => {
     expect(workers[0].terminated).toBe(true);
   });
 
+  it("el motor del worker declara backend wasm (FR-025)", async () => {
+    const { load, workers } = setup();
+    expect((await ready(load, workers)).backend).toBe("wasm");
+  });
+
   it("generate manda texto y voz, y devuelve duración y blob del audio", async () => {
     const { load, workers } = setup();
     const engine = await ready(load, workers);
