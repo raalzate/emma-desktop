@@ -7,6 +7,7 @@
  * sin que cambiara una línea del repo (el mismo commit había pasado en el PR).
  * La voz corre en CPU: el proveedor CUDA nunca se usa. Saltarlo a nivel de
  * workflow cubre cada job y cada paso de instalación, también los que vengan.
+ * Los saltos se normalizan: en Windows el checkout trae CRLF.
  */
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
@@ -19,7 +20,7 @@ const WORKFLOWS = path.join(RAIZ, ".github/workflows");
 const conInstalacion = fs
   .readdirSync(WORKFLOWS)
   .filter((f) => /\.ya?ml$/.test(f))
-  .map((f) => ({ nombre: f, yml: fs.readFileSync(path.join(WORKFLOWS, f), "utf8") }))
+  .map((f) => ({ nombre: f, yml: fs.readFileSync(path.join(WORKFLOWS, f), "utf8").replace(/\r\n/g, "\n") }))
   .filter(({ yml }) => /pnpm install/.test(yml));
 
 describe("workflows que instalan dependencias", () => {
