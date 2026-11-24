@@ -22,6 +22,11 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+# onnxruntime-node baja en Linux x64 los binarios CUDA desde GitHub; la voz
+# corre en CPU y ese asset puede desaparecer (404 el 2026-11-24, gotcha).
+env:
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   build:
     name: Package (${{ matrix.os }})
