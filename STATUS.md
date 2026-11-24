@@ -4,13 +4,15 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-11-24 (macOS local; CI de `main` rojo por el 404 de los
-  binarios CUDA de onnxruntime-node, corregido saltando esa descarga en los workflows)
+- **Fecha del último gate completo:** 2026-11-24 (macOS local y CI de `main` en `1cf780c`, #321)
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.10.0 (2026-10-24, marcada Latest, 3 instaladores; build con smoke
-  de app y de voz nativa verdes en las tres plataformas): nube desde la puerta de IA
+- **Último release publicado:** v0.11.0 (2026-11-24, marcada Latest, 3 instaladores; build verde
+  en las tres plataformas): repaso con audio (Text/Audio/Mixed), chequeo de setup antes del
+  onboarding y gestión del audio guardado (#320). CI sin la descarga CUDA de onnxruntime-node
+  (#321: el asset de GitHub daba 404). Notas en `docs/releases/0.11.0.md`.
+- **v0.10.0 (2026-10-24, publicada):** nube desde la puerta de IA
   para equipos modestos (#261), voz nativa con onnxruntime-node en un utilityProcess (#269:
   0,68 s contra 9,6 s en WASM; verificada en la app empaquetada en Windows y macOS) y gate
   verde en Windows (#260). Notas en `docs/releases/0.10.0.md`.
