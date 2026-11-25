@@ -10,6 +10,8 @@ import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { modelFor, providerInfo, REMOTE_PROVIDERS } from "@/lib/ai/remote-settings";
 import type { AiMode, RemoteProvider } from "@/lib/ai/remote-settings";
 import { LabeledSelect } from "./labeled-select";
@@ -27,7 +29,9 @@ const PROVIDER_LABELS = Object.fromEntries(REMOTE_PROVIDERS.map((p) => [p.id, p.
 export function RemoteAiConfig() {
   const r = useRemoteAi();
   const provider = providerInfo(r.settings.provider);
-  const showRemote = r.settings.mode !== "local";
+  // Con «respuestas en la nube» el proveedor y la llave hacen falta aunque el
+  // modo sea local (#348).
+  const showRemote = r.settings.mode !== "local" || r.settings.replyInCloud;
 
   return (
     <Card>
@@ -44,6 +48,24 @@ export function RemoteAiConfig() {
           options={MODE_OPTIONS} labels={MODE_LABELS}
           onChange={(v) => r.setMode(v as AiMode)}
         />
+
+        {r.settings.mode !== "remote" && (
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="ai-reply-cloud"
+              checked={r.settings.replyInCloud}
+              onCheckedChange={(v) => r.setReplyInCloud(v === true)}
+              title="Envía a la nube sólo los turnos de la práctica (tu mensaje y la conversación de la escena) para que Emma responda más rápido; la gramática, las sugerencias, las lecciones y la voz siguen en tu equipo"
+            />
+            <div className="space-y-1">
+              <Label htmlFor="ai-reply-cloud">Conversation replies in the cloud</Label>
+              <p className="text-sm text-muted-foreground">
+                Faster practice on slower computers. Only the scene conversation is sent;
+                everything else stays on this device. If the cloud fails, EMMA answers locally.
+              </p>
+            </div>
+          </div>
+        )}
 
         {showRemote && (
           <>

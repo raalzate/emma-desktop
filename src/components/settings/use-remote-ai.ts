@@ -32,6 +32,8 @@ export function useRemoteAi() {
 
   const setMode = (mode: AiMode) => persist({ ...settings, mode });
   const setProvider = (provider: RemoteProvider) => persist({ ...settings, provider });
+  // #348: sólo el turno de práctica a la nube; lo demás sigue local.
+  const setReplyInCloud = (replyInCloud: boolean) => persist({ ...settings, replyInCloud });
   const setModel = (model: string) =>
     persist({ ...settings, models: { ...settings.models, [settings.provider]: model } });
 
@@ -50,6 +52,6 @@ export function useRemoteAi() {
 
   return {
     available: !!api, settings, keys,
-    setMode, setProvider, setModel, saveKey, deleteKey,
+    setMode, setProvider, setModel, setReplyInCloud, saveKey, deleteKey,
   };
 }

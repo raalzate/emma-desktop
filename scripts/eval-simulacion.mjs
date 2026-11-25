@@ -14,6 +14,7 @@
  *                                                            # su store: las escenas se guardan ahí!)
  *   opciones: --port 9333 · --only daily_standup:correct,coffee_break · --limit 4
  *             --label "línea base" · --out .eval · --strict (exit 1 si un SC no pasa)
+ *             --reply-in-cloud (turno de práctica en la nube, #348)
  *
  * Lee la traza `__emmaTrace` (src/lib/ai/llm-trace.ts) para contar las llamadas
  * del camino crítico de cada turno. Todo queda en el equipo.
@@ -43,6 +44,8 @@ const LIMIT = Number(arg("limit", 0));
 const ONLY = arg("only", "");
 const STRICT = Boolean(arg("strict", false));
 const LAUNCH = Boolean(arg("launch", false));
+/** #348: mide con «respuestas en la nube» (usa la llave guardada del proveedor). */
+const REPLY_IN_CLOUD = Boolean(arg("reply-in-cloud", false));
 
 const NO_THROTTLE = [
   "--disable-renderer-backgrounding",
@@ -246,6 +249,13 @@ async function main() {
     throw new Error(`no hay app con CDP en :${PORT}. Usá --launch o abrí Electron con --remote-debugging-port=${PORT}.`);
   }
   const page = await connect();
+  // El ajuste vive en el localStorage del renderer: se fija explícito en cada
+  // corrida para que la medición diga qué se midió.
+  await page.evaluate(`
+    const k = "ai_remote_settings";
+    const cur = JSON.parse(localStorage.getItem(k) || "{}");
+    localStorage.setItem(k, JSON.stringify({ ...cur, replyInCloud: ${REPLY_IN_CLOUD} }));
+    return 1;`);
   const conversations = [];
   for (const { scenario, profile } of plan()) {
     process.stdout.write(`▶ ${scenario}:${profile} … `);
@@ -272,7 +282,7 @@ async function main() {
   page.close();
   const summary = summarize(conversations);
   const date = new Date().toISOString();
-  const md = toMarkdown(summary, { label: LABEL, date: date.slice(0, 16).replace("T", " "), engine: "Gemma local (dev)" });
+  const md = toMarkdown(summary, { label: LABEL, date: date.slice(0, 16).replace("T", " "), engine: REPLY_IN_CLOUD ? "turno en la nube + resto local (dev)" : "Gemma local (dev)" });
   fs.mkdirSync(OUT, { recursive: true });
   const stamp = date.replace(/[:.]/g, "-");
   fs.writeFileSync(path.join(OUT, `simulacion-${stamp}.json`), JSON.stringify({ label: LABEL, date, summary, conversations }, null, 2));
