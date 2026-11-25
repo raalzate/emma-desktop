@@ -69,3 +69,21 @@ describe("buildImmersiveBriefing", () => {
     expect(r.narrative).toBeNull();
   });
 });
+
+describe("narrativa en segundo plano (T14 de #323)", () => {
+  it("respeta la prioridad pedida para no frenar el kickoff", async () => {
+    const { buildImmersiveBriefing } = await import("../build-scene-briefing-use-case");
+    const seen: (string | undefined)[] = [];
+    const llm = async (a: { priority?: string }) => {
+      seen.push(a.priority);
+      return "You walk into the standup.";
+    };
+    await buildImmersiveBriefing({
+      llm,
+      scenario: { scenarioType: "daily_standup", title: "Daily Standup", description: "d", emmaRole: "Scrum Master" } as never,
+      situation: { title: "t", framingDescription: "f" } as never,
+      priority: "background",
+    });
+    expect(seen).toEqual(["background"]);
+  });
+});

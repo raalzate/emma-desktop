@@ -109,6 +109,8 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
         completed: snap.completed,
         lesson: snap.lesson,
         voiceOptOut: snap.voiceOptOut,
+        sceneFacts: snap.sceneFacts,
+        situationId: snap.situationId,
         // El archivado lo decide la promoción: un guardado del panel no debe borrarlo.
         archived: history.list.find((c) => c.id === sessionId)?.archived,
         createdAt: createdAt.current,

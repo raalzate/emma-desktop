@@ -8,6 +8,8 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { createEmmaRuntime, type EmmaRuntime } from "./emma-runtime";
+import { prewarmLocalModel } from "@/lib/ai/prewarm";
+import { loadAiSettings } from "@/lib/ai/remote-settings";
 import { loadProfile } from "@/infrastructure/persistence/profile-repository";
 import { loadChatSettings } from "@/infrastructure/persistence/chat-settings-repository";
 import type { UserProfile } from "@/domain/profile/user-profile";
@@ -40,6 +42,9 @@ export function EmmaProvider({ children }: { children: ReactNode }) {
       setProfile(p);
       setSettingsState(s);
       setReady(true);
+      // T16 de #323: carga el modelo local en segundo plano mientras el
+      // aprendiz mira el mapa (la primera escena del día ya no lo espera).
+      void prewarmLocalModel(rt.llm, loadAiSettings().mode);
     })();
     return () => {
       alive = false;

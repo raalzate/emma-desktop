@@ -80,3 +80,43 @@ describe("renderSceneMemory", () => {
     expect(renderSceneMemory({ entities: [], openQuestion: null })).toBe("");
   });
 });
+
+describe("memoria sin empujar a re-preguntar (T12 de #323)", () => {
+  // «You are waiting on their answer to: X» viajaba justo cuando el mensaje
+  // nuevo ERA esa respuesta: el modelo pequeño volvía a preguntarla.
+  it("la pregunta pendiente se presenta como ya contestada por el mensaje nuevo", () => {
+    const texto = renderSceneMemory({ entities: [], openQuestion: "What did you do yesterday?" });
+    expect(texto).not.toMatch(/waiting on their answer/i);
+    expect(texto).toMatch(/new message is their answer/i);
+    expect(texto).toMatch(/do not ask it again/i);
+  });
+});
+
+describe("lo que dijo el aprendiz (T12 de #323)", () => {
+  it("guarda las afirmaciones sustantivas que ya salieron de la ventana reciente", async () => {
+    const { buildSceneMemory } = await import("../scene-memory");
+    const historia: ChatTurn[] = [
+      turno("assistant", "What did you do yesterday?"),
+      turno("user", "Yesterday I finished the login page and the Lambda integration."),
+      turno("assistant", "Nice. And today?"),
+      turno("user", "Today I will write the payment API tests."),
+      turno("assistant", "Any blockers?"),
+      turno("user", "Yes."),
+      turno("assistant", "What is it?"),
+      turno("user", "The API contract is late."),
+      turno("assistant", "Okay."),
+    ];
+    const memoria = buildSceneMemory(historia);
+    expect(memoria.learnerFacts).toEqual([
+      "Yesterday I finished the login page and the Lambda integration.",
+      "Today I will write the payment API tests.",
+    ]);
+    expect(renderSceneMemory(memoria)).toMatch(/THE LEARNER ALREADY TOLD YOU: .*login page.*payment API tests/);
+  });
+
+  it("no guarda respuestas mínimas ni repite lo que sigue en la ventana reciente", async () => {
+    const { buildSceneMemory } = await import("../scene-memory");
+    const corta: ChatTurn[] = [turno("assistant", "Hi?"), turno("user", "Hi."), turno("assistant", "Ready?")];
+    expect(buildSceneMemory(corta).learnerFacts).toEqual([]);
+  });
+});

@@ -23,6 +23,12 @@ export interface ChatConversation {
   lesson?: SessionLesson;
   /** El aprendiz declaró que no puede hablar: los turnos hablados quedan abiertos (#169). */
   voiceOptOut?: boolean;
+  /**
+   * Hechos de escena generados y situación jugada (T15 de #323): al reanudar,
+   * la persona vuelve al MISMO caso en vez del framing de otra situación.
+   */
+  sceneFacts?: string;
+  situationId?: string;
   /** Archivada al subir de nivel: solo lectura, agrupada por nivel (FR-008). */
   archived?: { level: CefrLevel; at: string };
   createdAt: number;
@@ -105,4 +111,27 @@ export function groupArchivedByLevel(conversations: ChatConversation[]): Archive
     level,
     conversations: conversations.filter((c) => c.archived?.level === level),
   })).filter((g) => g.conversations.length > 0);
+}
+
+const MAX_STORED_FACTS = 1500;
+const MAX_SITUATION_ID = 120;
+
+function boundedText(value: unknown, max: number): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  return text && text.length <= max ? text : null;
+}
+
+/**
+ * Hechos y situación guardados, validados en el borde (T15 de #323): el almacén
+ * puede traer una versión vieja o un valor corrupto; ante la duda, null y la
+ * reanudación usa el respaldo determinista.
+ */
+export function readStoredScene(
+  conversation: { sceneFacts?: unknown; situationId?: unknown } | null | undefined,
+): { sceneFacts: string | null; situationId: string | null } {
+  return {
+    sceneFacts: boundedText(conversation?.sceneFacts, MAX_STORED_FACTS),
+    situationId: boundedText(conversation?.situationId, MAX_SITUATION_ID),
+  };
 }

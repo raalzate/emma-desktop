@@ -169,9 +169,9 @@ Causa:   el motor local procesa UNA generación a la vez. `send` encolaba el che
 Regla:   toda pieza con fallback silencioso declara quién respondió (`source`) y el
   fallback se ve en la consola de dev; el juez corre primero en la cola del motor.
 Mecanismo: `src/components/chat/__tests__/juez-antes-que-gramatica.test.ts` — falla si el
-  orden se invierte o si el aviso de fallback desaparece. El juez de escena sigue la misma
-  regla: `FidelityVerdict.source` y el aviso `[escena] juez de escena no respondio` (sin tildes: `ui-en-ingles.test.ts` las lee como copy en español) los
-  fija `juez-de-escena-cableado.test.ts`. Los invariantes de conversación
+  orden se invierte o si el aviso de fallback desaparece. (El juez LLM de fidelidad de escena
+  se retiró en #323: rechazaba líneas correctas; `juez-de-escena-cableado.test.ts` fija que no
+  vuelva.) Los invariantes de conversación
   (`conversacion-invariantes.test.ts`) fijan además el piso que la red garantiza sola.
 
 ---
@@ -293,3 +293,29 @@ Causa:   en Linux x64 el postinstall de onnxruntime-node baja `onnxruntime-linux
 Regla:   todo workflow que instala dependencias declara `ONNXRUNTIME_NODE_INSTALL_CUDA: skip` en su
   `env:` global (cubre cada job, también los que se agreguen).
 Mecanismo: `scripts/__tests__/workflows-sin-cuda.test.ts`.
+
+---
+
+### GOTCHA: la simulación «se queda pensando» y re-pregunta lo ya contestado — el juez vetaba líneas buenas y las generaciones vencidas tapaban el motor
+
+Síntoma: el aprendiz contesta («Yesterday, I finished login…») y Sofía devuelve «Sorry, let me
+  put it another way — what did you do yesterday?». Turnos de 12–15 s. Sin errores en consola.
+  Reincidencia: «pierde el hilo» ya tenía `no-perder-el-hilo.test.ts` y el juez su gotcha
+  (2026-09, «muerto de hambre»), y ninguno de los dos lo frenó: probaban cada pieza con dobles,
+  no el camino real.
+Causa:   tres piezas. (1) El contrato de escena (hechos + narrativa en serie, 26–29 s) vencía su
+  tope de 25 s y caía al framing, que es la META del aprendiz en segunda persona («Lead the
+  standup…»). El juez, juzgando contra eso, marcó `wrong-role` 8/8 líneas correctas (medido en
+  vivo por CDP). (2) Dos vetos del juez escalaban a la reformulación con contexto recortado y a
+  la recuperación, que re-pregunta. (3) Los topes de reloj (`Promise.race`) del turno, del juez,
+  del observador y del onboarding descartaban el resultado pero NO cancelaban la generación: el
+  motor local (una a la vez) seguía ocupado y el reintento esperaba detrás.
+Regla:   todo tope de reloj sobre el LLM cancela la generación (AbortController + `signal`). El
+  juez es señal blanda: compra un reintento, nunca la recuperación, y nunca juzga contra el
+  framing. Antes de culpar al modelo, medir el turno con traza (tipo de llamada, duración, veredicto).
+Mecanismo: `src/lib/__tests__/tope-cancela-generacion.test.ts` — escanea `src/application` y falla
+  si un archivo pone `Promise.race`/`withTimeout` sobre `llm(` sin AbortController, `signal` y
+  `.abort()`. Además: `run-chat-turn-tope.test.ts` (el tope aborta), `no-perder-el-hilo.test.ts`
+  (sin tercer intento ni recuperación que re-pregunte), `juez-de-escena-cableado.test.ts` (sin juez
+  LLM en el turno; sólo el chequeo determinista de horas) y la prueba de aborto de `observe-turn`.
+  El juez se retiró del todo en #323 (T6): medido, rechazaba 8/9 líneas correctas.

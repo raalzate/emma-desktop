@@ -14,11 +14,12 @@ import type { LlmGenerate } from "@/domain/ai/llm-port";
 import { capHistory, type ChatTurn } from "@/domain/chat/simulation-session";
 import { layerHistory } from "@/domain/chat/history-layers";
 import { buildSceneMemory, renderSceneMemory } from "@/domain/chat/scene-memory";
-import { buildGroundedRecovery } from "@/domain/chat/scene-recovery";
+import { neutralContinuation } from "@/domain/chat/scene-recovery";
 import { sanitizeReply, hasNonLatinScript } from "@/domain/chat/sanitize-reply";
 import { hasIdentityLeak, removeIdentityLeak } from "@/domain/chat/identity-guard";
 import { isGreeting, stripRepeatedGreeting } from "@/domain/chat/greeting-guard";
-import { stripRepeatedOpener } from "@/domain/chat/repetition-guard";
+import { stripRepeatedOpener, stripRepeatedQuestions } from "@/domain/chat/repetition-guard";
+import { isSubstantive } from "@/domain/chat/scene-state";
 import { polishChatReply } from "@/domain/chat/chat-brevity";
 import { CHAT_MAX_TOKENS } from "@/domain/shared/token-budgets";
 
@@ -31,12 +32,24 @@ const CHAT_REPLY_MAX_SENTENCES = 3;
 
 const TIMEOUT = Symbol("timeout");
 
-/** Espera `p` con un presupuesto de reloj; resuelve al centinela TIMEOUT si se pasa. */
-function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | typeof TIMEOUT> {
+/**
+ * Corre `run` con un presupuesto de reloj; resuelve al centinela TIMEOUT si se
+ * pasa y CANCELA la generación: el motor local procesa una a la vez y una
+ * generación vencida que sigue corriendo deja al reintento esperando detrás.
+ */
+function withTimeout<T>(
+  run: (signal: AbortSignal) => Promise<T>,
+  ms: number,
+): Promise<T | typeof TIMEOUT> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const budget = new Promise<typeof TIMEOUT>((resolve) => {
-    setTimeout(() => resolve(TIMEOUT), ms);
+    timer = setTimeout(() => {
+      controller.abort();
+      resolve(TIMEOUT);
+    }, ms);
   });
-  return Promise.race([p, budget]);
+  return Promise.race([run(controller.signal), budget]).finally(() => clearTimeout(timer));
 }
 
 /**
@@ -77,27 +90,6 @@ function buildPrompt(
   );
 }
 
-/**
- * Consulta SELECTIVA del contexto para el último intento: memoria de escena +
- * la línea que hay que reformular, nada más. El prompt completo (transcripción
- * entera + directiva) es justo lo que el modelo pequeño no logra atender cuando
- * ya falló dos veces; recortarlo a lo imprescindible es lo que salva el hilo.
- */
-function buildRestatePrompt(
-  history: ChatTurn[],
-  userMessage: string,
-  lastAssistantLine: string,
-): string {
-  const memory = renderSceneMemory(buildSceneMemory(history));
-  return (
-    (memory ? `${memory}\n\n` : "") +
-    `Your last line was: "${lastAssistantLine}"\n` +
-    `The learner answered: "${userMessage}" — they did not follow you.\n\n` +
-    "Say that same thing again in simpler words and hand the turn back. " +
-    "ONE short line of spoken dialogue — nothing else."
-  );
-}
-
 export interface RunChatTurnArgs {
   llm: LlmGenerate;
   system: string;
@@ -115,12 +107,6 @@ export interface RunChatTurnArgs {
   sceneCue?: string;
   /** Verify del loop: false ⇒ la respuesta se rechaza y se reintenta. */
   validateReply?: (reply: string) => boolean;
-  /**
-   * Juez de escena asíncrono (fail-open): tras la limpieza, rechaza la línea que
-   * contradice los hechos o se sale del rol. Aplica al primer y segundo intento;
-   * la reformulación es la propia línea anterior y no se juzga.
-   */
-  judgeReply?: (reply: string) => Promise<{ inScene: boolean; issue: string | null }>;
   /**
    * Turno de REPARACIÓN: el aprendiz no siguió a la persona y la orden es decir
    * lo mismo con palabras más simples. Los guardias anti-repetición no pueden
@@ -143,6 +129,7 @@ function cleanReply(
   previousAssistantTurns: readonly string[],
   learnerGreeted: boolean,
   allowRestate = false,
+  learnerSubstantive = false,
 ): string {
   const sane = sanitizeReply(raw);
   const noLeak = removeIdentityLeak(sane);
@@ -154,23 +141,19 @@ function cleanReply(
     : stripRepeatedOpener(greetingSafe, previousAssistantTurns);
   const polished = polishChatReply(inCharacter, maxSentences);
   if (allowRestate) return polished;
+  // T13 de #323: si el aprendiz CONTESTÓ, repetir una pregunta propia reciente
+  // se lee como no escuchar: se quita esa pregunta y queda la reacción. Si no
+  // contestó («Hi.»), volver a preguntar es lo correcto.
+  const answered = learnerSubstantive ? stripRepeatedQuestions(polished, previousAssistantTurns) : polished;
+  if (!answered) return "";
   const last = previousAssistantTurns[previousAssistantTurns.length - 1]?.trim();
-  return polished === last ? "" : polished;
+  return answered === last ? "" : answered;
 }
 
 /** Nudge correctivo del reintento: la primera generación fue inválida. */
 const RETRY_NUDGE =
   "\n\nYour previous reply was rejected (meta text, repetition, or wrong language). " +
   "Reply again: ONE short, natural spoken line as your character, with different wording.";
-
-/** Nudge del reintento cuando el juez sacó la línea de la escena: nombra el problema. */
-function sceneNudge(issue: string | null): string {
-  return (
-    `\n\nYour previous reply left the scene (${issue ?? "off-scene"}). ` +
-    "Stay inside the SCENE FACTS and your role, and answer the learner's last message. " +
-    "Reply again: ONE short, natural spoken line as your character."
-  );
-}
 
 /**
  * Compuerta de streaming (BUG-001): la UI mostraba los tokens crudos ANTES del
@@ -224,80 +207,59 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
   // El aprendiz saludó en este turno: la persona puede devolver el saludo. Sin
   // esto, responder "hi, good morning" con una pregunta seca era lo normal.
   const learnerGreeted = isGreeting(args.userMessage);
-  const clean = (raw: string, allowRestate = args.allowRestate ?? false): string => {
+  const learnerSubstantive = isSubstantive(args.userMessage);
+  const clean = (raw: string): string => {
     const cleaned = cleanReply(
       raw,
       CHAT_REPLY_MAX_SENTENCES,
       alreadyGreeted,
       previousAssistant,
       learnerGreeted,
-      allowRestate,
+      args.allowRestate ?? false,
+      learnerSubstantive,
     );
     if (cleaned && args.validateReply && !args.validateReply(cleaned)) return "";
     return cleaned;
   };
-  /** Limpia y pasa por el juez; si éste rechaza devuelve "" y el problema. */
-  const accept = async (raw: string): Promise<{ text: string; issue: string | null }> => {
-    const text = clean(raw);
-    if (!text || !args.judgeReply) return { text, issue: null };
-    try {
-      const verdict = await args.judgeReply(text);
-      return verdict.inScene ? { text, issue: null } : { text: "", issue: verdict.issue };
-    } catch {
-      return { text, issue: null };
-    }
-  };
-  const generation = args.llm({
-    prompt,
-    system: args.system,
-    maxTokens: CHAT_MAX_TOKENS,
-    sessionId: args.sessionId,
-    onToken,
-  });
-  const result = await withTimeout(generation, LLM_TIMEOUT_SECONDS * 1000);
+  const result = await withTimeout(
+    (signal) =>
+      args.llm({
+        prompt,
+        system: args.system,
+        maxTokens: CHAT_MAX_TOKENS,
+        sessionId: args.sessionId,
+        onToken,
+        signal,
+        tag: "chat",
+      }),
+    LLM_TIMEOUT_SECONDS * 1000,
+  );
   // Timeout: devuelve lo parcial ya emitido, o el fallback si no hubo tokens.
   if (result === TIMEOUT) {
     if (tokens.length === 0) return FALLBACK;
     return clean(tokens.join("")) || FALLBACK;
   }
-  const first = await accept(result);
-  if (first.text) return first.text;
+  const first = clean(result);
+  if (first) return first;
   if (!result.trim()) return FALLBACK;
-  const nudge = first.issue ? sceneNudge(first.issue) : RETRY_NUDGE;
   // Loop de validación (BUG-001): la generación fue basura (meta/fuga/repetición)
   // → UN reintento con nudge correctivo, sin streaming (la burbuja espera el final).
   const retry = await withTimeout(
-    args.llm({
-      prompt: prompt + nudge,
-      system: args.system,
-      maxTokens: CHAT_MAX_TOKENS,
-      sessionId: args.sessionId,
-    }),
-    LLM_TIMEOUT_SECONDS * 1000,
-  );
-  const second = retry === TIMEOUT ? { text: "" } : await accept(retry);
-  if (second.text) return second.text;
-  const lastAssistantLine = previousAssistant[previousAssistant.length - 1] ?? "";
-  // TERCER intento con contexto recortado: reformular la propia línea. Es el
-  // pedido más fácil que existe para el modelo y mantiene el hilo; se limpia en
-  // modo restate porque repetir es, aquí, lo que se ordenó.
-  if (lastAssistantLine) {
-    const restated = await withTimeout(
+    (signal) =>
       args.llm({
-        prompt: buildRestatePrompt(args.history, args.userMessage, lastAssistantLine),
+        prompt: prompt + RETRY_NUDGE,
         system: args.system,
         maxTokens: CHAT_MAX_TOKENS,
         sessionId: args.sessionId,
+        signal,
+        tag: "chat-retry",
       }),
-      LLM_TIMEOUT_SECONDS * 1000,
-    );
-    const thirdTry = restated === TIMEOUT ? "" : clean(restated, true);
-    if (thirdTry) return thirdTry;
-  }
-  // Tres generaciones inválidas → recuperación ANCLADA al hilo: se retoma la
-  // pregunta que quedó abierta en vez de declarar amnesia.
-  return buildGroundedRecovery({
-    openQuestion: buildSceneMemory(args.history).openQuestion,
-    lastAssistantTurn: lastAssistantLine,
-  });
+    LLM_TIMEOUT_SECONDS * 1000,
+  );
+  const second = retry === TIMEOUT ? "" : clean(retry);
+  if (second) return second;
+  // Dos generaciones inválidas → continuación neutral (T7 de #323): ni tercer
+  // intento con contexto recortado ni «retomar la pregunta abierta», que
+  // re-preguntaba lo que el aprendiz acababa de contestar.
+  return neutralContinuation(previousAssistant[previousAssistant.length - 1] ?? "");
 }

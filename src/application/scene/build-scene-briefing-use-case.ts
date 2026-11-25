@@ -10,7 +10,7 @@
  * el caller usa el briefing estático.
  */
 
-import type { LlmGenerate } from "@/domain/ai/llm-port";
+import type { GenerationPriority, LlmGenerate } from "@/domain/ai/llm-port";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import { personaFor } from "@/domain/personas/protopersona";
@@ -33,6 +33,8 @@ export interface BuildBriefingArgs {
   techStack?: string;
   /** Hechos fijos del contrato de escena: la narrativa debe derivarse de ellos. */
   facts?: string;
+  /** "background" ⇒ el kickoff la interrumpe en vez de esperar detrás (T14 de #323). */
+  priority?: GenerationPriority;
 }
 
 export interface ImmersiveBriefing {
@@ -52,7 +54,7 @@ function validNarrative(raw: string): string | null {
 
 /** Genera la mini-historia inmersiva de la escena (null ⇒ usar fallback estático). */
 export async function buildImmersiveBriefing(args: BuildBriefingArgs): Promise<ImmersiveBriefing> {
-  const { llm, scenario, situation, techStack, facts } = args;
+  const { llm, scenario, situation, techStack, facts, priority } = args;
   const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
   const prompt =
     `Scene: ${scenario.title} — ${scenario.description}\n` +
@@ -63,6 +65,8 @@ export async function buildImmersiveBriefing(args: BuildBriefingArgs): Promise<I
     "Briefing (English):";
   try {
     const raw = await llm({
+      tag: "scene-briefing",
+      priority,
       prompt,
       system: BRIEFING_SYSTEM,
       maxTokens: SCENE_BRIEFING_MAX_TOKENS,

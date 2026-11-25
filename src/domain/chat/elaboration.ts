@@ -55,10 +55,23 @@ export function needsElaboration(message: string, level: CefrLevel): boolean {
  * jerga: «I'd like to know more about the specific technical challenge you are
  * facing». Mostrar la línea funciona donde prohibir no llegaba.
  */
-export function buildElaborationCue(): string {
+/**
+ * Ejemplos de línea hablada que rotan por turno (T13 de #323): con uno solo,
+ * el modelo pequeño lo copiaba literal y repetía la misma pregunta turno tras
+ * turno. El ejemplo sigue siendo necesario: sin él volvía la jerga de asistente.
+ */
+const ELABORATION_EXAMPLES: readonly string[] = [
+  "Nice, which part took you the longest?",
+  "Oh, what was the tricky bit there?",
+  "Wait, how did you end up solving that?",
+  "Nice, what's the next step there?",
+];
+
+export function buildElaborationCue(turn = 0): string {
+  const example = ELABORATION_EXAMPLES[Math.abs(turn) % ELABORATION_EXAMPLES.length];
   return (
     "They kept it short and you are curious about that same thing. Say one " +
-    'short line that asks for the concrete bit — like "Nice, which part took ' +
-    'you the longest?" Stay on their topic; do not open a new one.'
+    `short line that asks for the concrete bit — like "${example}" Stay on their ` +
+    "topic; do not open a new one. Do not repeat a question you already asked."
   );
 }

@@ -33,6 +33,18 @@ const SYSTEM =
   "EXAMPLE_ES: that sentence in Spanish\n" +
   "No markdown, no extra commentary.";
 
+/**
+ * Palabra que la tarjeta explica. En clasificación el ítem ES la palabra
+ * («shipped») y la respuesta es una categoría («/t/»): sin fijarla, el modelo
+ * pequeño explicaba el sonido como si fuera la palabra.
+ */
+function targetWord(
+  exercise: Pick<UnitExercise, "kind">,
+  item: ExerciseItem,
+): string | null {
+  return exercise.kind === "classify" ? item.stem.trim() || null : null;
+}
+
 export function explanationPrompt(args: {
   exercise: Pick<UnitExercise, "promptEs" | "kind">;
   item: ExerciseItem;
@@ -47,6 +59,13 @@ export function explanationPrompt(args: {
     ...(wrong ? [`Learner answered: ${args.given}`] : []),
     ...(args.item.noteEs ? [`Answer key note (Spanish): ${args.item.noteEs}`] : []),
   ];
+  const target = targetWord(args.exercise, args.item);
+  if (target) {
+    lines.push(
+      `Target word: ${target} — use exactly this as WORD and give the IPA of this word. ` +
+        `TRANSLATION is the Spanish meaning of "${target}", not of the sound or category.`,
+    );
+  }
   return { system: SYSTEM, prompt: lines.join("\n") };
 }
 
@@ -87,4 +106,22 @@ export function parseExplanation(raw: string): ItemExplanation | null {
   };
   const parsed = ExplanationSchema.safeParse(candidate);
   return parsed.success ? parsed.data : null;
+}
+
+/**
+ * Ancla la explicación al ítem (incidente 2026-11-24): en clasificación impone
+ * la palabra del ítem y descarta una IPA que sea sólo la categoría (/t/), para
+ * que el botón de sonido pronuncie la palabra y no un fonema suelto.
+ */
+export function anchorExplanation(
+  explanation: ItemExplanation,
+  exercise: Pick<UnitExercise, "kind">,
+  item: ExerciseItem,
+): ItemExplanation {
+  const target = targetWord(exercise, item);
+  if (!target) return explanation;
+  const categories = [item.answer, ...(item.altAnswers ?? [])].map((a) => a.trim());
+  const { ipa, ...rest } = explanation;
+  const keepIpa = ipa !== undefined && !categories.includes(ipa.trim());
+  return { ...rest, word: target, ...(keepIpa ? { ipa } : {}) };
 }

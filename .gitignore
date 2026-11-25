@@ -58,3 +58,6 @@ next-env.d.ts
 
 # Caché del modelo de voz del smoke de CI (#269)
 .cache/
+
+# Reportes del banco de simulación (scripts/eval-simulacion.mjs)
+.eval/

@@ -14,6 +14,7 @@ import type { SceneState } from "@/domain/chat/scene-state";
 import {
   buildObservationPrompt,
   fallbackObservation,
+  isConfidentObservation,
   parseObservation,
   resolveCoherence,
   type TurnObservation,
@@ -51,18 +52,27 @@ export async function observeTurn(args: ObserveTurnArgs): Promise<TurnObservatio
   // Sin checklist no hay nada que atribuir: las heurísticas bastan y no se
   // paga una llamada.
   if (!state || state.pending.length === 0) return red();
+  // Atajo (SC-002 de #323): si la red ya está segura, el juez no agrega nada.
+  const quick = red();
+  if (isConfidentObservation(quick)) return { ...quick, source: "fast-path" };
   const prompt = buildObservationPrompt({
     lastAgentLine,
     message,
     pending: state.pending.map((p) => ({ id: p.id, ask: p.ask })),
     level,
   });
+  // Vencido el tope se CANCELA la generación: el motor local corre una a la
+  // vez y un observador huérfano retrasaba la respuesta de la persona.
+  const controller = new AbortController();
   const timeout = new Promise<null>((resolve) => {
-    setTimeout(() => resolve(null), args.timeoutMs ?? OBSERVE_BUDGET_MS);
+    setTimeout(() => {
+      controller.abort();
+      resolve(null);
+    }, args.timeoutMs ?? OBSERVE_BUDGET_MS);
   });
   try {
     const raw = await Promise.race([
-      llm({ prompt, maxTokens: OBSERVE_MAX_TOKENS }),
+      llm({ prompt, maxTokens: OBSERVE_MAX_TOKENS, signal: controller.signal, tag: "observe" }),
       timeout,
     ]);
     if (raw === null) return red();

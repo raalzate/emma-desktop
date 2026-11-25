@@ -122,6 +122,7 @@ export function ChatPane({
             <MessageList
               messages={s.messages}
               typing={s.busy}
+              streamingText={s.streaming}
               persona={personaFor(scenario.scenarioType, scenario.emmaRole)}
               scenario={scenario}
               situation={s.situation}

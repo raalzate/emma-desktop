@@ -177,13 +177,22 @@ async function generateWithBudget(
   llmArgs: Parameters<LlmGenerate>[0],
   budgetMs: number,
 ): Promise<string | null> {
+  // Vencido el tope se CANCELA la generación: si no, sigue ocupando el motor
+  // local (una a la vez) y la siguiente pregunta espera detrás.
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const budget = new Promise<null>((resolve) => {
-    setTimeout(() => resolve(null), budgetMs);
+    timer = setTimeout(() => {
+      controller.abort();
+      resolve(null);
+    }, budgetMs);
   });
   try {
-    return await Promise.race([llm(llmArgs), budget]);
+    return await Promise.race([llm({ ...llmArgs, signal: controller.signal }), budget]);
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 

@@ -33,6 +33,12 @@ describe("explainExerciseItem", () => {
     await explainExerciseItem({ llm, exercise, item, given: "x" });
     expect(llm).toHaveBeenCalledTimes(1);
   });
+  it("si el modelo toma la categoría como palabra, la tarjeta muestra la palabra del ítem", async () => {
+    const llm = async () => "WORD: /t/\nIPA: /t/\nTRANSLATION: enviado\nWHY: /p/ es sorda.";
+    const out = await explainExerciseItem({ llm, exercise, item, given: "/d/" });
+    expect(out?.word).toBe("shipped");
+    expect(out?.ipa).toBeUndefined();
+  });
   it("si el modelo falla o responde basura, devuelve null", async () => {
     expect(await explainExerciseItem({ llm: async () => { throw new Error("boom"); }, exercise, item, given: "a" })).toBeNull();
     expect(await explainExerciseItem({ llm: async () => "lorem ipsum", exercise, item, given: "b" })).toBeNull();

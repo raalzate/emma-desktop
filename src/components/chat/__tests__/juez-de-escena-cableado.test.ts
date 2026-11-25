@@ -1,10 +1,11 @@
 /**
- * Cableado del juez de escena en use-chat-session (FR-006, FR-007).
+ * Sin juez LLM en el turno (T6 de #323).
  *
- * Fuente como texto (no hay render del hook en el proyecto; técnica de
- * `juez-antes-que-gramatica.test.ts`). Se fija lo que alguien podría romper al
- * refactorizar `send`: que el juez reciba los hechos y la persona, que haya
- * respaldo sin contrato y que la respuesta final reemplace el streaming.
+ * El juez de escena con el modelo pequeño rechazó 8/9 líneas correctas en vivo
+ * (wrong-role / contradicts-facts) y cada rechazo costaba otra generación: era
+ * la mayor fuente de latencia del turno sin proteger nada. Queda el chequeo
+ * determinista de horas como parte del validador (gratis, sin LLM). Fuente
+ * como texto: no hay render del hook en el proyecto.
  */
 
 import { describe, expect, it } from "vitest";
@@ -14,41 +15,33 @@ import path from "node:path";
 const root = process.cwd();
 const hook = fs.readFileSync(path.join(root, "src/components/chat/use-chat-session.ts"), "utf8");
 const runtime = fs.readFileSync(path.join(root, "src/interface/emma-runtime.ts"), "utf8");
+const turn = fs.readFileSync(path.join(root, "src/application/chat/run-chat-turn-use-case.ts"), "utf8");
 
-/** El cuerpo de la llamada a runtime.chatTurn({...}) dentro de send. */
 function chatTurnCall(): string {
   const start = hook.indexOf("await runtime.chatTurn(");
   expect(start, "send debe llamar a runtime.chatTurn").toBeGreaterThan(-1);
-  return hook.slice(start, hook.indexOf("setStreaming(\"\")", start));
+  return hook.slice(start, hook.indexOf('setStreaming("")', start));
 }
 
-describe("juez de escena en use-chat-session", () => {
-  it("chatTurn recibe judgeReply que llama al juez del runtime", () => {
-    const call = chatTurnCall();
-    expect(call).toMatch(/judgeReply:/);
-    expect(call).toMatch(/runtime\s*\.judgeSceneFidelity\(/);
+describe("turno sin juez LLM", () => {
+  it("send no pasa judgeReply y el caso de uso ya no lo acepta", () => {
+    expect(chatTurnCall()).not.toMatch(/judgeReply/);
+    expect(turn).not.toMatch(/judgeReply/);
   });
 
-  it("juzga con los hechos del contrato y, sin contrato, con el framing de la situación", () => {
-    expect(hook).toMatch(/contract\?\.facts[^;]*situation\?\.framingDescription/);
+  it("el runtime no expone el juez de escena", () => {
+    expect(runtime).not.toMatch(/judgeSceneFidelity/);
   });
 
-  it("juzga con el nombre y el rol de la persona", () => {
+  it("el validador incluye el chequeo determinista de horas contra los hechos generados", () => {
     const call = chatTurnCall();
-    expect(call).toMatch(/personaName/);
-    expect(call).toMatch(/personaRole/);
+    expect(call).toMatch(/validateReply:/);
+    expect(call).toMatch(/detectTimeDrift\(r, judgeFacts\(contract, situation\)\)/);
   });
 
   it("los hechos vigentes están en las dependencias del callback de envío", () => {
     const deps = hook.slice(hook.indexOf("[busy, messages, turnCount, runtime"));
     expect(deps.slice(0, deps.indexOf("]"))).toMatch(/contract/);
-  });
-
-  it("el fallback del juez queda observable en dev (aviso en consola)", () => {
-    const call = chatTurnCall();
-    expect(call).toMatch(/source === "fail-open"/);
-    expect(call).toMatch(/NODE_ENV !== "production"/);
-    expect(call).toMatch(/console\.warn\("\[escena\] juez de escena no respondio/);
   });
 
   it("la respuesta final reemplaza el texto en streaming", () => {
@@ -57,14 +50,7 @@ describe("juez de escena en use-chat-session", () => {
     const push = tail.indexOf('setMessages((m) => [...m, { role: "assistant", content: reply');
     const clear = tail.indexOf('setStreaming("")');
     expect(push).toBeGreaterThan(-1);
-    expect(clear, "el streaming se limpia junto con el push de la respuesta final").toBeGreaterThan(push);
+    expect(clear).toBeGreaterThan(push);
     expect(clear - push).toBeLessThan(200);
-  });
-});
-
-describe("juez de escena en el runtime", () => {
-  it("chatTurn acepta judgeReply y expone judgeSceneFidelity", () => {
-    expect(runtime).toMatch(/judgeReply\?:/);
-    expect(runtime).toMatch(/judgeSceneFidelity: \(a\) => judgeSceneFidelity\(\{ llm, \.\.\.a \}\)/);
   });
 });

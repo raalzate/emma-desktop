@@ -15,6 +15,8 @@ import { isAbortError } from "./generation-queue";
 import { getSelectedLitertModelFile } from "@/lib/litert-models";
 import { localAvailable, remoteAvailable, remoteGenerateText } from "./providers";
 import { loadAiSettings, modelFor, type AiMode } from "./remote-settings";
+import { maybeTrace } from "./llm-trace";
+import { enforcedMaxTokens } from "./output-budget";
 
 /**
  * Ejecuta un turno en el modelo local (Gemma) con streaming opcional.
@@ -35,7 +37,7 @@ async function runLocalTurn(
       { role: "user" as const, content: args.prompt },
     ],
     onToken,
-    { priority: args.priority, signal: args.signal }
+    { priority: args.priority, signal: args.signal, maxTokens: enforcedMaxTokens(args.tag, args.maxTokens) }
   );
 }
 
@@ -48,6 +50,11 @@ async function runRemoteTurn(system: string | undefined, prompt: string): Promis
 
 /** Construye un LlmGenerate que respeta el modo global de IA. */
 export function createLlmGenerate(modeOverride?: AiMode): LlmGenerate {
+  // Traza de diagnóstico (T3 de #323): en dev siempre, en producción con flag.
+  return maybeTrace(createRoutedLlm(modeOverride));
+}
+
+function createRoutedLlm(modeOverride?: AiMode): LlmGenerate {
   return async (args) => {
     const { prompt, system, onToken } = args;
     const mode = modeOverride ?? loadAiSettings().mode;

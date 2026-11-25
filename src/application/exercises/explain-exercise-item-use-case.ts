@@ -8,6 +8,7 @@
 import type { LlmGenerate } from "@/domain/ai/llm-port";
 import type { ExerciseItem, UnitExercise } from "@/domain/exercises/exercise";
 import {
+  anchorExplanation,
   explanationPrompt,
   parseExplanation,
   type ItemExplanation,
@@ -28,7 +29,8 @@ export async function explainExerciseItem(args: {
   let result: ItemExplanation | null = null;
   try {
     const raw = await args.llm({ prompt, system, maxTokens: ITEM_EXPLANATION_MAX_TOKENS });
-    result = parseExplanation(raw);
+    const parsed = parseExplanation(raw);
+    result = parsed ? anchorExplanation(parsed, args.exercise, args.item) : null;
   } catch {
     result = null;
   }

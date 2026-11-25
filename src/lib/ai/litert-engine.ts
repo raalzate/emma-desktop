@@ -11,6 +11,7 @@
  * para que webpack/Next NO intente bundlearlo (rompería) y sin CDN (#248).
  */
 
+import { outputBudgetReached } from "./output-budget";
 import type { GenerationPriority } from "@/domain/ai/llm-port";
 import { abortError, createGenerationQueue } from "./generation-queue";
 
@@ -167,7 +168,7 @@ export async function warmLitertEngine(modelFile: string): Promise<void> {
  */
 export interface LitertConversation {
   /** Con `signal`: al abortarse llama a `conversation.cancel()` y rechaza con AbortError. */
-  send(userText: string, onToken?: (chunk: string) => void, signal?: AbortSignal): Promise<string>;
+  send(userText: string, onToken?: (chunk: string) => void, signal?: AbortSignal, maxTokens?: number): Promise<string>;
   /** Libera el KV-cache de la conversación en la GPU. Idempotente. */
   close(): void;
 }
@@ -186,7 +187,7 @@ export async function createLitertConversation(
     sessionConfig: { samplerParams: LITERT_SAMPLER_PARAMS },
   });
   return {
-    async send(userText, onToken, signal) {
+    async send(userText, onToken, signal, maxTokens) {
       if (signal?.aborted) throw abortError();
       let full = "";
       const cancel = () => {
@@ -210,6 +211,12 @@ export async function createLitertConversation(
           // Cortacircuitos: si el modelo degenera en un bucle, aborta ya (no esperes
           // al tope de 60s ni sigas quemando tokens en basura repetida).
           if (isDegenerating(full)) break;
+          // Tope de salida del puerto (#323): LiteRT no lo aplica; se corta acá
+          // y se cancela para liberar la GPU en vez de seguir generando.
+          if (outputBudgetReached(full, maxTokens)) {
+            cancel();
+            break;
+          }
         }
       } catch (err) {
         // Al cancelar, el stream puede lanzar su propio error: lo normalizamos.
@@ -257,6 +264,8 @@ function isDegenerating(text: string): boolean {
 export interface LitertGenerateOptions {
   priority?: GenerationPriority;
   signal?: AbortSignal;
+  /** Tope de salida aproximado (ver output-budget). */
+  maxTokens?: number;
 }
 
 /** Una sola cola para todo el renderer: la GPU atiende de a una generación. */
@@ -278,7 +287,7 @@ export function litertGenerate(
     run: async (signal) => {
       const convo = await createLitertConversation(modelFile, system);
       try {
-        return await convo.send(lastUser, onToken, signal);
+        return await convo.send(lastUser, onToken, signal, options.maxTokens);
       } finally {
         // BUG-001: sin liberar, cada turno deja su KV-cache vivo en la GPU y el
         // motor degenera progresivamente hasta colapsar a los pocos turnos.

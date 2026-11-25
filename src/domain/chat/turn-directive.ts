@@ -14,6 +14,7 @@ import { WRAP_UP_CUE } from "./scene-closing";
 import { GREETING_CUE, REPAIR_CUE, type LearnerIntent } from "./learner-intent";
 import { sceneDirective, type SceneState } from "./scene-state";
 import { OFF_TOPIC_CUE, UNCLEAR_CUE, type Coherence } from "./turn-observation";
+import { answerFirstCue } from "./learner-question";
 
 export interface TurnDirectiveInput {
   state: SceneState | null;
@@ -40,6 +41,13 @@ export interface TurnDirectiveInput {
    * cambia nada).
    */
   coherence?: Coherence;
+  /**
+   * Pregunta directa del aprendiz en este turno (T11 de #323): se contesta
+   * ANTES de la orden de contenido. Una reparación (meta) manda sobre ella.
+   */
+  learnerQuestion?: string | null;
+  /** Número de turno: rota el ejemplo de la consigna de detalle. */
+  turn?: number;
 }
 
 /** Contexto de lo ya sabido, para no repreguntarlo aunque cambie la orden. */
@@ -51,9 +59,6 @@ function knownFacts(state: SceneState | null): string {
 
 import { buildElaborationCue } from "./elaboration";
 
-// Una sola redacción de la orden de profundizar (vivía duplicada aquí y en
-// `elaboration.ts`, y sólo se arreglaba una de las dos copias).
-const ELABORATE_CUE = buildElaborationCue();
 
 export function buildTurnDirective(input: TurnDirectiveInput): string {
   const { state, elaborate, deepen, wrapUp, recastCue, intent = "in-scene", coherence = "clear" } = input;
@@ -63,9 +68,13 @@ export function buildTurnDirective(input: TurnDirectiveInput): string {
     if (coherence === "unclear") return `${knownFacts(state)}${UNCLEAR_CUE}`;
     if (coherence === "off-topic") return `${knownFacts(state)}${OFF_TOPIC_CUE}`;
     if (wrapUp) return `${knownFacts(state)}${WRAP_UP_CUE}`;
-    if (elaborate) return `${knownFacts(state)}${ELABORATE_CUE}`;
+    // Una sola redacción de la orden (vive en `elaboration.ts`); el turno rota
+    // su ejemplo para que la persona no repita la misma pregunta (T13 de #323).
+    if (elaborate) return `${knownFacts(state)}${buildElaborationCue(input.turn ?? 0)}`;
     if (state) return sceneDirective(state, { deepen });
     return "";
   })();
-  return [order, recastCue].filter(Boolean).join(" ");
+  const answerFirst =
+    input.learnerQuestion && intent !== "meta" ? answerFirstCue(input.learnerQuestion) : "";
+  return [answerFirst, order, recastCue].filter(Boolean).join(" ");
 }
