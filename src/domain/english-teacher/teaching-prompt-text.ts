@@ -17,8 +17,10 @@ export const GRAMMAR_SYSTEM =
   "never invent examples. For EACH structure output a block of EXACTLY these 8 " +
   "lines, blocks separated by one blank line, and nothing else:\n" +
   "STRUCTURE: <short name of the structure>\n" +
-  "TENSE: <the verb tense IN SPANISH, e.g. 'presente simple', 'pasado simple', " +
-  "'presente continuo'>\n" +
+  "TENSE: <the verb tense IN SPANISH, read from the verb form: be + -ing = " +
+  "'presente continuo'; was/were + -ing = 'pasado continuo'; have/has + participle = " +
+  "'presente perfecto'; will + verb = 'futuro simple'; did = 'pasado simple'; " +
+  "do/does or a bare verb = 'presente simple'>\n" +
   "PATTERN: <a readable formula, e.g. 'Can you + (please) + base verb + object ?'>\n" +
   "EXAMPLE: <the exact fragment from the text that shows this structure>\n" +
   "AFFIRMATIVE: <the SAME idea as a statement>\n" +

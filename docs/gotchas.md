@@ -319,3 +319,19 @@ Mecanismo: `src/lib/__tests__/tope-cancela-generacion.test.ts` — escanea `src/
   (sin tercer intento ni recuperación que re-pregunte), `juez-de-escena-cableado.test.ts` (sin juez
   LLM en el turno; sólo el chequeo determinista de horas) y la prueba de aborto de `observe-turn`.
   El juez se retiró del todo en #323 (T6): medido, rechazaba 8/9 líneas correctas.
+
+---
+
+### GOTCHA: «Teach me» enseñó un tiempo verbal falso en producción — «Presente simple» sobre «You are connecting…»
+
+Síntoma: la tarjeta de gramática de «Teach me» mostró «Presente simple (tag question implied)»
+  con los ejemplos «You **are** connecting the front and back end with the API» (presente
+  continuo) y sólo «are» marcado como verbo. El aprendiz aprende una regla falsa.
+Causa:   el tiempo verbal (`TENSE:`) y la etiqueta los escribe el modelo como texto libre y nada
+  los verificaba contra la forma real del ejemplo; el chequeo del trío (#193) sólo miraba
+  signos, negación y do-support.
+Regla:   todo dato gramatical que el modelo AFIRMA y se puede verificar por forma se verifica en
+  el dominio; si contradice a la forma inequívoca, gana la detección. Sin marca clara no se adivina.
+Mecanismo: `src/domain/english-teacher/__tests__/verb-tense.test.ts` (detección y reconciliación,
+  con el caso de producción) y `teaching-parsers.test.ts` («la salida de producción … sale como
+  presente continuo»): fallan si `parseGrammarPoints` deja de pasar por `reconcileTense`.
