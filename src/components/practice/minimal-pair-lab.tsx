@@ -40,6 +40,8 @@ import { useVoiceInput } from "@/components/chat/use-voice-input";
 import { LiveWaveform } from "@/components/chat/live-waveform";
 import { AttemptButton, MaskedSentence, RevealedWord, RoundSummary, type AttemptState } from "./perception-parts";
 import { useSpanishTranslation } from "./use-spanish-translation";
+import { SpeedPicker, TranslationHint, type Speed } from "./shadowing-parts";
+import { shadowingTextFor } from "@/domain/phonetics/shadowing-texts";
 import { useEmma } from "@/interface/emma-context";
 import { isCefrLevel, INITIAL_LEVEL, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import {
@@ -181,7 +183,7 @@ function PerceptionSayIt({
  * De a una oración —un párrafo entero de un tirón no se puede dictar— y con un
  * mensaje claro cuando el dictado no oyó nada, en vez de un «0 %» mudo.
  */
-function SentenceCheck({ index, sentence }: { index: number; sentence: string }) {
+function SentenceCheck({ index, sentence, rate }: { index: number; sentence: string; rate: Speed }) {
   const { state, result, toggle } = useSpokenAttempt(sentence);
   const nothing = result ? heardNothing(result) : false;
 
@@ -192,7 +194,8 @@ function SentenceCheck({ index, sentence }: { index: number; sentence: string })
         {sentence}
       </p>
       <div className="flex flex-wrap items-center gap-2">
-        <SpeakButton text={sentence} />
+        <SpeakButton key={`${sentence}-${rate}`} text={sentence} rate={rate} />
+        <TranslationHint sentence={sentence} />
         <AttemptButton
           state={state}
           idleLabel="Record this sentence"
@@ -232,10 +235,12 @@ function SentenceCheck({ index, sentence }: { index: number; sentence: string })
 }
 
 /** Reto A: shadowing del texto del libro, oración por oración. */
-function ShadowingChallenge({ instructionsEs }: { instructionsEs: string }) {
-  const text = extractQuotedText(instructionsEs);
-  const sentences = useMemo(() => splitSentences(text), [text]);
+function ShadowingChallenge({ instructionsEs, level }: { instructionsEs: string; level: CefrLevel }) {
+  // T6 de #357: el texto del libro es para B2+; cada nivel tiene el suyo.
+  const { text, sentences } = useMemo(() => shadowingTextFor(level), [level]);
+  const bookText = sentences.join(" ") === splitSentences(extractQuotedText(instructionsEs)).join(" ");
   const [notesOpen, setNotesOpen] = useState(false);
+  const [rate, setRate] = useState<Speed>(1);
 
   return (
     <Card>
@@ -249,20 +254,23 @@ function ShadowingChallenge({ instructionsEs }: { instructionsEs: string }) {
           <li>3. Record it and see which words the dictation missed.</li>
           <li>4. Repeat the red words slowly, then record again.</li>
         </ol>
-        <div className="flex items-center gap-2">
-          <SpeakButton text={text} />
-          <span className="text-sm">Listen to the whole text</span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <SpeakButton key={`all-${rate}`} text={text} rate={rate} />
+            <span className="text-sm">Listen to the whole text</span>
+          </div>
+          <SpeedPicker value={rate} onChange={setRate} />
         </div>
         <ol className="space-y-2">
           {sentences.map((sentence, i) => (
-            <SentenceCheck key={sentence} index={i} sentence={sentence} />
+            <SentenceCheck key={sentence} index={i} sentence={sentence} rate={rate} />
           ))}
         </ol>
         <p className="text-xs text-muted-foreground">
           Golden rule: if dictation can't understand you, neither can a human. The goal is not to
           sound native, it is to be intelligible.
         </p>
-        <div>
+        {bookText && <div>
           <Button
             size="sm"
             variant="ghost"
@@ -274,7 +282,7 @@ function ShadowingChallenge({ instructionsEs }: { instructionsEs: string }) {
             Preparation notes (Spanish)
           </Button>
           {notesOpen && <p className="mt-1 text-sm text-muted-foreground">{instructionsEs}</p>}
-        </div>
+        </div>}
       </CardContent>
     </Card>
   );
@@ -447,10 +455,10 @@ function PerceptionRound({
 
 // El reto es lo que se practica; el protocolo de seis pasos es la ayuda de
 // cómo hacerlo, así que queda plegado hasta que el aprendiz lo pide.
-function ShadowingSection() {
+function ShadowingSection({ level }: { level: CefrLevel }) {
   return (
     <div className="space-y-4">
-      {CHALLENGE_A && <ShadowingChallenge instructionsEs={CHALLENGE_A.instructionsEs} />}
+      {CHALLENGE_A && <ShadowingChallenge instructionsEs={CHALLENGE_A.instructionsEs} level={level} />}
       <details className="rounded-bubble border border-border bg-card p-4 text-sm">
         <summary className="cursor-pointer font-medium" title="Los seis pasos del método de shadowing, con su tiempo">
           How shadowing works
@@ -528,7 +536,7 @@ export function MinimalPairLab({ initialContrastId }: Props = {}) {
         )}
       </TabsContent>
       <TabsContent value="shadowing">
-        <ShadowingSection />
+        <ShadowingSection level={level} />
       </TabsContent>
     </Tabs>
   );

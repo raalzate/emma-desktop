@@ -181,7 +181,8 @@ describe("laboratorio de sonidos", () => {
   });
 
   it("el reto de shadowing se graba oración por oración, con pasos y aviso cuando no se oyó nada", () => {
-    expect(src).toContain("splitSentences(text)");
+    // #357 (T6): las frases salen del texto del nivel del aprendiz.
+    expect(src).toContain("shadowingTextFor(level)");
     expect(src).toContain("Record this sentence");
     expect(src).toContain("heardNothing(result)");
     expect(src).toContain("Nothing was recognized.");
