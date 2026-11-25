@@ -449,6 +449,16 @@ function ExerciseRunner({ exercise, runtime, onExit, onChange }: RunnerProps) {
             <span>
               Item {state.index + 1} of {total}
             </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              aria-label="Exit exercise"
+              title="Sale del ejercicio sin guardar el progreso"
+              onClick={onExit}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </div>
         <Progress value={progressPct} className="h-1.5" />
@@ -520,9 +530,6 @@ function ExerciseRunner({ exercise, runtime, onExit, onChange }: RunnerProps) {
               <ArrowRight className="h-4 w-4" />
             </Button>
           )}
-          <Button variant="ghost" title="Sale del ejercicio sin guardar el progreso" onClick={onExit}>
-            Exit
-          </Button>
         </div>
       </CardContent>
     </Card>

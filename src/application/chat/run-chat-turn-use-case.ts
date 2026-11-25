@@ -31,12 +31,24 @@ const CHAT_REPLY_MAX_SENTENCES = 3;
 
 const TIMEOUT = Symbol("timeout");
 
-/** Espera `p` con un presupuesto de reloj; resuelve al centinela TIMEOUT si se pasa. */
-function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | typeof TIMEOUT> {
+/**
+ * Corre `run` con un presupuesto de reloj; resuelve al centinela TIMEOUT si se
+ * pasa y CANCELA la generación: el motor local procesa una a la vez y una
+ * generación vencida que sigue corriendo deja al reintento esperando detrás.
+ */
+function withTimeout<T>(
+  run: (signal: AbortSignal) => Promise<T>,
+  ms: number,
+): Promise<T | typeof TIMEOUT> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const budget = new Promise<typeof TIMEOUT>((resolve) => {
-    setTimeout(() => resolve(TIMEOUT), ms);
+    timer = setTimeout(() => {
+      controller.abort();
+      resolve(TIMEOUT);
+    }, ms);
   });
-  return Promise.race([p, budget]);
+  return Promise.race([run(controller.signal), budget]).finally(() => clearTimeout(timer));
 }
 
 /**
@@ -117,8 +129,8 @@ export interface RunChatTurnArgs {
   validateReply?: (reply: string) => boolean;
   /**
    * Juez de escena asíncrono (fail-open): tras la limpieza, rechaza la línea que
-   * contradice los hechos o se sale del rol. Aplica al primer y segundo intento;
-   * la reformulación es la propia línea anterior y no se juzga.
+   * contradice los hechos o se sale del rol. Señal BLANDA: sólo juzga el primer
+   * intento y su rechazo compra un reintento, nunca la recuperación.
    */
   judgeReply?: (reply: string) => Promise<{ inScene: boolean; issue: string | null }>;
   /**
@@ -236,25 +248,37 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
     if (cleaned && args.validateReply && !args.validateReply(cleaned)) return "";
     return cleaned;
   };
-  /** Limpia y pasa por el juez; si éste rechaza devuelve "" y el problema. */
-  const accept = async (raw: string): Promise<{ text: string; issue: string | null }> => {
+  /**
+   * Limpia y pasa por el juez; si éste rechaza devuelve "" y el problema, y
+   * conserva en `cleaned` la línea que SÍ pasó la limpieza: el juez es señal
+   * blanda (falsos positivos del modelo pequeño) y no puede tumbar el turno.
+   */
+  const accept = async (
+    raw: string,
+  ): Promise<{ text: string; issue: string | null; cleaned: string }> => {
     const text = clean(raw);
-    if (!text || !args.judgeReply) return { text, issue: null };
+    if (!text || !args.judgeReply) return { text, issue: null, cleaned: text };
     try {
       const verdict = await args.judgeReply(text);
-      return verdict.inScene ? { text, issue: null } : { text: "", issue: verdict.issue };
+      return verdict.inScene
+        ? { text, issue: null, cleaned: text }
+        : { text: "", issue: verdict.issue, cleaned: text };
     } catch {
-      return { text, issue: null };
+      return { text, issue: null, cleaned: text };
     }
   };
-  const generation = args.llm({
-    prompt,
-    system: args.system,
-    maxTokens: CHAT_MAX_TOKENS,
-    sessionId: args.sessionId,
-    onToken,
-  });
-  const result = await withTimeout(generation, LLM_TIMEOUT_SECONDS * 1000);
+  const result = await withTimeout(
+    (signal) =>
+      args.llm({
+        prompt,
+        system: args.system,
+        maxTokens: CHAT_MAX_TOKENS,
+        sessionId: args.sessionId,
+        onToken,
+        signal,
+      }),
+    LLM_TIMEOUT_SECONDS * 1000,
+  );
   // Timeout: devuelve lo parcial ya emitido, o el fallback si no hubo tokens.
   if (result === TIMEOUT) {
     if (tokens.length === 0) return FALLBACK;
@@ -267,28 +291,37 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
   // Loop de validación (BUG-001): la generación fue basura (meta/fuga/repetición)
   // → UN reintento con nudge correctivo, sin streaming (la burbuja espera el final).
   const retry = await withTimeout(
-    args.llm({
-      prompt: prompt + nudge,
-      system: args.system,
-      maxTokens: CHAT_MAX_TOKENS,
-      sessionId: args.sessionId,
-    }),
+    (signal) =>
+      args.llm({
+        prompt: prompt + nudge,
+        system: args.system,
+        maxTokens: CHAT_MAX_TOKENS,
+        sessionId: args.sessionId,
+        signal,
+      }),
     LLM_TIMEOUT_SECONDS * 1000,
   );
-  const second = retry === TIMEOUT ? { text: "" } : await accept(retry);
-  if (second.text) return second.text;
+  // El juez ya compró su reintento: el segundo intento NO se juzga y una línea
+  // que pasó la limpieza gana a la reformulación con contexto recortado y a la
+  // recuperación, que re-preguntan lo ya contestado («pierde el hilo»,
+  // incidente 2026-11-24: el juez del modelo pequeño da falsos positivos).
+  const second = retry === TIMEOUT ? "" : clean(retry);
+  if (second) return second;
+  if (first.cleaned) return first.cleaned;
   const lastAssistantLine = previousAssistant[previousAssistant.length - 1] ?? "";
   // TERCER intento con contexto recortado: reformular la propia línea. Es el
   // pedido más fácil que existe para el modelo y mantiene el hilo; se limpia en
   // modo restate porque repetir es, aquí, lo que se ordenó.
   if (lastAssistantLine) {
     const restated = await withTimeout(
-      args.llm({
-        prompt: buildRestatePrompt(args.history, args.userMessage, lastAssistantLine),
-        system: args.system,
-        maxTokens: CHAT_MAX_TOKENS,
-        sessionId: args.sessionId,
-      }),
+      (signal) =>
+        args.llm({
+          prompt: buildRestatePrompt(args.history, args.userMessage, lastAssistantLine),
+          system: args.system,
+          maxTokens: CHAT_MAX_TOKENS,
+          sessionId: args.sessionId,
+          signal,
+        }),
       LLM_TIMEOUT_SECONDS * 1000,
     );
     const thirdTry = restated === TIMEOUT ? "" : clean(restated, true);

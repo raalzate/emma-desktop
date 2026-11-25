@@ -38,11 +38,20 @@ export async function judgeSceneFidelity(args: JudgeSceneFidelityArgs): Promise<
   if (detectTimeDrift(reply, facts)) return TIME_DRIFT;
   const prompt = buildFidelityPrompt({ ...args, facts, reply });
   let timer: ReturnType<typeof setTimeout> | undefined;
+  // Vencido el tope se CANCELA la generación: el motor local corre una a la
+  // vez y un juez huérfano dejaba el reintento del turno esperando detrás.
+  const controller = new AbortController();
   const timeout = new Promise<null>((resolve) => {
-    timer = setTimeout(() => resolve(null), args.timeoutMs ?? FIDELITY_BUDGET_MS);
+    timer = setTimeout(() => {
+      controller.abort();
+      resolve(null);
+    }, args.timeoutMs ?? FIDELITY_BUDGET_MS);
   });
   try {
-    const raw = await Promise.race([llm({ prompt, maxTokens: FIDELITY_MAX_TOKENS }), timeout]);
+    const raw = await Promise.race([
+      llm({ prompt, maxTokens: FIDELITY_MAX_TOKENS, signal: controller.signal }),
+      timeout,
+    ]);
     return raw === null ? FAIL_OPEN : parseFidelity(raw);
   } catch {
     return FAIL_OPEN;

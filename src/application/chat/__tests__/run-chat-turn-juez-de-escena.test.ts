@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { runChatTurn } from "../run-chat-turn-use-case";
 import type { LlmGenerate } from "@/domain/ai/llm-port";
 
@@ -45,7 +45,13 @@ describe("runChatTurn con juez de escena", () => {
     expect(prompts).toHaveLength(1);
   });
 
-  it("rechazo del segundo intento: sigue a la reformulación, que no se juzga", async () => {
+  // Contrato cambiado (incidente 2026-11-24, «pierde el hilo»): el juez del
+  // modelo pequeño da falsos positivos (8/8 líneas buenas rechazadas como
+  // wrong-role medido en vivo). Dos vetos del juez escalaban a la reformulación
+  // con contexto recortado y a la recuperación «Sorry, let me put it another
+  // way», que re-pregunta lo ya contestado. El juez es señal BLANDA: compra un
+  // reintento, nunca tumba un segundo intento que pasó la limpieza.
+  it("tras un rechazo del juez, el segundo intento limpio se acepta sin juzgar ni reformular", async () => {
     const judged: string[] = [];
     const { llm, prompts } = scripted([
       "Bad line one.",
@@ -60,9 +66,23 @@ describe("runChatTurn con juez de escena", () => {
         return /Bad/.test(r) ? { inScene: false, issue: "other-scene" } : { inScene: true, issue: null };
       },
     });
-    expect(prompts).toHaveLength(3);
-    expect(judged).toEqual(["Bad line one.", "Bad line two."]);
-    expect(reply).toBe("The merge failed this morning, I think.");
+    expect(prompts).toHaveLength(2);
+    // El segundo intento no se juzga: su veredicto ya no cambiaría nada y
+    // costaba otra generación en el motor local.
+    expect(judged).toEqual(["Bad line one."]);
+    expect(reply).toBe("Bad line two.");
+  });
+
+  it("el juez nunca lleva el turno a la recuperación si hubo una línea limpia", async () => {
+    const { llm } = scripted(["Good morning, Raul! What did you work on yesterday?"]);
+    const reply = await runChatTurn({
+      ...base,
+      llm,
+      judgeReply: async () => ({ inScene: false, issue: "wrong-role" }),
+    });
+    expect(reply).not.toMatch(/put it another way/i);
+    // El resaludo lo quita la guardia de saludo: la persona ya abrió la escena.
+    expect(reply).toBe("What did you work on yesterday?");
   });
 
   it("si el juez rechaza todo y la reformulación no sirve, cae a la recuperación anclada", async () => {
@@ -82,5 +102,26 @@ describe("runChatTurn con juez de escena", () => {
     const reply = await runChatTurn({ ...base, llm });
     expect(reply).toBe("Let me teach you some grammar rules.");
     expect(prompts).toHaveLength(1);
+  });
+});
+
+describe("runChatTurn: el tope de reloj cancela la generación", () => {
+  // Incidente 2026-11-24: una generación vencida seguía ocupando el motor local
+  // (una a la vez) y el reintento esperaba detrás — «se queda pensando».
+  it("al vencer el tope aborta la generación pendiente", async () => {
+    vi.useFakeTimers();
+    try {
+      const signals: (AbortSignal | undefined)[] = [];
+      const llm: LlmGenerate = (a) => {
+        signals.push(a.signal);
+        return new Promise<string>(() => {});
+      };
+      const pending = runChatTurn({ ...base, llm });
+      await vi.advanceTimersByTimeAsync(60_001);
+      await pending;
+      expect(signals[0]?.aborted).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

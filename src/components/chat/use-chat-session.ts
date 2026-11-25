@@ -128,6 +128,19 @@ function rememberSituation(scenarioType: string, id: string): void {
   }
 }
 
+/**
+ * Hechos contra los que juzga el juez de escena: sólo los GENERADOS. El
+ * framing es la meta del aprendiz en segunda persona («Lead the standup…») y
+ * el juez, leído así, marcaba wrong-role toda línea de la persona. Si el
+ * contrato cayó al framing (timeout o reanudación) se devuelve "" y el juez
+ * queda fail-open.
+ */
+function judgeFacts(contract: SceneContract | null, situation: SituationVariant | null): string {
+  const facts = contract?.facts?.trim() ?? "";
+  if (!facts || facts === situation?.framingDescription?.trim()) return "";
+  return facts;
+}
+
 export function useChatSession(d: Deps) {
   const { runtime, profile, scenario, restore } = d;
   const level = profile.englishLevel;
@@ -418,12 +431,12 @@ export function useChatSession(d: Deps) {
             deepeningOn: deepen ? deepeningTarget(sceneState.current)?.id : undefined,
           }),
         // Juez de escena (fail-open): rechaza la línea que contradice los hechos
-        // o sale del rol; sin contrato rige el framing de la situación.
+        // o sale del rol; sin hechos generados no juzga (ver judgeFacts).
         judgeReply: (r) => {
           const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
           return runtime
             .judgeSceneFidelity({
-              facts: contract?.facts || situation?.framingDescription || "",
+              facts: judgeFacts(contract, situation),
               personaName: persona.name,
               personaRole: persona.role,
               situationTitle: situation?.title ?? "",

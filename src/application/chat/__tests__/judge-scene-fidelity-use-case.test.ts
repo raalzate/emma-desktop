@@ -55,6 +55,22 @@ describe("judgeSceneFidelity", () => {
     expect(await pending).toMatchObject({ inScene: true, source: "fail-open" });
   });
 
+  // El motor local corre UNA generación a la vez: un juez vencido que sigue
+  // generando tapa la cola y el reintento del turno espera detrás (incidente
+  // 2026-11-24, «se queda pensando»). Vencer el tope cancela la generación.
+  it("al vencer el presupuesto aborta la generación del juez", async () => {
+    vi.useFakeTimers();
+    let signal: AbortSignal | undefined;
+    const llm: LlmGenerate = (a) => {
+      signal = a.signal;
+      return new Promise<string>(() => {});
+    };
+    const pending = judgeSceneFidelity({ llm, ...base, reply: "Did the merge pass?" });
+    await vi.advanceTimersByTimeAsync(4001);
+    await pending;
+    expect(signal?.aborted).toBe(true);
+  });
+
   it("acepta sin llamar al LLM cuando no hay hechos que juzgar", async () => {
     const llm = vi.fn<LlmGenerate>(async () => '{"inScene":false,"issue":"wrong-role"}');
     const v = await judgeSceneFidelity({ llm, ...base, facts: "  ", reply: "Hello." });

@@ -46,6 +46,18 @@ describe("observeTurn — LLM juzga, código decide", () => {
     expect(obs.intent).toBe("in-scene");
   });
 
+  // Un observador vencido que sigue generando tapa la cola del motor local y
+  // la respuesta de la persona espera detrás (incidente 2026-11-24).
+  it("al vencer el presupuesto aborta la generación del observador", async () => {
+    let signal: AbortSignal | undefined;
+    const llm: LlmGenerate = (a) => {
+      signal = a.signal;
+      return new Promise<string>(() => {});
+    };
+    await observeTurn({ llm, ...base, timeoutMs: 30 });
+    expect(signal?.aborted).toBe(true);
+  });
+
   it("cae a las heurísticas si la llamada lanza", async () => {
     const llm: LlmGenerate = async () => {
       throw new Error("engine busy");

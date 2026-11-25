@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { explanationPrompt, parseExplanation } from "../item-explanation";
+import { anchorExplanation, explanationPrompt, parseExplanation } from "../item-explanation";
 import type { UnitExercise } from "../exercise";
 
 const exercise: UnitExercise = {
@@ -38,6 +38,40 @@ describe("explanationPrompt", () => {
     expect(system).toMatch(/TRANSLATION.*Spanish/);
     expect(system).toMatch(/WHY.*Spanish/);
     expect(system).toMatch(/EXAMPLE.*English/);
+  });
+});
+
+// Incidente 2026-11-24: en un ítem de clasificación («shipped» → /t/) la
+// tarjeta salía con «/t/» como palabra y «sonido /t/» como traducción. La
+// palabra que se explica es el ÍTEM; la categoría es sólo la respuesta.
+describe("palabra objetivo en ítems de clasificación", () => {
+  it("el prompt fija la palabra del ítem como WORD y pide traducir la palabra, no el sonido", () => {
+    const { prompt } = explanationPrompt({ exercise, item: exercise.items[0], given: "/t/" });
+    expect(prompt).toContain("Target word: shipped");
+    expect(prompt).toMatch(/TRANSLATION.*shipped/);
+  });
+  it("anchorExplanation impone la palabra del ítem y descarta la IPA que es sólo la categoría", () => {
+    const parsed = {
+      word: "/t/",
+      ipa: "/t/",
+      translationEs: "sonido /t/",
+      whyEs: "El verbo termina en sonido sordo.",
+    };
+    expect(anchorExplanation(parsed, exercise, exercise.items[0])).toEqual({
+      word: "shipped",
+      translationEs: "sonido /t/",
+      whyEs: "El verbo termina en sonido sordo.",
+    });
+  });
+  it("conserva la IPA cuando es la de la palabra", () => {
+    const parsed = { word: "shipped", ipa: "/ʃɪpt/", translationEs: "enviado", whyEs: "p sorda." };
+    expect(anchorExplanation(parsed, exercise, exercise.items[0])).toEqual(parsed);
+  });
+  it("fuera de clasificación no toca la explicación", () => {
+    const fill: UnitExercise = { ...exercise, kind: "fill" };
+    const parsed = { word: "deploy", ipa: "/dɪˈplɔɪ/", translationEs: "desplegar", whyEs: "verbo." };
+    expect(anchorExplanation(parsed, fill, { stem: "We ___ on Fridays.", answer: "deploy" })).toEqual(parsed);
+    expect(explanationPrompt({ exercise: fill, item: { stem: "x", answer: "deploy" }, given: "deploy" }).prompt).not.toContain("Target word");
   });
 });
 

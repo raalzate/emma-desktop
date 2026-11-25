@@ -29,8 +29,16 @@ describe("juez de escena en use-chat-session", () => {
     expect(call).toMatch(/runtime\s*\.judgeSceneFidelity\(/);
   });
 
-  it("juzga con los hechos del contrato y, sin contrato, con el framing de la situación", () => {
-    expect(hook).toMatch(/contract\?\.facts[^;]*situation\?\.framingDescription/);
+  // Contrato cambiado (incidente 2026-11-24): el framing es la META del
+  // aprendiz en segunda persona («Lead the standup…»). Juzgado contra eso, el
+  // juez marcaba wrong-role 8/8 líneas buenas de la persona. Sin hechos
+  // generados no se juzga (el juez queda fail-open), y el framing se descarta
+  // también cuando el contrato cayó a él por timeout o en una reanudación.
+  it("juzga sólo con hechos generados, nunca con el framing de la situación", () => {
+    const call = chatTurnCall();
+    expect(call).toMatch(/facts:\s*judgeFacts\(contract, situation\)/);
+    expect(call).not.toMatch(/situation\?\.framingDescription/);
+    expect(hook).toMatch(/function judgeFacts\(/);
   });
 
   it("juzga con el nombre y el rol de la persona", () => {
