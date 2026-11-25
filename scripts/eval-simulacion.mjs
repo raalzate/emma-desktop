@@ -15,6 +15,7 @@
  *   opciones: --port 9333 · --only daily_standup:correct,coffee_break · --limit 4
  *             --label "línea base" · --out .eval · --strict (exit 1 si un SC no pasa)
  *             --reply-in-cloud (turno de práctica en la nube, #348)
+ *             --prod (contra build/out; el modo que vale para /release)
  *
  * Lee la traza `__emmaTrace` (src/lib/ai/llm-trace.ts) para contar las llamadas
  * del camino crítico de cada turno. Todo queda en el equipo.
@@ -46,6 +47,13 @@ const STRICT = Boolean(arg("strict", false));
 const LAUNCH = Boolean(arg("launch", false));
 /** #348: mide con «respuestas en la nube» (usa la llave guardada del proveedor). */
 const REPLY_IN_CLOUD = Boolean(arg("reply-in-cloud", false));
+/**
+ * Contra el build de PRODUCCIÓN (app://-, requiere `pnpm build`). En dev React
+ * duplica los efectos (StrictMode): la generación de hechos de la escena corría
+ * dos veces en serie y el banco medía 15–20 s de «escena lista» que en
+ * producción son ~0–10 s. Es el modo que vale para /release.
+ */
+const PROD = Boolean(arg("prod", false));
 
 const NO_THROTTLE = [
   "--disable-renderer-backgrounding",
@@ -94,7 +102,9 @@ function isolatedStore() {
 
 const children = [];
 async function launch() {
-  if (!(await reachable("http://localhost:3000"))) {
+  if (PROD) {
+    if (!fs.existsSync(path.join(REPO_ROOT, "build", "out"))) throw new Error("falta build/out: corré `pnpm build` antes de --prod");
+  } else if (!(await reachable("http://localhost:3000"))) {
     children.push(spawn("pnpm", ["next-dev"], { cwd: REPO_ROOT, stdio: "ignore", detached: true }));
     await waitFor(() => reachable("http://localhost:3000"), 180_000, "next dev en :3000");
   }
@@ -106,7 +116,9 @@ async function launch() {
       cwd: REPO_ROOT,
       stdio: "ignore",
       detached: true,
-      env: { ...process.env, ELECTRON_RENDERER_URL: "http://localhost:3000", EMMA_DB_DIR: isolatedStore() },
+      env: PROD
+        ? { ...process.env, EMMA_FORCE_PROD: "1", EMMA_DB_DIR: isolatedStore() }
+        : { ...process.env, ELECTRON_RENDERER_URL: "http://localhost:3000", EMMA_DB_DIR: isolatedStore() },
     }),
   );
   await waitFor(() => reachable(`http://127.0.0.1:${PORT}/json/list`), 60_000, "CDP de Electron");
@@ -123,12 +135,12 @@ function cleanup() {
   }
 }
 
-const APP_ORIGIN = "http://localhost:3000";
+const APP_ORIGIN = PROD ? "app://-" : "http://localhost:3000";
 
 async function appPage() {
   try {
     const list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
-    return list.find((t) => t.type === "page" && t.url.startsWith("http"));
+    return list.find((t) => t.type === "page" && t.url.startsWith(APP_ORIGIN));
   } catch {
     return undefined;
   }
@@ -177,13 +189,22 @@ const btn=(re)=>[...document.querySelectorAll("button")].find(b=>re.test(b.inner
 const emma=()=>[...document.querySelectorAll('[data-testid="emma-bubble"]')];
 `;
 
+/**
+ * Navegación del lado cliente cuando el router de Next está disponible: en
+ * producción `location.href` recarga la app entera y vuelve a cargar el
+ * modelo en frío en cada escena, que no es lo que vive un aprendiz.
+ */
+function goto(route) {
+  return `if (window.next?.router?.push) { window.next.router.push(${JSON.stringify(route)}); } else { location.href = ${JSON.stringify(APP_ORIGIN)} + ${JSON.stringify(route)}; } return 1;`;
+}
+
 async function openScene(page, scenario) {
   // Sólo en el store aislado: las lecciones de la escena anterior bloquean la
   // siguiente («Finish your pending lessons…»). Nunca toca un store real.
   if (LAUNCH) await page.evaluate(`await window.emmaAPI.storeSet("lessonTodos", {}); return 1;`);
   // Como un aprendiz real: pasa por el mapa (donde se precalcula la escena
   // recomendada) y desde ahí abre la escena.
-  await page.evaluate(`location.href="${APP_ORIGIN}/"; return 1;`);
+  await page.evaluate(goto("/"));
   await sleep(4000);
   // El ajuste vive en el localStorage del renderer: se fija explícito en cada
   // escena (ya con el origen de la app cargado) para que la medición diga qué midió.
@@ -192,12 +213,17 @@ async function openScene(page, scenario) {
     const cur = JSON.parse(localStorage.getItem(k) || "{}");
     localStorage.setItem(k, JSON.stringify({ ...cur, replyInCloud: ${REPLY_IN_CLOUD} }));
     return 1;`);
-  await page.evaluate(`location.href="${APP_ORIGIN}/chat/?scenario=${scenario}"; return 1;`);
+  // El cronómetro de «escena lista» arranca al navegar (o al pulsar «New chat»,
+  // que reinicia la escena): antes arrancaba después de esperas fijas y
+  // subestimaba hasta ~6,5 s.
+  await page.evaluate(`globalThis.__sceneT0 = Date.now(); return 1;`);
+  await page.evaluate(goto(`/chat/?scenario=${scenario}`));
   await sleep(5000);
   return page.evaluate(`${HELPERS}
-    const fresh=btn(/^New chat$/); if(fresh){ fresh.click(); await sleep(1500); }
+    const fresh=btn(/^New chat$/); if(fresh){ globalThis.__sceneT0 = Date.now(); fresh.click(); await sleep(300); }
+    const tStart = globalThis.__sceneT0 ?? Date.now();
     const t0=performance.now();
-    while(performance.now()-t0<180000){ const intro=btn(/^Skip intro$/); if(intro) intro.click(); const b=btn(/ready, let/i); if(b){ const ms=performance.now()-t0; b.click();
+    while(performance.now()-t0<180000){ const intro=btn(/^Skip intro$/); if(intro) intro.click(); const b=btn(/ready, let/i); if(b){ const ms=Date.now()-tStart; b.click();
       const t1=performance.now(); while(performance.now()-t1<120000){ if(emma().length>=1) return {sceneReadyMs:ms, opening:emma().at(-1).dataset.text}; const i2=btn(/^Skip intro$/); if(i2) i2.click(); await sleep(200);} return {sceneReadyMs:ms, opening:null}; }
       await sleep(200); }
     return {sceneReadyMs:null, opening:null};`);
@@ -255,7 +281,15 @@ async function main() {
   if (!(await reachable(`http://127.0.0.1:${PORT}/json/list`))) {
     throw new Error(`no hay app con CDP en :${PORT}. Usá --launch o abrí Electron con --remote-debugging-port=${PORT}.`);
   }
-  const page = await connect();
+  let page = await connect();
+  if (PROD) {
+    // La traza en producción se activa con el flag local y una recarga.
+    await page.evaluate(`localStorage.setItem("emma.trace","1"); location.reload(); return 1;`);
+    page.close();
+    await sleep(8000);
+    page = await connect();
+    await sleep(15000); // modelo precalentado, como al abrir la app
+  }
   const conversations = [];
   for (const { scenario, profile } of plan()) {
     process.stdout.write(`▶ ${scenario}:${profile} … `);
@@ -282,7 +316,7 @@ async function main() {
   page.close();
   const summary = summarize(conversations);
   const date = new Date().toISOString();
-  const md = toMarkdown(summary, { label: LABEL, date: date.slice(0, 16).replace("T", " "), engine: REPLY_IN_CLOUD ? "turno en la nube + resto local (dev)" : "Gemma local (dev)" });
+  const md = toMarkdown(summary, { label: LABEL, date: date.slice(0, 16).replace("T", " "), engine: `${REPLY_IN_CLOUD ? "turno en la nube + resto local" : "Gemma local"} (${PROD ? "producción" : "dev"})` });
   fs.mkdirSync(OUT, { recursive: true });
   const stamp = date.replace(/[:.]/g, "-");
   fs.writeFileSync(path.join(OUT, `simulacion-${stamp}.json`), JSON.stringify({ label: LABEL, date, summary, conversations }, null, 2));
