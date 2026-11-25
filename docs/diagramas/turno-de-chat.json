@@ -2,8 +2,8 @@
   "vista": "BPMN · Turno de chat",
   "notacion": "bpmn",
   "proyecto": "EMMA · Conversación",
-  "revisado": "2026-10-13",
-  "resumen": "Un turno de conversación: antes de responder, un juez corto lee la intención del aprendiz; si no se entiende, la tutora le pide que lo diga de otra forma, y si se fue de tema lo reconoce y vuelve a la escena. Las sugerencias siguen al borrador mientras escribe, la respuesta se muestra sólo si su apertura es segura, un juez de escena revisa que la línea respete los hechos y el rol, y hay tres intentos antes de que la tutora retome la pregunta abierta.",
+  "revisado": "2026-11-25",
+  "resumen": "Un turno de conversación: un juicio corto lee la intención del aprendiz y la tutora arma UNA consigna (si preguntó algo, contestarlo primero). El modelo escribe la línea, que aparece en la burbuja mientras se genera; se limpia y valida, con un único reintento si no sirve y, si tampoco, una frase neutral que devuelve el turno. La gramática se revisa después de responder, sin demorar la respuesta.",
   "elementos": [
     {
       "id": "aprendiz",
@@ -93,7 +93,7 @@
       "id": "stream-burbuja",
       "nombre": "Aparece en la burbuja",
       "tipo": "Tarea",
-      "descripcion": "El aprendiz ve la respuesta formándose, lo que sostiene el ritmo de conversación.",
+      "descripcion": "El aprendiz ve la respuesta formándose en la burbuja de «escribiendo…», lo que sostiene el ritmo de conversación.",
       "codigo": "src/application/chat/run-chat-turn-use-case.ts:STREAM_HOLDBACK_CHARS"
     },
     {
@@ -107,43 +107,29 @@
       "id": "gw-valida",
       "nombre": "¿La respuesta sirve?",
       "tipo": "Compuerta Exclusiva",
-      "descripcion": "Sirve si suena a diálogo humano, en inglés, sin repetir lo ya dicho ni re-preguntar lo ya respondido.",
+      "descripcion": "Sirve si suena a diálogo humano, en inglés, sin repetir lo ya dicho, sin re-preguntar lo ya respondido y sin cambiar una hora fijada en los hechos de la escena.",
       "codigo": "src/application/chat/run-chat-turn-use-case.ts:validateReply"
     },
     {
       "id": "reintento-nudge",
       "nombre": "Pide otra versión",
       "tipo": "Tarea",
-      "descripcion": "Se le dice por qué se rechazó la anterior (si se salió de la escena, se le recuerdan los hechos y su rol) y se pide la línea de nuevo, con otras palabras. Esta vez sin mostrarla en vivo.",
+      "descripcion": "Se le dice por qué se rechazó la anterior (texto que no es diálogo, repetición o idioma equivocado) y se pide la línea de nuevo, con otras palabras. Es el único reintento.",
       "codigo": "src/application/chat/run-chat-turn-use-case.ts:RETRY_NUDGE"
     },
     {
       "id": "gw-valida2",
       "nombre": "¿Sirve el 2º intento?",
       "tipo": "Compuerta Exclusiva",
-      "descripcion": "Mismo criterio que la primera vez.",
+      "descripcion": "Mismo criterio que la primera vez. Si tampoco sirve, la tutora acusa recibo y sigue.",
       "codigo": "src/application/chat/run-chat-turn-use-case.ts:cleanReply"
     },
     {
-      "id": "reformula",
-      "nombre": "Dilo más simple",
-      "tipo": "Tarea",
-      "descripcion": "Último recurso con la consigna más fácil que existe: repetir la propia línea en palabras sencillas y devolver el turno. Acá sí se permite repetirse: es lo que se pidió.",
-      "codigo": "src/application/chat/run-chat-turn-use-case.ts:buildRestatePrompt"
-    },
-    {
-      "id": "gw-valida3",
-      "nombre": "¿Sirve el 3º intento?",
-      "tipo": "Compuerta Exclusiva",
-      "descripcion": "Acá no cuenta como falta repetir lo propio.",
-      "codigo": "src/application/chat/run-chat-turn-use-case.ts:allowRestate"
-    },
-    {
       "id": "recuperacion",
-      "nombre": "Retoma la pregunta",
+      "nombre": "Acusa recibo y sigue",
       "tipo": "Tarea",
-      "descripcion": "Tras tres intentos fallidos, la tutora vuelve sobre la pregunta que quedó abierta en vez de admitir que perdió el hilo. La escena continúa.",
-      "codigo": "src/application/chat/run-chat-turn-use-case.ts:buildGroundedRecovery"
+      "descripcion": "Si las dos versiones fallan, la tutora acusa recibo con una frase neutral y devuelve el turno: no re-pregunta lo que el aprendiz acaba de contestar ni admite que perdió el hilo.",
+      "codigo": "src/domain/chat/scene-recovery.ts:neutralContinuation"
     },
     {
       "id": "fallback",
@@ -195,18 +181,18 @@
       "codigo": "src/domain/chat/turn-directive.ts:buildTurnDirective"
     },
     {
-      "id": "juez-escena",
-      "nombre": "Juez de escena",
+      "id": "contesta-primero",
+      "nombre": "Contesta su pregunta",
       "tipo": "Tarea",
-      "descripcion": "Antes de entregar la línea se comprueba que siga dentro de la escena: que no cambie una hora o un dato fijado, que hable como su personaje y que no rompa la ficción. Si no responde a tiempo, la línea pasa; nunca frena la conversación.",
-      "codigo": "src/application/chat/judge-scene-fidelity-use-case.ts:judgeSceneFidelity"
+      "descripcion": "Si el aprendiz preguntó algo («And you?»), la consigna del turno pide responderlo primero, en personaje, y recién después seguir con la escena.",
+      "codigo": "src/domain/chat/learner-question.ts:learnerQuestionOf"
     },
     {
-      "id": "juez-escena2",
-      "nombre": "Juez de escena (2º intento)",
+      "id": "gramatica-despues",
+      "nombre": "Revisa la gramática después",
       "tipo": "Tarea",
-      "descripcion": "Mismo control sobre la segunda versión. Si también se sale de la escena, se pasa a decirlo más simple.",
-      "codigo": "src/application/chat/run-chat-turn-use-case.ts:sceneNudge"
+      "descripcion": "Con la respuesta ya entregada se revisa la línea del aprendiz: el error queda para la lección y la forma correcta se devuelve con naturalidad en el turno siguiente.",
+      "codigo": "src/components/chat/use-chat-session.ts:bufferGrammar"
     }
   ]
 }

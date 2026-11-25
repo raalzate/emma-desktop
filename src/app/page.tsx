@@ -34,7 +34,7 @@ export default function Home() {
 
   return (
     <AppShell>
-      <PathwayHome runtime={runtime} level={profile.englishLevel} />
+      <PathwayHome runtime={runtime} level={profile.englishLevel} techStack={profile.techStack} />
     </AppShell>
   );
 }

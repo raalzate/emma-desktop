@@ -15,7 +15,11 @@ function playAudio(url: string) {
 
 export function UserBubble({ text, at, audioUrl }: { text: string; at?: number; audioUrl?: string }) {
   return (
-    <div className="flex justify-end duration-300 animate-in fade-in slide-in-from-bottom-1">
+    <div
+      className="flex justify-end duration-300 animate-in fade-in slide-in-from-bottom-1"
+      data-testid="user-bubble"
+      data-text={text}
+    >
       {/* Azul primary con esquina inferior derecha 4px (FR-018); abraza el
           texto y lleva la hora dentro, estilo mensajería. */}
       <div className="w-fit max-w-[75%] whitespace-pre-wrap rounded-bubble rounded-br-[4px] bg-primary px-3 py-1.5 text-sm text-primary-foreground shadow-[0_1px_2px_rgba(31,41,51,0.08)]">

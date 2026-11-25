@@ -50,3 +50,16 @@ describe("buildRecastCue", () => {
     expect(cue).toContain("I fixed the bug yesterday");
   });
 });
+
+describe("recast diferido (T9 de #323)", () => {
+  it("con deferred la directiva habla de su línea ANTERIOR, no de la última", async () => {
+    const { buildRecastCue } = await import("../recast");
+    const cue = buildRecastCue(
+      [{ label: "word_form", original: "Yesterday I finish the login.", corrected: "Yesterday I finished the login.", turn: 1 }],
+      { deferred: true },
+    );
+    expect(cue).toMatch(/previous line/);
+    expect(cue).not.toMatch(/their last line/);
+    expect(cue).toContain("Yesterday I finished the login.");
+  });
+});

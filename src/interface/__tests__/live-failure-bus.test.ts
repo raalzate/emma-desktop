@@ -61,3 +61,43 @@ describe("watchChatTurn", () => {
     expect(await watchChatTurn(async () => FALLBACK, report)).toBe(FALLBACK);
   });
 });
+
+describe("watchChatTurn mide la latencia del turno (T18 de #323)", () => {
+  it("tras 3 turnos lentos reporta ai-slow una vez por racha", async () => {
+    const { watchChatTurn, resetTurnTimes } = await import("../live-failure-bus");
+    const { SLOW_TURN_MS } = await import("@/domain/setup/live-failure");
+    resetTurnTimes();
+    const reports: string[] = [];
+    let t = 0;
+    const now = () => t;
+    for (let i = 0; i < 3; i++) {
+      await watchChatTurn(
+        async () => {
+          t += SLOW_TURN_MS + 1000;
+          return "Sure.";
+        },
+        (f) => reports.push(f.kind),
+        now,
+      );
+    }
+    expect(reports).toEqual(["ai-slow"]);
+  });
+
+  it("turnos rápidos no reportan nada", async () => {
+    const { watchChatTurn, resetTurnTimes } = await import("../live-failure-bus");
+    resetTurnTimes();
+    const reports: string[] = [];
+    let t = 0;
+    for (let i = 0; i < 4; i++) {
+      await watchChatTurn(
+        async () => {
+          t += 2000;
+          return "Sure.";
+        },
+        (f) => reports.push(f.kind),
+        () => t,
+      );
+    }
+    expect(reports).toEqual([]);
+  });
+});

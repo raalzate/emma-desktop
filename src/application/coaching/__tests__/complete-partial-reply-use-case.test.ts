@@ -75,3 +75,17 @@ describe("completePartialReply", () => {
     ).rejects.toThrow("boom");
   });
 });
+
+describe("prioridad del autocompletado (T10 de #323)", () => {
+  // Corre mientras el aprendiz escribe: si fuera interactiva, al enviar el
+  // mensaje la respuesta de Emma esperaría detrás de ella en el motor local.
+  it("se pide en segundo plano para que la respuesta del turno la interrumpa", async () => {
+    const calls: LlmGenerateArgs[] = [];
+    const llm: LlmGenerate = async (a) => {
+      calls.push(a);
+      return "I finished the login page.";
+    };
+    await completePartialReply({ llm, context: "Emma: What did you do?", partial: "I fin" });
+    expect(calls[0].priority).toBe("background");
+  });
+});

@@ -93,6 +93,7 @@ export async function suggestReplies(args: {
   const focusHint = sessionFocusHint(args.scenarioType, args.level, args.context);
   const prompt = buildSuggestRepliesPrompt(args.context, args.level, args.draft);
   const raw = await args.llm({
+    tag: "suggest",
     prompt: focusHint ? `${prompt}\n${focusHint}` : prompt,
     system,
     maxTokens: REPLIES_MAX_TOKENS,

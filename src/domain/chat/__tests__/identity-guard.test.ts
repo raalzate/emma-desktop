@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   hasIdentityLeak,
   removeIdentityLeak,
-  IN_CHARACTER_RECOVERY,
 } from "../identity-guard";
 
 describe("identity-guard — detección de fuga de identidad de IA", () => {
@@ -34,10 +33,5 @@ describe("identity-guard — limpieza en personaje", () => {
 
   it("si toda la respuesta era fuga devuelve cadena vacía (el caller decide el fallback)", () => {
     expect(removeIdentityLeak("As an AI, I do not have that information.")).toBe("");
-  });
-
-  it("expone una línea de recuperación en personaje (no el fallback técnico)", () => {
-    expect(IN_CHARACTER_RECOVERY).not.toMatch(/\b(EMMA|AI|model)\b/i);
-    expect(IN_CHARACTER_RECOVERY.length).toBeGreaterThan(10);
   });
 });

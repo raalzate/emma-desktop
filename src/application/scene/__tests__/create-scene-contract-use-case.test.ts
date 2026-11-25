@@ -66,3 +66,29 @@ describe("createSceneContract — creador de escenario (BUG-001)", () => {
     expect(contract.narrative).toBeNull();
   });
 });
+
+describe("hechos y narrativa por separado (T14 de #323)", () => {
+  // La escena esperaba hechos + narrativa en serie (25 s medidos) antes del
+  // botón; el botón sólo necesita los hechos.
+  it("createSceneFacts genera sólo los hechos y avisa si son generados", async () => {
+    const { createSceneFacts } = await import("../create-scene-contract-use-case");
+    const { llm, calls } = scriptedLlm([
+      "Atlas checkout API, squad of 5, sprint 14\nYesterday the merge failed\nDemo today at 2 PM\nQA is blocked",
+    ]);
+    const out = await createSceneFacts({ llm, scenario, situation, priority: "background" });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].priority).toBe("background");
+    expect(calls[0].tag).toBe("scene-facts");
+    expect(out.generated).toBe(true);
+    expect(out.facts).toContain("Atlas checkout API");
+  });
+
+  it("si el LLM falla, los hechos son el framing y generated es false", async () => {
+    const { createSceneFacts } = await import("../create-scene-contract-use-case");
+    const llm: LlmGenerate = async () => {
+      throw new Error("Generation aborted");
+    };
+    const out = await createSceneFacts({ llm, scenario, situation });
+    expect(out).toEqual({ facts: situation.framingDescription, generated: false });
+  });
+});
