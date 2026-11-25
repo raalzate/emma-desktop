@@ -335,3 +335,16 @@ Regla:   todo dato gramatical que el modelo AFIRMA y se puede verificar por form
 Mecanismo: `src/domain/english-teacher/__tests__/verb-tense.test.ts` (detección y reconciliación,
   con el caso de producción) y `teaching-parsers.test.ts` («la salida de producción … sale como
   presente continuo»): fallan si `parseGrammarPoints` deja de pasar por `reconcileTense`.
+
+---
+
+### GOTCHA: el build de producción se cae en CI en `next/font` sin cambio de código
+
+Síntoma: `An error occurred in next/font. TypeError: Cannot read properties of null (reading '1')`
+  en macOS, Linux y Windows: release v0.12.0 (pasó al relanzar) y dos PR seguidos.
+Causa:   `next/font/google` descargaba las fuentes de Google en cada build; cuando Google Fonts
+  responde algo inesperado al runner, el cargador revienta. Local suele pasar (hay caché).
+Regla:   el build no depende de la red: las fuentes viven en el repo (`src/app/fonts`) y se
+  cargan con `next/font/local`.
+Mecanismo: `src/components/__tests__/fuentes-locales.test.ts` — falla si `layout.tsx` vuelve a
+  usar `next/font/google` o si falta un archivo de fuente referenciado.

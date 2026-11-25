@@ -1,32 +1,34 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, IBM_Plex_Mono, Instrument_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AppProviders } from "@/interface/app-providers";
 
 /**
  * Tipografías del rediseño «Café sereno» (issue #146):
  * display → titulares/wordmark, body → texto corrido, mono → código.
- * next/font/google descarga y auto-hospeda en build (compatible con
- * `next export`); `display: "swap"` + fallbacks del sistema evitan bloqueo
- * si la fuente tarda o falta.
+ * Las fuentes viven en el repo (`src/app/fonts`, subconjunto latino, licencia
+ * OFL): el cargador de Google Fonts las descargaba en el build y en CI se caía sin
+ * cambio de código (incidente 2026-11-25). Bricolage e Instrument son
+ * variables (un archivo para todos los pesos). `display: "swap"` + fallbacks
+ * del sistema evitan bloqueo.
  */
-const fontDisplay = Bricolage_Grotesque({
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
+const fontDisplay = localFont({
+  src: [{ path: "./fonts/bricolage-grotesque-latin.woff2", weight: "200 800", style: "normal" }],
   variable: "--font-display",
   display: "swap",
 });
 
-const fontBody = Instrument_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const fontBody = localFont({
+  src: [{ path: "./fonts/instrument-sans-latin.woff2", weight: "400 700", style: "normal" }],
   variable: "--font-body",
   display: "swap",
 });
 
-const fontMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
+const fontMono = localFont({
+  src: [
+    { path: "./fonts/ibm-plex-mono-400-latin.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/ibm-plex-mono-500-latin.woff2", weight: "500", style: "normal" },
+  ],
   variable: "--font-mono",
   display: "swap",
 });
