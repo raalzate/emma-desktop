@@ -14,6 +14,7 @@ import { WRAP_UP_CUE } from "./scene-closing";
 import { GREETING_CUE, REPAIR_CUE, type LearnerIntent } from "./learner-intent";
 import { sceneDirective, type SceneState } from "./scene-state";
 import { OFF_TOPIC_CUE, UNCLEAR_CUE, type Coherence } from "./turn-observation";
+import { answerFirstCue } from "./learner-question";
 
 export interface TurnDirectiveInput {
   state: SceneState | null;
@@ -40,6 +41,11 @@ export interface TurnDirectiveInput {
    * cambia nada).
    */
   coherence?: Coherence;
+  /**
+   * Pregunta directa del aprendiz en este turno (T11 de #323): se contesta
+   * ANTES de la orden de contenido. Una reparación (meta) manda sobre ella.
+   */
+  learnerQuestion?: string | null;
 }
 
 /** Contexto de lo ya sabido, para no repreguntarlo aunque cambie la orden. */
@@ -67,5 +73,7 @@ export function buildTurnDirective(input: TurnDirectiveInput): string {
     if (state) return sceneDirective(state, { deepen });
     return "";
   })();
-  return [order, recastCue].filter(Boolean).join(" ");
+  const answerFirst =
+    input.learnerQuestion && intent !== "meta" ? answerFirstCue(input.learnerQuestion) : "";
+  return [answerFirst, order, recastCue].filter(Boolean).join(" ");
 }

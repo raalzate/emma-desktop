@@ -116,3 +116,20 @@ describe("stripForStorage", () => {
     expect("audioId" in m).toBe(false);
   });
 });
+
+describe("hechos y situación guardados para reanudar (T15 de #323)", () => {
+  it("readStoredScene devuelve hechos y situación válidos", async () => {
+    const { readStoredScene } = await import("../chat-conversation");
+    expect(
+      readStoredScene({ sceneFacts: "Atlas API, squad of 5\nDemo at 2 PM", situationId: "daily_standup.blocked" }),
+    ).toEqual({ sceneFacts: "Atlas API, squad of 5\nDemo at 2 PM", situationId: "daily_standup.blocked" });
+  });
+
+  it("descarta lo que no es texto razonable (versión vieja o corrupta)", async () => {
+    const { readStoredScene } = await import("../chat-conversation");
+    expect(readStoredScene({ sceneFacts: 42, situationId: ["x"] })).toEqual({ sceneFacts: null, situationId: null });
+    expect(readStoredScene({ sceneFacts: "   " }).sceneFacts).toBeNull();
+    expect(readStoredScene({ sceneFacts: "x".repeat(3000) }).sceneFacts).toBeNull();
+    expect(readStoredScene(null)).toEqual({ sceneFacts: null, situationId: null });
+  });
+});

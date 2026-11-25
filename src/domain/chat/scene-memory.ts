@@ -10,6 +10,7 @@
  */
 
 import type { ChatTurn } from "./simulation-session";
+import { isSubstantive } from "./scene-state";
 
 /** Tope de entidades en el prompt: pasado esto, el bloque estorba más que ayuda. */
 const MAX_ENTITIES = 8;
@@ -35,6 +36,25 @@ export interface SceneMemory {
   entities: string[];
   /** Pregunta que la persona dejó sin responder en su último turno. */
   openQuestion: string | null;
+  /**
+   * Lo que el APRENDIZ ya contó y salió de la ventana reciente (T12 de #323):
+   * sin esto, en escenas sin checklist la persona olvidaba lo dicho hace 3 turnos.
+   */
+  learnerFacts?: string[];
+}
+
+/** Turnos recientes que viajan verbatim (igual que history-layers): no se duplican. */
+const RECENT_WINDOW = 4;
+const MAX_LEARNER_FACTS = 4;
+const MAX_FACT_CHARS = 140;
+
+/** Afirmaciones sustantivas del aprendiz anteriores a la ventana reciente. */
+export function learnerFactsOf(history: readonly ChatTurn[]): string[] {
+  return history
+    .slice(0, -RECENT_WINDOW)
+    .filter((t) => t.role === "user" && isSubstantive(t.content))
+    .map((t) => t.content.trim().slice(0, MAX_FACT_CHARS))
+    .slice(-MAX_LEARNER_FACTS);
 }
 
 /** Entidades concretas nombradas en la conversación, sin repetir y acotadas. */
@@ -68,7 +88,11 @@ export function openQuestionOf(history: readonly ChatTurn[]): string | null {
 
 /** Construye la memoria de la escena a partir del historial. */
 export function buildSceneMemory(history: readonly ChatTurn[]): SceneMemory {
-  return { entities: sceneEntities(history), openQuestion: openQuestionOf(history) };
+  return {
+    entities: sceneEntities(history),
+    openQuestion: openQuestionOf(history),
+    learnerFacts: learnerFactsOf(history),
+  };
 }
 
 /** Bloque compacto para el prompt; vacío si no hay nada que recordar. */
@@ -79,8 +103,16 @@ export function renderSceneMemory(memory: SceneMemory): string {
       `SCENE MEMORY — details already in play (keep them exactly): ${memory.entities.join(", ")}`,
     );
   }
+  if (memory.learnerFacts && memory.learnerFacts.length > 0) {
+    lines.push(`THE LEARNER ALREADY TOLD YOU: ${memory.learnerFacts.map((f) => `"${f}"`).join("; ")}`);
+  }
   if (memory.openQuestion) {
-    lines.push(`You are waiting on their answer to: "${memory.openQuestion}"`);
+    // No «waiting on their answer»: el mensaje nuevo ES la respuesta, y así
+    // redactado el modelo pequeño volvía a preguntarla (T12 de #323).
+    lines.push(
+      `Your last question was: "${memory.openQuestion}" — the new message is their answer; ` +
+        "react to it and do not ask it again.",
+    );
   }
   return lines.join("\n");
 }

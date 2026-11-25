@@ -39,6 +39,9 @@ export async function completePartialReply(args: {
 }): Promise<string> {
   const raw = await args.llm({
     tag: "complete-reply",
+    // Corre mientras el aprendiz escribe: en segundo plano, para que la
+    // respuesta del turno la interrumpa en vez de esperar detrás (T10 de #323).
+    priority: "background",
     prompt: buildCompletePartialReplyPrompt(args.context, args.partial),
     system: COMPLETE_PARTIAL_REPLY_SYSTEM_PROMPT,
     maxTokens: COMPLETION_MAX_TOKENS,

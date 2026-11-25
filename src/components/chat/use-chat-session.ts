@@ -30,6 +30,13 @@ import {
 } from "@/domain/chat/scene-state";
 import { resolveSceneClose, shouldWrapUp } from "@/domain/chat/scene-closing";
 import { buildRecastCue } from "@/domain/chat/recast";
+import { detectTimeDrift } from "@/domain/chat/scene-fidelity";
+import { learnerQuestionOf } from "@/domain/chat/learner-question";
+import { readStoredScene } from "@/domain/chat/chat-conversation";
+import { situationsFor } from "@/domain/situations/situations-catalog";
+import type { SceneFacts } from "@/application/scene/create-scene-contract-use-case";
+import { takePrefetchedScene } from "./scene-prefetch";
+import { chooseSituation, rememberSituation } from "./situation-rotation";
 import { requiresVoice } from "@/domain/chat/voice-requirement";
 import { buildTurnDirective } from "@/domain/chat/turn-directive";
 import { buildSuggestionContext } from "@/domain/coaching/suggestion-context";
@@ -53,6 +60,9 @@ export interface SessionSnapshot {
   lesson?: SessionLesson;
   /** El aprendiz usó la salida de emergencia de los turnos hablados (#169). */
   voiceOptOut?: boolean;
+  /** Hechos de escena y situación jugada: la reanudación vuelve al mismo caso (T15 de #323). */
+  sceneFacts?: string;
+  situationId?: string;
 }
 
 interface Deps {
@@ -102,32 +112,6 @@ async function openScenario(
   return { system, opening };
 }
 
-// Rotación de situaciones (BUG-001): el selector es determinista (primera
-// compatible) y siempre salía la misma variante. Se recuerdan las últimas
-// jugadas por escenario para excluirlas y VARIAR el caso.
-const RECENT_SITUATIONS_KEY = (scenarioType: string) => `emma_recent_situations_${scenarioType}`;
-const RECENT_SITUATIONS_MAX = 3;
-
-function recentSituations(scenarioType: string): string[] {
-  try {
-    return JSON.parse(localStorage.getItem(RECENT_SITUATIONS_KEY(scenarioType)) ?? "[]");
-  } catch {
-    return [];
-  }
-}
-
-function rememberSituation(scenarioType: string, id: string): void {
-  try {
-    const ring = [id, ...recentSituations(scenarioType).filter((x) => x !== id)];
-    localStorage.setItem(
-      RECENT_SITUATIONS_KEY(scenarioType),
-      JSON.stringify(ring.slice(0, RECENT_SITUATIONS_MAX)),
-    );
-  } catch {
-    /* almacenamiento no disponible: sin rotación */
-  }
-}
-
 /**
  * Hechos contra los que juzga el juez de escena: sólo los GENERADOS. El
  * framing es la meta del aprendiz en segunda persona («Lead the standup…») y
@@ -174,9 +158,9 @@ export function useChatSession(d: Deps) {
   const [sceneComplete, setSceneComplete] = useState(false);
   // Turnos extra concedidos porque la persona dejó una pregunta sin responder.
   const graceTurns = useRef(0);
-  // Cuánto se espera al corrector para poder hacer recast en el mismo turno;
-  // pasado el presupuesto la escena sigue sin él (nunca bloquea la respuesta).
-  const RECAST_BUDGET_MS = 1200;
+  // Correcciones del turno ANTERIOR, listas para el recast del siguiente (T9 de
+  // #323): la gramática ya no corre ni se espera antes de la respuesta.
+  const pendingRecast = useRef<SilentError[]>([]);
   // Ítem para el que ya se pidió un detalle (no se insiste dos veces).
   const elaborationAskedFor = useRef<string | null>(null);
   // H3/FR-004: si el turno anterior ya pidió aclaración ("unclear"), el
@@ -192,14 +176,20 @@ export function useChatSession(d: Deps) {
   useEffect(() => {
     if (restore?.messages?.length) {
       // Reanudar: rehidrata el system prompt en silencio y restaura los mensajes.
-      const situationR = selectSituation({
-        scenarioType: scenario.scenarioType,
-        level,
-        stack: profile.techStack,
-      });
+      // T15 de #323: el MISMO caso que se jugó (situación y hechos guardados);
+      // antes se tomaba la primera situación compatible y su framing.
+      const stored = readStoredScene(restore);
+      const situationR =
+        situationsFor(scenario.scenarioType).find((v) => v.id === stored.situationId) ??
+        selectSituation({
+          scenarioType: scenario.scenarioType,
+          level,
+          stack: profile.techStack,
+        });
       setSituation(situationR);
       system.current = runtime.buildSystemPrompt({
         scenario, situation: situationR, settings: d.settings, profile, level,
+        sceneFacts: stored.sceneFacts ?? undefined,
       });
       // El tuning y las categorías débiles llegan async: re-construyen el
       // prompt en cuanto están disponibles.
@@ -210,7 +200,7 @@ export function useChatSession(d: Deps) {
         .then(([personaTuning, weakErrorCategories]) => {
           system.current = runtime.buildSystemPrompt({
             scenario, situation: situationR, settings: d.settings, profile, level, personaTuning,
-            weakErrorCategories,
+            weakErrorCategories, sceneFacts: stored.sceneFacts ?? undefined,
           });
         })
         .catch(() => {});
@@ -228,8 +218,8 @@ export function useChatSession(d: Deps) {
       }
       sceneState.current = replayed;
       setSceneGoals(sceneProgress(replayed));
-      // Reanudación: el contrato determinista es el framing (sin esperar LLM).
-      setContract({ facts: situationR?.framingDescription ?? "", narrative: null });
+      // Reanudación: los hechos guardados; sin ellos, el framing (sin esperar LLM).
+      setContract({ facts: stored.sceneFacts ?? situationR?.framingDescription ?? "", narrative: null });
       return;
     }
     sceneState.current = createSceneState(scenario.scenarioType);
@@ -241,20 +231,10 @@ export function useChatSession(d: Deps) {
     setMessages([]);
     setErrors([]);
     setTurnCount(0);
-    // Variar el caso: excluye las últimas situaciones jugadas de este
-    // escenario; si el pool queda vacío, reintenta sin exclusión.
-    const sit =
-      selectSituation({
-        scenarioType: scenario.scenarioType,
-        level,
-        stack: profile.techStack,
-        exclude: recentSituations(scenario.scenarioType),
-      }) ??
-      selectSituation({
-        scenarioType: scenario.scenarioType,
-        level,
-        stack: profile.techStack,
-      });
+    // T14 de #323: el mapa pudo precalcular la situación y sus hechos; si no,
+    // se elige ahora (rotación compartida con el precálculo).
+    const pre = takePrefetchedScene(scenario.scenarioType);
+    const sit = pre?.situation ?? chooseSituation(scenario.scenarioType, level, profile.techStack);
     setSituation(sit);
     if (sit) rememberSituation(scenario.scenarioType, sit.id);
     if (!sit) {
@@ -262,19 +242,29 @@ export function useChatSession(d: Deps) {
       return;
     }
     let alive = true;
-    const fallback: SceneContract = { facts: sit.framingDescription, narrative: null };
-    const timeout = new Promise<SceneContract>((resolve) => {
+    const fallback: SceneFacts = { facts: sit.framingDescription, generated: false };
+    const timeout = new Promise<SceneFacts>((resolve) => {
       setTimeout(() => resolve(fallback), 25_000);
     });
-    void Promise.race([
-      runtime.sceneContract({ scenario, situation: sit, techStack: profile.techStack }),
-      timeout,
-    ])
-      .then((c) => {
-        if (alive) setContract(c);
+    const facts = (pre ? pre.facts : Promise.resolve(null)).then(
+      (f) => f ?? runtime.sceneFacts({ scenario, situation: sit, techStack: profile.techStack }),
+    );
+    // El botón espera SÓLO los hechos; la narrativa llega después, en segundo
+    // plano (el kickoff la interrumpe si el aprendiz ya empezó).
+    void Promise.race([facts, timeout])
+      .then((f) => {
+        if (!alive) return;
+        setContract({ facts: f.facts, narrative: null });
+        if (!f.generated) return;
+        void runtime
+          .sceneNarrative({ scenario, situation: sit, techStack: profile.techStack, facts: f.facts })
+          .then((narrative) => {
+            if (alive && narrative) setContract((c) => (c ? { ...c, narrative } : c));
+          })
+          .catch(() => {});
       })
       .catch(() => {
-        if (alive) setContract(fallback);
+        if (alive) setContract({ facts: fallback.facts, narrative: null });
       });
     return () => {
       alive = false;
@@ -363,7 +353,6 @@ export function useChatSession(d: Deps) {
         // no está corriendo y hay que mirar la cola del motor.
         console.warn("[escena] turno etiquetado por la red determinista", observation);
       }
-      const grammarCheck = bufferGrammar(clean, turn);
       const intent = observation.intent;
       const contributes = intent === "in-scene";
       // Elaboración: sólo sobre una respuesta que contesta con POCO (juicio del
@@ -395,12 +384,10 @@ export function useChatSession(d: Deps) {
       // deja de ser la vía normal (era donde se improvisaban los turnos vacíos).
       const minTurns = turnsToGradeFor(scenario.scenarioType);
       const deepen = closingTurn && turn < minTurns && turn < maxTurns;
-      // Recast en caliente: si el chequeo gramatical llega a tiempo, la persona
-      // devuelve la forma correcta en su propia línea (feedback inmediato).
-      const fresh = await Promise.race([
-        grammarCheck,
-        new Promise<SilentError[]>((r) => setTimeout(() => r([]), RECAST_BUDGET_MS)),
-      ]);
+      // Recast diferido: la corrección del turno anterior (la gramática corre
+      // DESPUÉS de cada respuesta para no ocupar el motor antes de ella).
+      const recast = pendingRecast.current;
+      pendingRecast.current = [];
       // UNA sola orden de contenido por turno (ver domain/chat/turn-directive):
       // apilarlas producía instrucciones contradictorias y respuestas vacías.
       // Si EMMA va a pedir que desarrolle, el próximo turno del aprendiz se habla.
@@ -412,7 +399,8 @@ export function useChatSession(d: Deps) {
         elaborate: askElaboration,
         deepen,
         wrapUp: shouldWrapUp(turn, maxTurns) && !deepen,
-        recastCue: buildRecastCue(fresh),
+        recastCue: buildRecastCue(recast, { deferred: true }),
+        learnerQuestion: learnerQuestionOf(clean),
       });
       const reply = await runtime.chatTurn({
         system: system.current,
@@ -426,31 +414,12 @@ export function useChatSession(d: Deps) {
         // Recibe lo que Decide ordenó: al profundizar, la pregunta sobre ESE
         // ítem cubierto es la orden, no una re-pregunta. Sin este dato el veto
         // tumbaba las dos generaciones y la escena caía en la recuperación.
+        // Más el chequeo determinista de horas contra los hechos generados (el
+        // juez LLM se retiró en T6 de #323: rechazaba líneas correctas).
         validateReply: (r) =>
           !isReaskingCovered(r, sceneState.current, {
             deepeningOn: deepen ? deepeningTarget(sceneState.current)?.id : undefined,
-          }),
-        // Juez de escena (fail-open): rechaza la línea que contradice los hechos
-        // o sale del rol; sin hechos generados no juzga (ver judgeFacts).
-        judgeReply: (r) => {
-          const persona = personaFor(scenario.scenarioType, scenario.emmaRole);
-          return runtime
-            .judgeSceneFidelity({
-              facts: judgeFacts(contract, situation),
-              personaName: persona.name,
-              personaRole: persona.role,
-              situationTitle: situation?.title ?? "",
-              reply: r,
-            })
-            .then((verdict) => {
-              if (verdict.source === "fail-open" && process.env.NODE_ENV !== "production") {
-                // Visible en la consola de dev: si esto aparece en cada turno, el
-                // juez no está corriendo (timeout o cola del motor) y no protege.
-                console.warn("[escena] juez de escena no respondio: linea aceptada sin juzgar", verdict);
-              }
-              return verdict;
-            });
-        },
+          }) && !detectTimeDrift(r, judgeFacts(contract, situation)),
         // Reparación: la orden es decir lo mismo más simple, así que los
         // guardias anti-repetición no pueden vetar la respuesta (si lo hacen,
         // el turno cae en la recuperación y la escena parece amnésica).
@@ -460,6 +429,11 @@ export function useChatSession(d: Deps) {
       setMessages((m) => [...m, { role: "assistant", content: reply, at: Date.now() }]);
       setStreaming("");
       setBusy(false);
+      // Gramática DESPUÉS de la respuesta (T9 de #323): registra los errores de
+      // la sesión y deja el recast listo para el turno siguiente.
+      void bufferGrammar(clean, turn).then((errs) => {
+        pendingRecast.current = errs;
+      });
       // Decide terminar: cierre tras completar el checklist, o presupuesto
       // agotado — salvo que la persona haya dejado una pregunta abierta, que
       // gana turnos de gracia para no expulsar al aprendiz a media frase.
@@ -489,6 +463,8 @@ export function useChatSession(d: Deps) {
       completed: sceneComplete,
       lesson: lesson ?? undefined,
       voiceOptOut,
+      sceneFacts: contract?.facts || undefined,
+      situationId: situation?.id,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, turnCount, sceneComplete, lesson, voiceOptOut]);

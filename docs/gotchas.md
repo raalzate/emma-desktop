@@ -169,9 +169,9 @@ Causa:   el motor local procesa UNA generación a la vez. `send` encolaba el che
 Regla:   toda pieza con fallback silencioso declara quién respondió (`source`) y el
   fallback se ve en la consola de dev; el juez corre primero en la cola del motor.
 Mecanismo: `src/components/chat/__tests__/juez-antes-que-gramatica.test.ts` — falla si el
-  orden se invierte o si el aviso de fallback desaparece. El juez de escena sigue la misma
-  regla: `FidelityVerdict.source` y el aviso `[escena] juez de escena no respondio` (sin tildes: `ui-en-ingles.test.ts` las lee como copy en español) los
-  fija `juez-de-escena-cableado.test.ts`. Los invariantes de conversación
+  orden se invierte o si el aviso de fallback desaparece. (El juez LLM de fidelidad de escena
+  se retiró en #323: rechazaba líneas correctas; `juez-de-escena-cableado.test.ts` fija que no
+  vuelva.) Los invariantes de conversación
   (`conversacion-invariantes.test.ts`) fijan además el piso que la red garantiza sola.
 
 ---
@@ -315,6 +315,7 @@ Regla:   todo tope de reloj sobre el LLM cancela la generación (AbortController
   framing. Antes de culpar al modelo, medir el turno con traza (tipo de llamada, duración, veredicto).
 Mecanismo: `src/lib/__tests__/tope-cancela-generacion.test.ts` — escanea `src/application` y falla
   si un archivo pone `Promise.race`/`withTimeout` sobre `llm(` sin AbortController, `signal` y
-  `.abort()`. Además: `run-chat-turn-juez-de-escena.test.ts` (el juez no lleva a la recuperación
-  y el tope aborta), `juez-de-escena-cableado.test.ts` (nunca `situation?.framingDescription`
-  como hechos del juez) y las pruebas de aborto de `judge-scene-fidelity` y `observe-turn`.
+  `.abort()`. Además: `run-chat-turn-tope.test.ts` (el tope aborta), `no-perder-el-hilo.test.ts`
+  (sin tercer intento ni recuperación que re-pregunte), `juez-de-escena-cableado.test.ts` (sin juez
+  LLM en el turno; sólo el chequeo determinista de horas) y la prueba de aborto de `observe-turn`.
+  El juez se retiró del todo en #323 (T6): medido, rechazaba 8/9 líneas correctas.

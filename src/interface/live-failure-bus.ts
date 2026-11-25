@@ -4,7 +4,7 @@
  * ventana, sin store global. Reportar es best-effort: nunca rompe el turno.
  */
 
-import type { LiveFailure } from "@/domain/setup/live-failure";
+import { isSlowConversation, type LiveFailure } from "@/domain/setup/live-failure";
 import { CHAT_FALLBACK } from "@/application/chat/run-chat-turn-use-case";
 
 export const SETUP_ISSUE = "emma:setup-issue";
@@ -39,13 +39,29 @@ function safely(report: (f: LiveFailure) => void, failure: LiveFailure): void {
  * Observa un turno de chat sin alterarlo: un error del LLM (no cancelación) o la
  * degradación al mensaje de respaldo se reportan; la respuesta o el error siguen igual.
  */
+let turnTimes: number[] = [];
+
+/** Sólo para pruebas: olvida la latencia de los turnos medidos. */
+export function resetTurnTimes(): void {
+  turnTimes = [];
+}
+
 export async function watchChatTurn(
   run: () => Promise<string>,
   report: (failure: LiveFailure) => void = reportLiveFailure,
+  now: () => number = () => performance.now(),
 ): Promise<string> {
+  const startedAt = now();
   try {
     const reply = await run();
     if (reply === CHAT_FALLBACK) safely(report, { kind: "ai-timeout" });
+    // T18 de #323: una racha de turnos lentos sugiere la nube. Se reinicia la
+    // ventana al reportar para no repetir el aviso en cada turno.
+    turnTimes = [...turnTimes, now() - startedAt].slice(-10);
+    if (isSlowConversation(turnTimes)) {
+      turnTimes = [];
+      safely(report, { kind: "ai-slow" });
+    }
     return reply;
   } catch (error) {
     if (!isAbort(error)) safely(report, { kind: "ai-error" });

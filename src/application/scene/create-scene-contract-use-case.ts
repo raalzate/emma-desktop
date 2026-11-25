@@ -7,7 +7,7 @@
  * determinista de respaldo (el botón de comenzar nunca queda bloqueado).
  */
 
-import type { LlmGenerate } from "@/domain/ai/llm-port";
+import type { GenerationPriority, LlmGenerate } from "@/domain/ai/llm-port";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { SituationVariant } from "@/domain/situations/situation-variant";
 import { hasNonLatinScript } from "@/domain/chat/sanitize-reply";
@@ -51,14 +51,27 @@ function validFacts(raw: string): string | null {
   return lines.join("\n");
 }
 
-/** Genera el contrato de escena: hechos EN (guardrail) + narrativa EN derivada. */
-export async function createSceneContract(args: CreateSceneContractArgs): Promise<SceneContract> {
+export interface SceneFacts {
+  /** Hechos fijos en inglés; el framing del catálogo si el LLM falló. */
+  facts: string;
+  /** true ⇒ los generó el LLM (el framing es la meta del aprendiz, no hechos). */
+  generated: boolean;
+}
+
+/**
+ * Sólo los hechos (T14 de #323): es lo único que el botón de comenzar necesita.
+ * La narrativa se pide aparte y no bloquea. Con `priority: "background"` la
+ * generación cede ante una interactiva (precálculo desde el mapa).
+ */
+export async function createSceneFacts(
+  args: CreateSceneContractArgs & { priority?: GenerationPriority },
+): Promise<SceneFacts> {
   const { llm, scenario, situation, techStack } = args;
-  let facts = situation.framingDescription;
-  let generated = false;
+  const fallback: SceneFacts = { facts: situation.framingDescription, generated: false };
   try {
     const raw = await llm({
       tag: "scene-facts",
+      priority: args.priority,
       prompt:
         `Scene: ${scenario.title} — ${scenario.description}\n` +
         `Situation: ${situation.title} — ${situation.framingDescription}\n` +
@@ -68,21 +81,17 @@ export async function createSceneContract(args: CreateSceneContractArgs): Promis
       maxTokens: SCENE_BRIEFING_MAX_TOKENS,
     });
     const valid = validFacts(raw);
-    if (valid) {
-      facts = valid;
-      generated = true;
-    }
+    return valid ? { facts: valid, generated: true } : fallback;
   } catch {
-    // contrato determinista de respaldo (framing) + sin narrativa
-    return { facts, narrative: null };
+    return fallback;
   }
+}
+
+/** Genera el contrato de escena: hechos EN (guardrail) + narrativa EN derivada. */
+export async function createSceneContract(args: CreateSceneContractArgs): Promise<SceneContract> {
+  const { facts, generated } = await createSceneFacts(args);
+  if (!generated) return { facts, narrative: null };
   // La narrativa se redacta DESDE los hechos: mismo contrato en ambos lados.
-  const { narrative } = await buildImmersiveBriefing({
-    llm,
-    scenario,
-    situation,
-    techStack,
-    facts: generated ? facts : undefined,
-  });
+  const { narrative } = await buildImmersiveBriefing({ ...args, facts });
   return { facts, narrative };
 }

@@ -15,12 +15,18 @@ import { isActionableCorrection, type SilentError } from "./silent-error";
  * Directiva de recast para el turno actual a partir de los errores capturados.
  * Usa la corrección REAL más reciente; cadena vacía si no hay ninguna.
  */
-export function buildRecastCue(errors: readonly SilentError[]): string {
+export function buildRecastCue(
+  errors: readonly SilentError[],
+  options: { deferred?: boolean } = {},
+): string {
   const usable = errors.filter(isActionableCorrection);
   const latest = usable[usable.length - 1];
   if (!latest) return "";
+  // Diferido (T9 de #323): la gramática corre después de la respuesta, así que
+  // la corrección llega un turno tarde y se refiere a su línea anterior.
+  const which = options.deferred ? "their previous line" : "their last line";
   return (
-    `RECAST — their last line had a slip. Work this corrected phrasing into your ` +
+    `RECAST — ${which} had a slip. Work this corrected phrasing into your ` +
     `own reply as if you were echoing their point back ("so you're …", "right, ` +
     `you …"), naturally and in character. NEVER mention grammar, never correct ` +
     `them explicitly, never switch language. Correct phrasing: "${latest.corrected.trim()}"`

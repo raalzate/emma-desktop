@@ -1,35 +1,23 @@
 /**
- * Recuperación ANCLADA al hilo (incidente: «pierde el hilo tan rápido»).
+ * Continuación neutral cuando las dos generaciones del turno salieron
+ * inválidas (T7 de #323).
  *
- * El "why": cuando todas las generaciones de un turno salían inválidas, la
- * escena devolvía una línea amnésica («I lost my train of thought — where were
- * we?») aunque la app tenía el historial completo. Al aprendiz eso se le lee
- * como que la tutora olvidó la conversación. Con la pregunta que la persona
- * dejó abierta se puede retomar EXACTAMENTE donde estaba, sin inventar nada:
- * la recuperación deja de ser un reinicio y pasa a ser una reformulación.
- * Dominio puro: sólo texto.
+ * El "why": la recuperación anterior retomaba «la pregunta abierta» («Sorry,
+ * let me put it another way — what did you do yesterday?») justo cuando el
+ * aprendiz ACABABA de contestarla: se leía como que la persona no escuchó. Y
+ * las variantes en personaje eran del standup («anything blocking you?») aunque
+ * la escena fuera otra. Una continuación neutral acusa recibo y devuelve el
+ * turno sin re-preguntar ni declarar amnesia, en cualquier escena. Dominio puro.
  */
 
-import { pickRecovery } from "./identity-guard";
+const CONTINUATIONS: readonly string[] = [
+  "Got it. Tell me a bit more about that.",
+  "Okay, I see. Go on.",
+  "Right, that makes sense. What else?",
+];
 
-/** Minúscula inicial para encajar la pregunta dentro de la frase de reparación. */
-function lowerFirst(text: string): string {
-  return text.charAt(0).toLowerCase() + text.slice(1);
-}
-
-export interface GroundedRecoveryInput {
-  /** Pregunta que la persona dejó abierta en su último turno, si la hubo. */
-  openQuestion: string | null;
-  /** Último turno de la persona: evita repetir la misma recuperación. */
-  lastAssistantTurn: string;
-}
-
-/**
- * Retoma la pregunta abierta en palabras de reparación; sin pregunta abierta
- * cae a las variantes en personaje (que ya no repiten el turno anterior).
- */
-export function buildGroundedRecovery(input: GroundedRecoveryInput): string {
-  const question = input.openQuestion?.trim();
-  if (question) return `Sorry, let me put it another way — ${lowerFirst(question)}`;
-  return pickRecovery(input.lastAssistantTurn);
+/** Continuación que NO repite el último turno de la persona. */
+export function neutralContinuation(lastAssistantTurn: string): string {
+  const last = lastAssistantTurn.trim();
+  return CONTINUATIONS.find((c) => c !== last) ?? CONTINUATIONS[0];
 }

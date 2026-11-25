@@ -3,7 +3,6 @@
  * los turnos medidos por el driver CDP y devuelven SC-001…SC-007.
  */
 import { describe, expect, it } from "vitest";
-// @ts-expect-error módulo .mjs sin tipos
 import { isRecovery, isReask, answersLearnerQuestion, percentile, summarize } from "../eval-simulacion-metricas.mjs";
 
 describe("detectores de texto", () => {

@@ -12,11 +12,13 @@
  * ningún dato de racha todavía y este rediseño no agrega lógica de dominio.
  */
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
 import { pathwayPassedCount, pathwayTotal } from "@/domain/pathway/pathway";
 import { isPathwayItemPassed } from "@/domain/pathway/pathway-item";
-import { levelLabel, nextLevel } from "@/domain/cefr/cefr-ladder";
+import { isCefrLevel, levelLabel, nextLevel } from "@/domain/cefr/cefr-ladder";
+import { prefetchScene } from "@/components/chat/scene-prefetch";
 import { canStartScenario } from "@/domain/lessons/scenario-gate";
 import { useLessonTodos } from "@/components/lessons/use-lesson-todos";
 import { useProgressData } from "./use-progress-data";
@@ -27,10 +29,25 @@ import { PathwayProgress } from "./pathway-progress";
 import { ProgressSkeleton } from "./progress-skeleton";
 import { RecommendedNext } from "./recommended-next";
 
-export function PathwayHome({ runtime, level }: { runtime: EmmaRuntime; level: string }) {
+export function PathwayHome({
+  runtime,
+  level,
+  techStack,
+}: {
+  runtime: EmmaRuntime;
+  level: string;
+  techStack?: string;
+}) {
   const router = useRouter();
   const { roadmap, recommendation, loading } = useProgressData(runtime, level);
   const { todos } = useLessonTodos();
+  // T14 de #323: mientras el aprendiz mira el mapa, el motor está ocioso; se
+  // precalculan en segundo plano los hechos de la escena recomendada.
+  const recommended = recommendation?.scenarioType;
+  useEffect(() => {
+    if (!recommended || !isCefrLevel(level)) return;
+    prefetchScene(runtime, { scenarioType: recommended, level, techStack });
+  }, [runtime, recommended, level, techStack]);
 
   const openScene = (scenarioType: string) =>
     router.push(`/chat/?scenario=${encodeURIComponent(scenarioType)}`);

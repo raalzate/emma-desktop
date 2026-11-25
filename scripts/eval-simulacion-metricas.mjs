@@ -106,7 +106,11 @@ export function summarize(conversations) {
     sc007: { p50: percentile(ready, 50), p95: percentile(ready, 95) },
   };
   const T = THRESHOLDS;
-  s.pass = {
+  return { ...s, pass: passOf(s, T) };
+}
+
+function passOf(s, T) {
+  return {
     sc001: s.sc001.p95 !== null && s.sc001.p95 <= T.sc001FirstVisibleP95Ms,
     sc002: s.sc002.p95 !== null && s.sc002.p95 <= T.sc002DoneP95Ms,
     sc003: s.sc003.max !== null && s.sc003.max <= T.sc003MaxCriticalCalls,
@@ -115,7 +119,6 @@ export function summarize(conversations) {
     sc006: s.sc006.rate >= T.sc006MinAnsweredRate,
     sc007: s.sc007.p95 !== null && s.sc007.p95 <= T.sc007SceneReadyP95Ms,
   };
-  return s;
 }
 
 /** Reporte Markdown para la issue / las notas del release. */
