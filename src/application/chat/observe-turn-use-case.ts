@@ -68,7 +68,7 @@ export async function observeTurn(args: ObserveTurnArgs): Promise<TurnObservatio
   });
   try {
     const raw = await Promise.race([
-      llm({ prompt, maxTokens: OBSERVE_MAX_TOKENS, signal: controller.signal }),
+      llm({ prompt, maxTokens: OBSERVE_MAX_TOKENS, signal: controller.signal, tag: "observe" }),
       timeout,
     ]);
     if (raw === null) return red();

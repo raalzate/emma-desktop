@@ -63,6 +63,7 @@ export async function buildImmersiveBriefing(args: BuildBriefingArgs): Promise<I
     "Briefing (English):";
   try {
     const raw = await llm({
+      tag: "scene-briefing",
       prompt,
       system: BRIEFING_SYSTEM,
       maxTokens: SCENE_BRIEFING_MAX_TOKENS,

@@ -38,6 +38,7 @@
     "eval:a1:claude": "pnpm eval:a1:build && EMMA_EVAL_BASE_URL=anthropic npx -y promptfoo@0.123.1 eval -c evals/a1/promptfooconfig.yaml --grader anthropic:messages:claude-opus-5",
     "eval:a1:selftest": "pnpm eval:a1:build && EMMA_EVAL_BASE_URL=fixture npx -y promptfoo@0.123.1 eval -c evals/a1/promptfooconfig.selftest.yaml --no-cache",
     "rebuild": "electron-rebuild",
+    "eval:simulacion": "node scripts/eval-simulacion.mjs",
     "sdd:new": "node scripts/sdd-github.mjs new",
     "sdd:tasks": "node scripts/sdd-github.mjs tasks",
     "sdd:status": "node scripts/sdd-github.mjs status",

@@ -49,7 +49,7 @@ export async function judgeSceneFidelity(args: JudgeSceneFidelityArgs): Promise<
   });
   try {
     const raw = await Promise.race([
-      llm({ prompt, maxTokens: FIDELITY_MAX_TOKENS, signal: controller.signal }),
+      llm({ prompt, maxTokens: FIDELITY_MAX_TOKENS, signal: controller.signal, tag: "judge" }),
       timeout,
     ]);
     return raw === null ? FAIL_OPEN : parseFidelity(raw);

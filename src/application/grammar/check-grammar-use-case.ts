@@ -38,7 +38,7 @@ export async function checkGrammar(args: {
   const original = args.text.trim();
   if (!original) return [];
 
-  const response = await args.llm({ prompt: original, system: GRAMMAR_SYSTEM_PROMPT });
+  const response = await args.llm({ prompt: original, system: GRAMMAR_SYSTEM_PROMPT, tag: "grammar" });
   const corrected = cleanCorrection(response);
 
   // Sin cambios que capturar: LLM dijo "OK", devolvió vacío, o texto idéntico.

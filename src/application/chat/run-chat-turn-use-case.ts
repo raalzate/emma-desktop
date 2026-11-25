@@ -276,6 +276,7 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
         sessionId: args.sessionId,
         onToken,
         signal,
+        tag: "chat",
       }),
     LLM_TIMEOUT_SECONDS * 1000,
   );
@@ -298,6 +299,7 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
         maxTokens: CHAT_MAX_TOKENS,
         sessionId: args.sessionId,
         signal,
+        tag: "chat-retry",
       }),
     LLM_TIMEOUT_SECONDS * 1000,
   );
@@ -321,6 +323,7 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
           maxTokens: CHAT_MAX_TOKENS,
           sessionId: args.sessionId,
           signal,
+          tag: "chat-restate",
         }),
       LLM_TIMEOUT_SECONDS * 1000,
     );

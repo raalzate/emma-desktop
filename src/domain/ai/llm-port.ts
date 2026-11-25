@@ -30,6 +30,8 @@ export interface LlmGenerateArgs {
   priority?: GenerationPriority;
   /** Cancela la generación (en cola o en curso); rechaza con AbortError. */
   signal?: AbortSignal;
+  /** Qué es esta llamada (chat, observe, grammar…): etiqueta de la traza de diagnóstico. */
+  tag?: string;
 }
 
 /** Genera texto a partir de un prompt. Devuelve la respuesta completa. */

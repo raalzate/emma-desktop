@@ -38,6 +38,7 @@ export async function completePartialReply(args: {
   partial: string;
 }): Promise<string> {
   const raw = await args.llm({
+    tag: "complete-reply",
     prompt: buildCompletePartialReplyPrompt(args.context, args.partial),
     system: COMPLETE_PARTIAL_REPLY_SYSTEM_PROMPT,
     maxTokens: COMPLETION_MAX_TOKENS,

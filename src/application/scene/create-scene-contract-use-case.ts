@@ -58,6 +58,7 @@ export async function createSceneContract(args: CreateSceneContractArgs): Promis
   let generated = false;
   try {
     const raw = await llm({
+      tag: "scene-facts",
       prompt:
         `Scene: ${scenario.title} — ${scenario.description}\n` +
         `Situation: ${situation.title} — ${situation.framingDescription}\n` +

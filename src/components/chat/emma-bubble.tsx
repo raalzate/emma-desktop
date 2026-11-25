@@ -48,7 +48,11 @@ export function EmmaBubble({ text, at, gender, persona, onTeach, onTranslate, in
     k.play();
   };
   return (
-    <div className="flex justify-start duration-300 animate-in fade-in slide-in-from-bottom-1">
+    <div
+      className="flex justify-start duration-300 animate-in fade-in slide-in-from-bottom-1"
+      data-testid="emma-bubble"
+      data-text={text}
+    >
       {/* Tarjeta con borde y esquina superior izquierda 4px; sombra mínima (FR-015).
           Sin avatar por turno: quién habla ya vive en la cabecera, como en un 1:1. */}
       <div className="w-fit min-w-[260px] max-w-[75%] rounded-bubble rounded-tl-[4px] border border-border bg-card px-3 py-2 shadow-[0_1px_2px_rgba(31,41,51,0.06)]">

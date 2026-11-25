@@ -18,6 +18,8 @@ interface Props {
   messages: ChatTurn[];
   /** El personaje tiene el turno: muestra "escribiendo…" (no se revela el texto en crudo). */
   typing: boolean;
+  /** Respuesta parcial de Emma mientras se genera (vacía = tres puntos). */
+  streamingText?: string;
   gender?: VoiceGender;
   /** Protopersona de la escena: identidad visual y voz de las burbujas del agente. */
   persona?: Protopersona;
@@ -32,7 +34,7 @@ interface Props {
 }
 
 export function MessageList({
-  messages, typing, gender, persona, scenario, situation, narrate = true, narrative, onTeach, onTranslate,
+  messages, typing, streamingText, gender, persona, scenario, situation, narrate = true, narrative, onTeach, onTranslate,
 }: Props) {
   const end = useRef<HTMLDivElement>(null);
   // La escena se cuenta ANTES de que la persona hable: mientras la narración se
@@ -44,7 +46,7 @@ export function MessageList({
 
   useEffect(() => {
     end.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing, narrationDone]);
+  }, [messages, typing, streamingText, narrationDone]);
 
   return (
     // Papel tapiz de mensajería: puntos tenues del token border sobre lino;
@@ -75,7 +77,7 @@ export function MessageList({
             <UserBubble key={i} text={m.content} at={m.at} audioUrl={m.audioUrl} />
           ),
         )}
-        {narrationDone && typing && <TypingIndicator />}
+        {narrationDone && typing && <TypingIndicator text={streamingText} />}
         <div ref={end} />
       </div>
     </ScrollArea>
