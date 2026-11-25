@@ -23,10 +23,14 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { INITIAL_LEVEL, levelLabel, type CefrLevel } from "@/domain/cefr/cefr-ladder";
+import { defaultUnitFor, groupUnitsForLevel } from "@/domain/curriculum/units-by-level";
 import { SpeakButton } from "@/components/chat/speak-button";
 import type { UnitExercise } from "@/domain/exercises/exercise";
 import { hintFor, type AnswerDiagnosis } from "@/domain/exercises/answer-diagnosis";
@@ -544,13 +548,16 @@ interface Props {
   initialExerciseId?: string;
   /** Aviso de que se guardaron tarjetas en Repaso (para refrescar el panel «Hoy»). */
   onChange?: () => void;
+  /** Nivel del aprendiz: sus unidades van primero (T9 de #357). */
+  level?: CefrLevel;
 }
 
-export function ExerciseDrill({ runtime, initialUnit, initialExerciseId, onChange }: Props) {
+export function ExerciseDrill({ runtime, initialUnit, initialExerciseId, onChange, level = INITIAL_LEVEL }: Props) {
+  const groups = useMemo(() => groupUnitsForLevel(AVAILABLE_UNITS, ALL_UNITS, level), [level]);
   const [unit, setUnit] = useState<number>(
     initialUnit !== undefined && AVAILABLE_UNITS.includes(initialUnit)
       ? initialUnit
-      : AVAILABLE_UNITS[0] ?? 0,
+      : defaultUnitFor(AVAILABLE_UNITS, ALL_UNITS, level),
   );
   const [selected, setSelected] = useState<UnitExercise | null>(
     (initialExerciseId && ALL_EXERCISES.find((e) => e.id === initialExerciseId)) || null,
@@ -577,10 +584,15 @@ export function ExerciseDrill({ runtime, initialUnit, initialExerciseId, onChang
           <SelectValue placeholder="Pick a unit" />
         </SelectTrigger>
         <SelectContent>
-          {AVAILABLE_UNITS.map((u) => (
-            <SelectItem key={u} value={String(u)}>
-              {unitLabel(u)}
-            </SelectItem>
+          {groups.map((g) => (
+            <SelectGroup key={g.level}>
+              <SelectLabel>{g.current ? `Your level · ${levelLabel(g.level)}` : levelLabel(g.level)}</SelectLabel>
+              {g.units.map((u) => (
+                <SelectItem key={u} value={String(u)}>
+                  {unitLabel(u)}
+                </SelectItem>
+              ))}
+            </SelectGroup>
           ))}
         </SelectContent>
       </Select>
