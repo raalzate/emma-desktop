@@ -129,3 +129,17 @@ describe('validación de la entrada del IPC (Zod)', () => {
     expect(() => parseRemoteGenerateArgs({ provider: 'gemini', model: '../x?key=1', prompt: 'hi' })).toThrow();
   });
 });
+
+describe("Gemini sin razonamiento para el diálogo (#353)", () => {
+  // Medido con el banco: gemini-2.5-flash tardó 8,3 s por línea de diálogo
+  // porque razonaba antes de cada respuesta (thinking dinámico por defecto).
+  it.each(["gemini-2.5-flash", "gemini-2.5-flash-lite"])("%s pide thinkingBudget 0", (model) => {
+    const { init } = buildGenerateRequest("gemini", "k", model, "hi", "sys");
+    expect(JSON.parse(String(init.body)).generationConfig).toEqual({ thinkingConfig: { thinkingBudget: 0 } });
+  });
+
+  it("gemini-2.5-pro no admite apagarlo: no se manda", () => {
+    const { init } = buildGenerateRequest("gemini", "k", "gemini-2.5-pro", "hi", "sys");
+    expect(JSON.parse(String(init.body)).generationConfig).toBeUndefined();
+  });
+});

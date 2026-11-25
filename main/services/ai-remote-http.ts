@@ -48,9 +48,14 @@ function authHeaders(provider: RemoteProvider, key: string): Record<string, stri
 
 function generateBody(provider: RemoteProvider, model: string, prompt: string, system?: string): unknown {
   if (provider === 'gemini') {
+    // Gemini 2.5 Flash razona antes de responder por defecto (medido: 8,3 s
+    // por línea de diálogo, #353). Una línea de diálogo no lo necesita; Pro no
+    // admite apagarlo.
+    const noThinking = /^gemini-2\.5-flash/.test(model);
     return {
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
+      ...(noThinking ? { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } } : {}),
     };
   }
   if (provider === 'openai') {
