@@ -293,3 +293,28 @@ Causa:   en Linux x64 el postinstall de onnxruntime-node baja `onnxruntime-linux
 Regla:   todo workflow que instala dependencias declara `ONNXRUNTIME_NODE_INSTALL_CUDA: skip` en su
   `env:` global (cubre cada job, también los que se agreguen).
 Mecanismo: `scripts/__tests__/workflows-sin-cuda.test.ts`.
+
+---
+
+### GOTCHA: la simulación «se queda pensando» y re-pregunta lo ya contestado — el juez vetaba líneas buenas y las generaciones vencidas tapaban el motor
+
+Síntoma: el aprendiz contesta («Yesterday, I finished login…») y Sofía devuelve «Sorry, let me
+  put it another way — what did you do yesterday?». Turnos de 12–15 s. Sin errores en consola.
+  Reincidencia: «pierde el hilo» ya tenía `no-perder-el-hilo.test.ts` y el juez su gotcha
+  (2026-09, «muerto de hambre»), y ninguno de los dos lo frenó: probaban cada pieza con dobles,
+  no el camino real.
+Causa:   tres piezas. (1) El contrato de escena (hechos + narrativa en serie, 26–29 s) vencía su
+  tope de 25 s y caía al framing, que es la META del aprendiz en segunda persona («Lead the
+  standup…»). El juez, juzgando contra eso, marcó `wrong-role` 8/8 líneas correctas (medido en
+  vivo por CDP). (2) Dos vetos del juez escalaban a la reformulación con contexto recortado y a
+  la recuperación, que re-pregunta. (3) Los topes de reloj (`Promise.race`) del turno, del juez,
+  del observador y del onboarding descartaban el resultado pero NO cancelaban la generación: el
+  motor local (una a la vez) seguía ocupado y el reintento esperaba detrás.
+Regla:   todo tope de reloj sobre el LLM cancela la generación (AbortController + `signal`). El
+  juez es señal blanda: compra un reintento, nunca la recuperación, y nunca juzga contra el
+  framing. Antes de culpar al modelo, medir el turno con traza (tipo de llamada, duración, veredicto).
+Mecanismo: `src/lib/__tests__/tope-cancela-generacion.test.ts` — escanea `src/application` y falla
+  si un archivo pone `Promise.race`/`withTimeout` sobre `llm(` sin AbortController, `signal` y
+  `.abort()`. Además: `run-chat-turn-juez-de-escena.test.ts` (el juez no lleva a la recuperación
+  y el tope aborta), `juez-de-escena-cableado.test.ts` (nunca `situation?.framingDescription`
+  como hechos del juez) y las pruebas de aborto de `judge-scene-fidelity` y `observe-turn`.
