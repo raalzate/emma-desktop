@@ -32,6 +32,8 @@ import { challengeReadiness } from "@/domain/curriculum/challenge-readiness";
 import type { ChallengeSubmission } from "@/domain/curriculum/i-challenge-repository";
 import type { UnitChallenge, ChallengeMode } from "@/domain/curriculum/unit";
 import { ALL_UNITS } from "@/lib/curriculum-data";
+import { INITIAL_LEVEL, type CefrLevel } from "@/domain/cefr/cefr-ladder";
+import { pickPracticeUnit, practiceUnitsFor } from "@/domain/curriculum/units-by-level";
 import {
   getChallengeProgress,
   submitChallenge,
@@ -251,14 +253,13 @@ interface Props {
   initialUnit?: number;
   /** Aviso de que cambió el progreso de retos (para refrescar el panel «Hoy»). */
   onChange?: () => void;
+  /** Nivel del aprendiz: sólo sus unidades (#357, T9). */
+  level?: CefrLevel;
 }
 
-export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
-  const [unit, setUnit] = useState<number>(
-    initialUnit !== undefined && AVAILABLE_UNITS.includes(initialUnit)
-      ? initialUnit
-      : AVAILABLE_UNITS[0] ?? 1,
-  );
+export function ChallengeView({ runtime, initialUnit, onChange, level = INITIAL_LEVEL }: Props) {
+  const units = useMemo(() => practiceUnitsFor(AVAILABLE_UNITS, level), [level]);
+  const [unit, setUnit] = useState<number>(() => pickPracticeUnit(AVAILABLE_UNITS, level, initialUnit));
   const [selected, setSelected] = useState<UnitChallenge | null>(null);
   const [completed, setCompleted] = useState<Set<number>>(new Set());
   const [submissions, setSubmissions] = useState<ChallengeSubmission[]>([]);
@@ -325,7 +326,7 @@ export function ChallengeView({ runtime, initialUnit, onChange }: Props) {
           <SelectValue placeholder="Pick a unit" />
         </SelectTrigger>
         <SelectContent>
-          {AVAILABLE_UNITS.map((u) => (
+          {units.map((u) => (
             <SelectItem key={u} value={String(u)}>
               {unitLabel(u)}
             </SelectItem>

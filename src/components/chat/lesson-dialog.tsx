@@ -11,8 +11,9 @@
  * `use-end-session`; aquí sólo se pinta lo que llega.
  */
 
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Languages, Loader2, Play, Square } from "lucide-react";
+import { ArrowLeft, Check, Languages, Loader2, Play, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -59,10 +60,24 @@ function decisionLineOf(view: LessonView): string {
 }
 
 /**
+ * ¿La lección suena sola? (#357, T7): sí al abrir una lección NUEVA (es lo
+ * primero que el aprendiz ve y oye); no al reabrirla desde el historial, ni dos
+ * veces, ni sin texto que leer.
+ */
+export function shouldAutoplayLesson(a: {
+  open: boolean;
+  lesson: string;
+  stored: boolean;
+  alreadyPlayed: boolean;
+}): boolean {
+  return a.open && !a.stored && !a.alreadyPlayed && hasSpeakableContent(a.lesson);
+}
+
+/**
  * La lección de Emma en karaoke, con el audio en la cabecera de su propia
  * sección (#171): el control vivía arriba del reporte, lejos del texto que se
  * escucha, y la lección se leía como markdown plano —ninguna pista de qué línea
- * estaba sonando—. Sin autoplay: la lección nunca suena sola al abrir.
+ * estaba sonando—. La reproducción automática la decide `shouldAutoplayLesson`.
  */
 export function LessonKaraoke({
   karaoke,
@@ -120,6 +135,20 @@ export function LessonDialog({
   const karaoke = useKaraoke(view?.lesson ?? "", "feminine", EMMA_VOICE);
   // La lección sale del markdown del reporte: se renderiza en karaoke, no plana.
   const reportParts = splitReportAtLesson(view?.report ?? "");
+  // T7 de #357: la lección nueva suena sola, una vez.
+  const autoplayed = useRef(false);
+  useEffect(() => {
+    const go = shouldAutoplayLesson({
+      open,
+      lesson: view?.lesson ?? "",
+      stored: !!view?.stored,
+      alreadyPlayed: autoplayed.current,
+    });
+    if (!go) return;
+    autoplayed.current = true;
+    void karaoke.play();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, view?.lesson, view?.stored]);
 
   // Siguiente paso de la ruta: nunca el escenario que se acaba de jugar —
   // si la recomendación coincide, rota al siguiente del catálogo del nivel.
@@ -153,8 +182,8 @@ export function LessonDialog({
         </DialogHeader>
         <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-2">
           {/* Componente 1 — Enseñanza: correcciones + lección de Emma (audio). */}
+          {/* T7 de #357: primero la lección de Emma (suena sola), debajo las correcciones. */}
           <section className="rounded-lg border bg-card p-4">
-            <Markdown>{reportParts.before}</Markdown>
             {view.lesson && (
               <LessonKaraoke
                 karaoke={karaoke}
@@ -162,6 +191,7 @@ export function LessonDialog({
                 lesson={view.lesson}
               />
             )}
+            <Markdown>{reportParts.before}</Markdown>
             {reportParts.after && <Markdown>{reportParts.after}</Markdown>}
           </section>
           {/* XP ganado en la sesión (#216): la recompensa se ve junto a la decisión. */}
@@ -188,6 +218,17 @@ export function LessonDialog({
             closeAnd(() => (nextScenario ? onSelectScenario(nextScenario) : router.push("/")))
           }
         />
+        <div className="flex justify-end border-t pt-3">
+          {view.stored ? (
+            <Button variant="outline" size="sm" className="gap-1" title="Cierra la lección y vuelve a la conversación guardada" onClick={() => closeAnd()}>
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+          ) : (
+            <Button size="sm" className="gap-1" title="Da la lección por terminada y vuelve a tu ruta" onClick={() => closeAnd(() => router.push("/"))}>
+              <Check className="h-4 w-4" /> Done
+            </Button>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

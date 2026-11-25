@@ -30,6 +30,8 @@ import { teach, type TeachArgs } from "@/application/english-teacher/teach-use-c
 import { suggestReplies } from "@/application/coaching/suggest-replies-use-case";
 import { completePartialReply } from "@/application/coaching/complete-partial-reply-use-case";
 import { translate } from "@/application/translation/translate-use-case";
+import { askTutor } from "@/application/tutor/ask-tutor-use-case";
+import type { TutorTurn } from "@/domain/tutor/tutor-chat";
 import { buildWelcome } from "@/application/welcome/welcome-use-case";
 import { checkGrammar } from "@/application/grammar/check-grammar-use-case";
 import { ArchiveHistoryOnLevelUpUseCase } from "@/application/chat/archive-history-on-level-up-use-case";
@@ -116,6 +118,8 @@ export interface EmmaRuntime {
   ): ReturnType<typeof suggestReplies>;
   complete(context: string, partial: string): Promise<string>;
   translate(text: string, targetLang: string): ReturnType<typeof translate>;
+  /** Chat de apoyo de la práctica (#357, T8). */
+  askTutor(question: string, level: CefrLevel, history: TutorTurn[]): Promise<string | null>;
   welcome(profile: UserProfile): Promise<string>;
   checkGrammar(text: string, turn: number): Promise<SilentError[]>;
   finishSession(a: {
@@ -240,6 +244,7 @@ export async function createEmmaRuntime(deps: EmmaRuntimeDeps = {}): Promise<Emm
       suggestReplies({ llm, context, level, draft, scenarioType, agentLine, signal }),
     complete: (context, partial) => completePartialReply({ llm, context, partial }),
     translate: (text, targetLang) => translate({ llm, text, targetLang }),
+    askTutor: (question, level, history) => askTutor({ llm, question, level, history }),
     async welcome(profile) {
       // El briefing del plan es andamiaje opcional: si falla, el saludo sigue sin él.
       const tutorBriefingEs = await resolveTutorContext()
