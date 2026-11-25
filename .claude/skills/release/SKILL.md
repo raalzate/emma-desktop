@@ -33,10 +33,11 @@ frecuentes) está en `docs/RELEASE.md`; este skill es la mecánica verificada.
 | 5 | Versión coherente | leer `version` en `package.json` | debe ser MAYOR que el último tag (`git tag -l 'v*' --sort=-v:refname \| head -1`). Si ya existe `v<version>`, primero sube la versión por PR a main (main está protegida). |
 | 6 | STATUS.md al día | leer el encabezado de `STATUS.md` | si el veredicto no es VERDE o la fecha es vieja, actualizalo en el mismo PR del bump. |
 | 7 | Notas de release escritas | existe `docs/releases/<version>.md` con sus tres secciones | la regla RELEASE de `scripts/repo-lint.mjs` ya lo exige dentro del gate (paso 3); si el gate pasó, esto está. El workflow usa ese archivo como cuerpo del release. Plantilla: `docs/releases/PLANTILLA.md`. |
+| 8 | Banco de simulación | `pnpm eval:simulacion --launch --strict --label "release <version>"` | las 20 conversaciones guiadas (5 escenarios × 4 perfiles) sobre un store aislado no cumplen algún SC de #323 (latencia, llamadas por turno, recuperaciones, re-preguntas, preguntas del aprendiz, escena lista). Corre con Gemma local: no es señal de CI. El reporte (`.eval/simulacion-*.md`) va en las notas del release, sección «Calidad de la simulación». Un SC rojo detiene el release o se declara en las notas con su número y su porqué; nunca se omite en silencio. |
 
 ## 2 · Tag (el punto de no retorno)
 
-Solo con los 7 prechequeos verdes:
+Solo con los 8 prechequeos verdes:
 
 ```bash
 git tag -a v<version> -m "EMMA Desktop v<version> — <una línea con lo que entra>"
