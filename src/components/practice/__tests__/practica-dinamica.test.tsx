@@ -57,7 +57,7 @@ describe("ejercicios (drill)", () => {
 
   it("abre un ejercicio por deep-link mostrando el stem, el progreso y la pista disponible", () => {
     const html = renderToStaticMarkup(
-      createElement(ExerciseDrill, { runtime, initialUnit: 14, initialExerciseId: "14A" }),
+      createElement(ExerciseDrill, { runtime, initialUnit: 14, initialExerciseId: "14A", level: "B1" }),
     );
     expect(html).toContain("14A");
     expect(html).toContain("Item 1 of 7");
@@ -67,6 +67,15 @@ describe("ejercicios (drill)", () => {
     expect(html).toContain("Type the answer in English");
     // La clave nunca se muestra antes de intentar.
     expect(html).not.toContain("had already reached");
+  });
+
+  // #357 (T9): sólo las unidades del nivel del aprendiz; un enlace a otro nivel no las abre.
+  it("un aprendiz A1 no abre por enlace un ejercicio de B1", () => {
+    const html = renderToStaticMarkup(
+      createElement(ExerciseDrill, { runtime, initialUnit: 14, initialExerciseId: "14A", level: "A1" }),
+    );
+    expect(html).not.toContain("By the time he ____ (be) paged");
+    expect(html).toMatch(/exercises? in this unit/);
   });
 
   it("clasificar la -ed se responde tocando una opción, no escribiendo /t/", () => {
