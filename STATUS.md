@@ -4,12 +4,18 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-11-24 (macOS local y CI de `main` en `1cf780c`, #321)
+- **Fecha del último gate completo:** 2026-11-25 (macOS local y CI de `main` en `59d979b`, #345/#346)
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.11.0 (2026-11-24, marcada Latest, 3 instaladores; build verde
-  en las tres plataformas): repaso con audio (Text/Audio/Mixed), chequeo de setup antes del
+- **Último release publicado:** v0.12.0 (2026-11-25, marcada Latest, 3 instaladores): simulación
+  productiva (#323). Turno de ≤ 2 llamadas al LLM (sin juez LLM, gramática después de responder),
+  respuesta visible en streaming, contesta las preguntas del aprendiz, escena precalculada desde el
+  mapa y reanudación con el mismo caso. Banco de 20 conversaciones (`pnpm eval:simulacion`): 0
+  recuperaciones, 5 % re-preguntas, 100 % preguntas contestadas; latencia local p50 5,0 s / p95
+  8,5 s y escena lista p95 18 s (metas no alcanzadas, declaradas en `docs/releases/0.12.0.md`). El
+  build de macOS y Linux falló una vez en `next/font` (descarga de Google Fonts) y pasó al relanzar.
+- **v0.11.0 (2026-11-24, publicada):** 3 instaladores, build verde en las tres plataformas: repaso con audio (Text/Audio/Mixed), chequeo de setup antes del
   onboarding y gestión del audio guardado (#320). CI sin la descarga CUDA de onnxruntime-node
   (#321: el asset de GitHub daba 404). Notas en `docs/releases/0.11.0.md`.
 - **v0.10.0 (2026-10-24, publicada):** nube desde la puerta de IA
