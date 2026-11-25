@@ -53,7 +53,7 @@ function wordAt(timings: WordTiming[], t: number): number {
   return -1;
 }
 
-export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string): Karaoke {
+export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string, rate = 1): Karaoke {
   const script = useMemo(() => buildKaraokeScript(text), [text]);
   const [activeWord, setActiveWord] = useState(-1);
   const [playing, setPlaying] = useState(false);
@@ -79,10 +79,11 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
     setEngine("system");
     webHandle.current = speak(script.speakText, {
       gender,
+      rate: 0.95 * rate,
       onWord: setActiveWord,
       onEnd: () => (setPlaying(false), setActiveWord(-1)),
     });
-  }, [script.speakText, gender]);
+  }, [script.speakText, gender, rate]);
 
   // Un reproductor por texto: sintetiza por trozos y cachea audio+timings
   // (repetir = seek). Resuelve cuando el PRIMER trozo está listo.
@@ -91,7 +92,13 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
       const player: ChunkedPlayer = createChunkedPlayer({
         chunks: planSpeechChunks(text),
         synthesize: (chunk) => synthesizeSpeech(chunk, gender, voiceId),
-        createAudio: (url) => new Audio(url),
+        createAudio: (url) => {
+          // Velocidad elegible (#357): el audio a 1× era muy rápido para entender.
+          const audio = new Audio(url);
+          audio.playbackRate = rate;
+          audio.preservesPitch = true;
+          return audio;
+        },
         onTime: (t) => setActiveWord(wordAt(player.timings(), t)),
         onStop: () => (setPlaying(false), setActiveWord(-1)),
         onBuffering: setLoading,
@@ -109,7 +116,7 @@ export function useKaraoke(text: string, gender?: VoiceGender, voiceId?: string)
     setCanSeek(true);
     setEngine(player.engine());
     return player;
-  }, [text, gender, voiceId]);
+  }, [text, gender, voiceId, rate]);
 
   const playFrom = useCallback(
     async (startTime: number, stopAt: number | null = null) => {

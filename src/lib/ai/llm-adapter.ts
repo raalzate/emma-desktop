@@ -17,6 +17,7 @@ import { localAvailable, remoteAvailable, remoteGenerateText } from "./providers
 import { loadAiSettings, modelFor, type AiMode } from "./remote-settings";
 import { maybeTrace } from "./llm-trace";
 import { enforcedMaxTokens } from "./output-budget";
+import { routeFor, withCloudFallback } from "./turn-routing";
 
 /**
  * Ejecuta un turno en el modelo local (Gemma) con streaming opcional.
@@ -57,7 +58,20 @@ export function createLlmGenerate(modeOverride?: AiMode): LlmGenerate {
 function createRoutedLlm(modeOverride?: AiMode): LlmGenerate {
   return async (args) => {
     const { prompt, system, onToken } = args;
-    const mode = modeOverride ?? loadAiSettings().mode;
+    const settings = loadAiSettings();
+    const mode = modeOverride ?? settings.mode;
+
+    // #348: con «respuestas en la nube», sólo el turno de práctica sale del
+    // equipo; si la nube falla, el turno se genera en local.
+    if (!modeOverride && mode !== "remote" && routeFor(args.tag, settings) === "remote" && remoteAvailable()) {
+      return (
+        await withCloudFallback(
+          () => runRemoteTurn(system, prompt),
+          () => runLocalTurn(args, onToken),
+          args.signal,
+        )
+      ).trim();
+    }
 
     // La nube es sin estado: siempre recibe el prompt completo (ignora sessionId).
     if (mode === "remote" && remoteAvailable()) {

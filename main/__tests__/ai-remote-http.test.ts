@@ -63,7 +63,7 @@ describe('describeRemoteError', () => {
   it('429 explica la cuota y sugiere el modelo liviano o esperar', () => {
     const msg = describeRemoteError('gemini', 429);
     expect(msg).toMatch(/quota|limit/i);
-    expect(msg).toContain('gemini-2.5-flash-lite');
+    expect(msg).toContain('gemini-flash-lite-latest');
   });
 
   it('401/403 dice que la llave es inválida', () => {
@@ -127,5 +127,19 @@ describe('validación de la entrada del IPC (Zod)', () => {
 
   it('el modelo no puede romper la ruta de la URL', () => {
     expect(() => parseRemoteGenerateArgs({ provider: 'gemini', model: '../x?key=1', prompt: 'hi' })).toThrow();
+  });
+});
+
+describe("Gemini sin razonamiento para el diálogo (#353)", () => {
+  // Medido con el banco: gemini-2.5-flash tardó 8,3 s por línea de diálogo
+  // porque razonaba antes de cada respuesta (thinking dinámico por defecto).
+  it.each(["gemini-2.5-flash"])("%s pide thinkingBudget 0", (model) => {
+    const { init } = buildGenerateRequest("gemini", "k", model, "hi", "sys");
+    expect(JSON.parse(String(init.body)).generationConfig).toEqual({ thinkingConfig: { thinkingBudget: 0 } });
+  });
+
+  it("gemini-2.5-pro no admite apagarlo: no se manda", () => {
+    const { init } = buildGenerateRequest("gemini", "k", "gemini-2.5-pro", "hi", "sys");
+    expect(JSON.parse(String(init.body)).generationConfig).toBeUndefined();
   });
 });

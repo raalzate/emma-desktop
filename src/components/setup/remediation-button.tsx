@@ -15,6 +15,8 @@ import { CloudQuickSetup } from "@/components/settings/cloud-quick-setup";
 import { ModelManager } from "@/components/settings/model-manager";
 import type { ProbeName } from "@/domain/setup/setup-probe-result";
 import type { Remediation } from "@/domain/setup/setup-remediation";
+import { getEmmaApi } from "@/components/settings/emma-api";
+import { loadAiSettings, saveAiSettings } from "@/lib/ai/remote-settings";
 
 export interface RemediationButtonProps {
   remediation: Remediation;
@@ -28,7 +30,7 @@ export interface RemediationButtonProps {
   initiallyOpen?: boolean;
 }
 
-type DialogKind = "cloud" | "models" | null;
+type DialogKind = "cloud" | "cloud-replies" | "models" | null;
 
 export function RemediationButton({
   remediation, onRetest, onSwitchToLocal, onOpenSettingsTab, onCloudReady, disabled, initiallyOpen = false,
@@ -40,12 +42,26 @@ export function RemediationButton({
   const run = () => {
     switch (action.kind) {
       case "open-cloud-setup": return setDialog("cloud");
+      case "reply-in-cloud": return void enableReplyInCloud();
       case "open-model-manager": return setDialog("models");
       case "switch-to-local": return onSwitchToLocal();
       case "retest": return onRetest(action.probe);
       case "open-settings-tab": return onOpenSettingsTab(action.tab);
       case "steps": return setStepsOpen((v) => !v);
     }
+  };
+
+  // #348: con llave ya guardada se activa sin pedir nada; si no, la
+  // configuración rápida guarda la llave en modo «sólo respuestas».
+  const enableReplyInCloud = async () => {
+    const keys = ((await getEmmaApi()?.getAiKeyStatus()) ?? {}) as Record<string, boolean>;
+    const settings = loadAiSettings();
+    if (keys[settings.provider]) {
+      saveAiSettings({ ...settings, replyInCloud: true });
+      onCloudReady();
+      return;
+    }
+    setDialog("cloud-replies");
   };
 
   const handleReady = () => {
@@ -74,12 +90,13 @@ export function RemediationButton({
       <Dialog open={dialog !== null} onOpenChange={(o) => !o && setDialog(null)}>
         <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{dialog === "cloud" ? "Use cloud AI" : "Local models"}</DialogTitle>
+            <DialogTitle>{dialog === "models" ? "Local models" : "Use cloud AI"}</DialogTitle>
             <DialogDescription>
-              {dialog === "cloud" ? "Connect a cloud model to keep practicing." : "Download or pick a local model."}
+              {dialog === "models" ? "Download or pick a local model." : "Connect a cloud model to keep practicing."}
             </DialogDescription>
           </DialogHeader>
           {dialog === "cloud" && <CloudQuickSetup recommended={false} onReady={handleReady} />}
+          {dialog === "cloud-replies" && <CloudQuickSetup recommended={false} onReady={handleReady} scope="replies" />}
           {dialog === "models" && <ModelManager />}
         </DialogContent>
       </Dialog>

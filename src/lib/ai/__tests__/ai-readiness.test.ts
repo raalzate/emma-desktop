@@ -34,7 +34,7 @@ function stubBridge(models: FakeModel[], keys: Record<string, boolean>) {
 }
 
 function settings(mode: AiRemoteSettings["mode"]): AiRemoteSettings {
-  return { mode, provider: "anthropic", models: {} };
+  return { mode, provider: "anthropic", models: {}, replyInCloud: false };
 }
 
 const GEMMA_E4B: FakeModel = { id: "gemma-e4b", downloaded: true };

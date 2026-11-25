@@ -55,3 +55,12 @@ describe("catálogo de remediación", () => {
     }
   });
 });
+
+describe("conversación lenta → respuestas en la nube (#348, T4)", () => {
+  it("la primera remediación de ai-slow-local activa sólo el turno en la nube", () => {
+    const first = REMEDIATIONS["ai-slow-local"][0];
+    expect(first.action.kind).toBe("reply-in-cloud");
+    expect(first.label).toMatch(/cloud/i);
+    expect(first.tooltipEs).toMatch(/nube/);
+  });
+});

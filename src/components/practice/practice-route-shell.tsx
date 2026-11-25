@@ -13,6 +13,7 @@ import type { EmmaRuntime } from "@/interface/emma-runtime";
 import { AppShell } from "@/components/nav/app-shell";
 import { CardEnter } from "@/components/motion";
 import { PageHeader, type PageHeaderBack } from "@/components/nav/page-header";
+import { FloatingTutorChat } from "./floating-tutor-chat";
 
 // Cada sección es parte de Práctica: se vuelve ahí, no a la ruta.
 const BACK_TO_PRACTICE: PageHeaderBack = { href: "/practice", label: "Practice" };
@@ -37,6 +38,8 @@ export function PracticeRouteShell({ title, children }: Props) {
     <AppShell>
       <PageHeader title={title} back={BACK_TO_PRACTICE} />
       <CardEnter className="mx-auto w-full max-w-6xl space-y-6 p-6">{children(runtime)}</CardEnter>
+      {/* #357 (T8): EMMA a mano en toda la práctica, para traducir o explicar. */}
+      <FloatingTutorChat ask={(q, history) => runtime.askTutor(q, profile.englishLevel, history)} />
     </AppShell>
   );
 }

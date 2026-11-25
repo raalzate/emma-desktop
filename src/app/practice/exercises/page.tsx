@@ -12,9 +12,11 @@ import { ExerciseDrill } from "@/components/practice/exercise-drill";
 import { PracticeRouteShell } from "@/components/practice/practice-route-shell";
 import { parsePracticeUnit } from "@/domain/practice/practice-deeplink";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
+import { useEmma } from "@/interface/emma-context";
 
 function ExercisesContent({ runtime }: { runtime: EmmaRuntime }) {
   const params = useSearchParams();
+  const { profile } = useEmma();
   const unit = parsePracticeUnit(params.get("unit"));
   const exercise = params.get("exercise");
   return (
@@ -23,6 +25,7 @@ function ExercisesContent({ runtime }: { runtime: EmmaRuntime }) {
       runtime={runtime}
       initialUnit={unit}
       initialExerciseId={exercise ?? undefined}
+      level={profile?.englishLevel}
     />
   );
 }

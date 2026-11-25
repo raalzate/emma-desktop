@@ -15,6 +15,8 @@ export type OsName = "mac" | "windows" | "linux";
 
 export type RemediationAction =
   | { kind: "open-cloud-setup" }
+  /** Sólo el turno de práctica a la nube (#348); lo demás sigue local. */
+  | { kind: "reply-in-cloud" }
   | { kind: "open-model-manager" }
   | { kind: "switch-to-local" }
   | { kind: "retest"; probe: ProbeName }
@@ -31,6 +33,13 @@ const useCloud: Remediation = {
   label: "Use a cloud model instead",
   tooltipEs: "Configura una llave de nube: no necesita GPU ni mucha memoria de tu equipo.",
   action: { kind: "open-cloud-setup" },
+};
+
+const replyInCloud: Remediation = {
+  label: "Answer in the cloud",
+  tooltipEs:
+    "Emma responde desde la nube para que la práctica sea más rápida; la gramática, las sugerencias y la voz siguen en tu equipo.",
+  action: { kind: "reply-in-cloud" },
 };
 
 const checkKey: Remediation = {
@@ -66,7 +75,7 @@ const micSteps = (os: OsName, steps: string[]): Remediation => ({
 export const REMEDIATIONS: Record<SetupCause, readonly Remediation[]> = {
   "no-webgpu": [useCloud],
   "low-ram": [useCloud],
-  "ai-slow-local": [smallerModel, useCloud],
+  "ai-slow-local": [replyInCloud, smallerModel, useCloud],
   "ai-slow-remote": [
     {
       label: "Switch to the local model",

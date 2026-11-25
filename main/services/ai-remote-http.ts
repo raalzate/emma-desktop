@@ -48,9 +48,14 @@ function authHeaders(provider: RemoteProvider, key: string): Record<string, stri
 
 function generateBody(provider: RemoteProvider, model: string, prompt: string, system?: string): unknown {
   if (provider === 'gemini') {
+    // Gemini 2.5 Flash razona antes de responder por defecto (medido: 8,3 s
+    // por línea de diálogo, #353). Una línea de diálogo no lo necesita; Pro no
+    // admite apagarlo.
+    const noThinking = /^gemini-2\.5-flash/.test(model);
     return {
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
+      ...(noThinking ? { generationConfig: { thinkingConfig: { thinkingBudget: 0 } } } : {}),
     };
   }
   if (provider === 'openai') {
@@ -126,7 +131,7 @@ export function describeRemoteError(provider: RemoteProvider, status: number, bo
   const name = LABEL[provider];
   if (looksLikeBadKey(status, body)) return `${name} rejected the API key. Check it in Settings or paste a new one.`;
   if (status === 429) {
-    const lite = provider === 'gemini' ? ' Try the gemini-2.5-flash-lite model, which has a larger free quota, or' : '';
+    const lite = provider === 'gemini' ? ' Try the gemini-flash-lite-latest model, which has a larger free quota, or' : '';
     return `${name} usage limit reached (free tier quota).${lite} wait a minute and try again.`;
   }
   if (status >= 500) return `${name} is temporarily unavailable. Please try again in a moment.`;

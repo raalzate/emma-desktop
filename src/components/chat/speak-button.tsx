@@ -18,10 +18,12 @@ interface Props {
   gender?: VoiceGender;
   /** Texto visible del botón; si falta, el botón es sólo el icono. */
   label?: string;
+  /** Velocidad de reproducción (1 = normal). */
+  rate?: number;
 }
 
-export function SpeakButton({ text, gender, label }: Props) {
-  const k = useKaraoke(text, gender);
+export function SpeakButton({ text, gender, label, rate = 1 }: Props) {
+  const k = useKaraoke(text, gender, undefined, rate);
   const icon = k.loading ? (
     <Loader2 className="h-4 w-4 animate-spin" />
   ) : k.playing ? (

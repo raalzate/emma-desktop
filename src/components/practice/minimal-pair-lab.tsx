@@ -22,7 +22,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown, Loader2, Mic, Square } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnswerFeedback, ItemTransition } from "@/components/motion";
 import { awardActivities } from "@/components/gamification/award-activity";
@@ -38,6 +38,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SpeakButton } from "@/components/chat/speak-button";
 import { useVoiceInput } from "@/components/chat/use-voice-input";
 import { LiveWaveform } from "@/components/chat/live-waveform";
+import { AttemptButton, MaskedSentence, RevealedWord, RoundSummary, type AttemptState } from "./perception-parts";
+import { useSpanishTranslation } from "./use-spanish-translation";
+import { SpeedPicker, TranslationHint, type Speed } from "./shadowing-parts";
+import { shadowingTextFor } from "@/domain/phonetics/shadowing-texts";
 import { useEmma } from "@/interface/emma-context";
 import { isCefrLevel, INITIAL_LEVEL, type CefrLevel } from "@/domain/cefr/cefr-ladder";
 import {
@@ -59,7 +63,6 @@ import { sentenceForPair } from "@/domain/phonetics/minimal-pair-sentences";
 import type { MinimalPair } from "@/domain/phonetics/phonetics";
 import { SOUND_CONTRASTS, SHADOWING_PROTOCOL, PART1_CHALLENGES } from "@/lib/phonetics-data";
 
-type AttemptState = "idle" | "recording" | "transcribing" | "error";
 
 /**
  * Graba con el mecanismo de voz existente del chat (Whisper local) y evalúa
@@ -117,11 +120,6 @@ function useSpokenAttempt<R = PronunciationCheckResult>(
   return { state, result, toggle, stream: voice.stream };
 }
 
-function AttemptIcon({ state }: { state: AttemptState }) {
-  if (state === "transcribing") return <Loader2 className="h-4 w-4 animate-spin" />;
-  if (state === "recording") return <Square className="h-4 w-4" />;
-  return <Mic className="h-4 w-4" />;
-}
 
 /**
  * Botón "🎙️ Say it" del round de percepción (H8): pide leer la ORACIÓN
@@ -129,27 +127,37 @@ function AttemptIcon({ state }: { state: AttemptState }) {
  * reconoció la palabra objetivo dentro de esa oración, más el % general de
  * inteligibilidad de la frase.
  */
-function PerceptionSayIt({ sentence, targetWord }: { sentence: string; targetWord: string }) {
+function PerceptionSayIt({
+  sentence,
+  targetWord,
+  onBusyChange,
+}: {
+  sentence: string;
+  targetWord: string;
+  /** T3 de #357: mientras graba o procesa, «Next» queda deshabilitado. */
+  onBusyChange?: (busy: boolean) => void;
+}) {
   const checker = useMemo(
     () => (transcript: string) => checkTargetWordInSentence(sentence, targetWord, transcript),
     [sentence, targetWord],
   );
   const { state, result, toggle, stream } = useSpokenAttempt<TargetWordVerdict>(sentence, checker);
   const heardSentence = result?.overall.verdicts.map((v) => v.heard ?? "…").join(" ") || "(nothing)";
+  useEffect(() => {
+    onBusyChange?.(state === "recording" || state === "transcribing");
+  }, [state, onBusyChange]);
 
   return (
     <div className="flex flex-col gap-1">
-      <Button
-        size="sm"
-        variant={state === "recording" ? "destructive" : "outline"}
-        title={state === "recording" ? "Detiene la grabación y comprueba tu pronunciación" : "Graba la oración para comprobar si la máquina reconoce la palabra objetivo"}
-        onClick={toggle}
-        disabled={state === "transcribing"}
-      >
-        <AttemptIcon state={state} />
-        <span className="ml-1">🎙️ Say it</span>
-      </Button>
-      {state === "recording" && <LiveWaveform stream={stream} bars={16} />}
+      <div className="flex flex-wrap items-center gap-3">
+        <AttemptButton
+          state={state}
+          idleLabel="Say it"
+          title="Graba la oración para comprobar si la máquina reconoce la palabra objetivo"
+          onClick={toggle}
+        />
+        {state === "recording" && <LiveWaveform stream={stream} bars={32} />}
+      </div>
       {state === "error" && (
         <p className="text-xs text-red-600">Couldn't record: check the microphone permission.</p>
       )}
@@ -175,7 +183,7 @@ function PerceptionSayIt({ sentence, targetWord }: { sentence: string; targetWor
  * De a una oración —un párrafo entero de un tirón no se puede dictar— y con un
  * mensaje claro cuando el dictado no oyó nada, en vez de un «0 %» mudo.
  */
-function SentenceCheck({ index, sentence }: { index: number; sentence: string }) {
+function SentenceCheck({ index, sentence, rate }: { index: number; sentence: string; rate: Speed }) {
   const { state, result, toggle } = useSpokenAttempt(sentence);
   const nothing = result ? heardNothing(result) : false;
 
@@ -186,17 +194,14 @@ function SentenceCheck({ index, sentence }: { index: number; sentence: string })
         {sentence}
       </p>
       <div className="flex flex-wrap items-center gap-2">
-        <SpeakButton text={sentence} />
-        <Button
-          size="sm"
-          variant={state === "recording" ? "destructive" : "outline"}
-          title={state === "recording" ? "Detiene la grabación y compara tu lectura con la oración" : "Graba esta oración para comprobar si el dictado te entiende"}
+        <SpeakButton key={`${sentence}-${rate}`} text={sentence} rate={rate} />
+        <TranslationHint sentence={sentence} />
+        <AttemptButton
+          state={state}
+          idleLabel="Record this sentence"
+          title="Graba esta oración para comprobar si el dictado te entiende"
           onClick={toggle}
-          disabled={state === "transcribing"}
-        >
-          <AttemptIcon state={state} />
-          <span className="ml-1">{state === "recording" ? "Stop and check" : "Record this sentence"}</span>
-        </Button>
+        />
         {result && !nothing && (
           <span className="text-sm">
             <span className="font-semibold">{Math.round(result.score * 100)}%</span>{" "}
@@ -230,10 +235,12 @@ function SentenceCheck({ index, sentence }: { index: number; sentence: string })
 }
 
 /** Reto A: shadowing del texto del libro, oración por oración. */
-function ShadowingChallenge({ instructionsEs }: { instructionsEs: string }) {
-  const text = extractQuotedText(instructionsEs);
-  const sentences = useMemo(() => splitSentences(text), [text]);
+function ShadowingChallenge({ instructionsEs, level }: { instructionsEs: string; level: CefrLevel }) {
+  // T6 de #357: el texto del libro es para B2+; cada nivel tiene el suyo.
+  const { text, sentences } = useMemo(() => shadowingTextFor(level), [level]);
+  const bookText = sentences.join(" ") === splitSentences(extractQuotedText(instructionsEs)).join(" ");
   const [notesOpen, setNotesOpen] = useState(false);
+  const [rate, setRate] = useState<Speed>(1);
 
   return (
     <Card>
@@ -247,20 +254,23 @@ function ShadowingChallenge({ instructionsEs }: { instructionsEs: string }) {
           <li>3. Record it and see which words the dictation missed.</li>
           <li>4. Repeat the red words slowly, then record again.</li>
         </ol>
-        <div className="flex items-center gap-2">
-          <SpeakButton text={text} />
-          <span className="text-sm">Listen to the whole text</span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <SpeakButton key={`all-${rate}`} text={text} rate={rate} />
+            <span className="text-sm">Listen to the whole text</span>
+          </div>
+          <SpeedPicker value={rate} onChange={setRate} />
         </div>
         <ol className="space-y-2">
           {sentences.map((sentence, i) => (
-            <SentenceCheck key={sentence} index={i} sentence={sentence} />
+            <SentenceCheck key={sentence} index={i} sentence={sentence} rate={rate} />
           ))}
         </ol>
         <p className="text-xs text-muted-foreground">
           Golden rule: if dictation can't understand you, neither can a human. The goal is not to
           sound native, it is to be intelligible.
         </p>
-        <div>
+        {bookText && <div>
           <Button
             size="sm"
             variant="ghost"
@@ -272,7 +282,7 @@ function ShadowingChallenge({ instructionsEs }: { instructionsEs: string }) {
             Preparation notes (Spanish)
           </Button>
           {notesOpen && <p className="mt-1 text-sm text-muted-foreground">{instructionsEs}</p>}
-        </div>
+        </div>}
       </CardContent>
     </Card>
   );
@@ -289,21 +299,21 @@ function extractQuotedText(instructionsEs: string): string {
   return match ? match[1] : instructionsEs;
 }
 
-/** Resalta `word` dentro de `sentence` (coincidencia de palabra completa, sin distinguir mayúsculas). */
-function HighlightWord({ sentence, word }: { sentence: string; word: string }) {
-  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const parts = sentence.split(new RegExp(`(\\b${escaped}\\b)`, "i"));
+/** Traducción de la oración, sólo después de acertar (T1 de #357). */
+function PassedTranslation({ sentence }: { sentence: string }) {
+  const es = useSpanishTranslation(sentence, true);
+  if (es.loading) {
+    return (
+      <p className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Translating…
+      </p>
+    );
+  }
+  if (!es.text) return null;
   return (
-    <p className="text-sm">
-      {parts.map((part, i) =>
-        part.toLowerCase() === word.toLowerCase() ? (
-          <strong key={i} className="text-primary">
-            {part}
-          </strong>
-        ) : (
-          <span key={i}>{part}</span>
-        ),
-      )}
+    <p className="text-sm text-muted-foreground">
+      <span className="font-code text-[11px] uppercase tracking-wide">ES · </span>
+      {es.text}
     </p>
   );
 }
@@ -318,10 +328,21 @@ function pairForItem(
   return { pair, side: item.prompt === pair.a ? "a" : "b" };
 }
 
-function PerceptionRound({ contrastId, level }: { contrastId: string; level: CefrLevel }) {
+function PerceptionRound({
+  contrastId,
+  level,
+  onNextSound,
+  onShadowing,
+}: {
+  contrastId: string;
+  level: CefrLevel;
+  onNextSound: () => void;
+  onShadowing: () => void;
+}) {
   const contrast = CONTRASTS.find((c) => c.id === contrastId)!;
   // Seed aleatoria por montaje: cada vez que se entra al laboratorio la ronda es distinta.
-  const seed = useMemo(() => Math.floor(Math.random() * 1_000_000), [contrastId]);
+  const [roundId, setRoundId] = useState(0);
+  const seed = useMemo(() => Math.floor(Math.random() * 1_000_000), [contrastId, roundId]);
   const items = useMemo(
     () => buildPerceptionRound(contrast, ROUND_SIZE, seed),
     [contrast, seed],
@@ -329,23 +350,17 @@ function PerceptionRound({ contrastId, level }: { contrastId: string; level: Cef
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [feedback, setFeedback] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
 
   if (index >= items.length) {
     const score = scoreRound(items, answers);
-    return (
-      <Card>
-        <CardContent className="space-y-2 p-4">
-          <p className="text-sm">
-            Correct: <span className="font-semibold">{score.correct}</span> of {score.total}
-          </p>
-          {score.weakPairs.length > 0 && (
-            <p className="text-sm text-muted-foreground">
-              Words to reinforce: {score.weakPairs.join(", ")}
-            </p>
-          )}
-        </CardContent>
-      </Card>
-    );
+    const retry = () => {
+      setIndex(0);
+      setAnswers([]);
+      setFeedback(null);
+      setRoundId((r) => r + 1);
+    };
+    return <RoundSummary score={score} onRetry={retry} onNextSound={onNextSound} onShadowing={onShadowing} />;
   }
 
   const item: PerceptionItem = items[index];
@@ -364,7 +379,9 @@ function PerceptionRound({ contrastId, level }: { contrastId: string; level: Cef
   }
 
   function next() {
+    if (busy) return;
     setFeedback(null);
+    setBusy(false);
     setIndex((i) => i + 1);
   }
 
@@ -381,7 +398,11 @@ function PerceptionRound({ contrastId, level }: { contrastId: string; level: Cef
           <p className="text-sm font-medium">1 · Listen to the sentence</p>
           {/* key por ítem: cada oración tiene su propio audio, nunca el de la anterior. */}
           <SpeakButton key={`speak-${index}-${item.prompt}`} text={sentence} label="Listen to the sentence" />
-          <HighlightWord sentence={sentence} word={item.prompt} />
+          {feedback === null ? (
+            <MaskedSentence sentence={sentence} word={item.prompt} />
+          ) : (
+            <RevealedWord sentence={sentence} word={item.prompt} ipa={side === "a" ? pair.ipaA : pair.ipaB} />
+          )}
         </div>
         <div className="space-y-2">
           <p className="text-sm font-medium">2 · Which of the two did you hear?</p>
@@ -408,9 +429,20 @@ function PerceptionRound({ contrastId, level }: { contrastId: string; level: Cef
             </p>
             <div className="space-y-2">
               <p className="text-sm font-medium">3 · Now say the sentence and check whether the machine understands "{item.prompt}"</p>
-              <PerceptionSayIt key={`say-${index}-${item.prompt}`} sentence={sentence} targetWord={item.prompt} />
+              <PerceptionSayIt
+                key={`say-${index}-${item.prompt}`}
+                sentence={sentence}
+                targetWord={item.prompt}
+                onBusyChange={setBusy}
+              />
             </div>
-            <Button size="sm" title="Pasa al siguiente par mínimo" onClick={next}>
+            {feedback && <PassedTranslation sentence={sentence} />}
+            <Button
+              size="sm"
+              title={busy ? "Espera a que termine de procesar tu grabación" : "Pasa al siguiente par mínimo"}
+              onClick={next}
+              disabled={busy}
+            >
               Next
             </Button>
           </AnswerFeedback>
@@ -423,10 +455,10 @@ function PerceptionRound({ contrastId, level }: { contrastId: string; level: Cef
 
 // El reto es lo que se practica; el protocolo de seis pasos es la ayuda de
 // cómo hacerlo, así que queda plegado hasta que el aprendiz lo pide.
-function ShadowingSection() {
+function ShadowingSection({ level }: { level: CefrLevel }) {
   return (
     <div className="space-y-4">
-      {CHALLENGE_A && <ShadowingChallenge instructionsEs={CHALLENGE_A.instructionsEs} />}
+      {CHALLENGE_A && <ShadowingChallenge instructionsEs={CHALLENGE_A.instructionsEs} level={level} />}
       <details className="rounded-bubble border border-border bg-card p-4 text-sm">
         <summary className="cursor-pointer font-medium" title="Los seis pasos del método de shadowing, con su tiempo">
           How shadowing works
@@ -462,11 +494,16 @@ export function MinimalPairLab({ initialContrastId }: Props = {}) {
   const { profile } = useEmma();
   const params = useSearchParams();
   const levelParam = params.get("level");
+  const [tab, setTab] = useState("pairs");
+  const nextSound = () => {
+    const i = CONTRASTS.findIndex((c) => c.id === contrastId);
+    setContrastId(CONTRASTS[(i + 1) % CONTRASTS.length].id);
+  };
   const level: CefrLevel =
     (levelParam && isCefrLevel(levelParam) && levelParam) || profile?.englishLevel || INITIAL_LEVEL;
 
   return (
-    <Tabs defaultValue="pairs">
+    <Tabs value={tab} onValueChange={setTab}>
       <TabsList>
         <TabsTrigger value="pairs" title="Escuchá y distinguí dos sonidos parecidos, en oraciones">
           Minimal pairs
@@ -488,10 +525,18 @@ export function MinimalPairLab({ initialContrastId }: Props = {}) {
             ))}
           </SelectContent>
         </Select>
-        {contrastId && <PerceptionRound key={contrastId} contrastId={contrastId} level={level} />}
+        {contrastId && (
+          <PerceptionRound
+            key={contrastId}
+            contrastId={contrastId}
+            level={level}
+            onNextSound={nextSound}
+            onShadowing={() => setTab("shadowing")}
+          />
+        )}
       </TabsContent>
       <TabsContent value="shadowing">
-        <ShadowingSection />
+        <ShadowingSection level={level} />
       </TabsContent>
     </Tabs>
   );

@@ -21,16 +21,22 @@ const GEMINI = providerInfo("gemini");
 interface CloudQuickSetupProps {
   recommended: boolean;
   onReady: () => void;
+  /** "replies" ⇒ sólo el turno de práctica a la nube (#348); "all" ⇒ modo remoto. */
+  scope?: "all" | "replies";
 }
 
-export function CloudQuickSetup({ recommended, onReady }: CloudQuickSetupProps) {
+export function CloudQuickSetup({ recommended, onReady, scope = "all" }: CloudQuickSetupProps) {
   const api = getEmmaApi();
 
   const save = async (provider: RemoteProvider, key: string) => {
     if (!api) return { ok: false, error: "Only available in the desktop app." };
     const res = await api.setAiKey(provider, key);
     if (res.ok) {
-      saveAiSettings({ ...loadAiSettings(), mode: "remote", provider });
+      saveAiSettings(
+        scope === "replies"
+          ? { ...loadAiSettings(), provider, replyInCloud: true }
+          : { ...loadAiSettings(), mode: "remote", provider },
+      );
       onReady();
     }
     return res;

@@ -27,9 +27,11 @@ export const REMOTE_PROVIDERS: RemoteProviderInfo[] = [
   {
     id: "gemini",
     label: "Google Gemini",
-    // flash-lite: cuota gratuita más holgada para equipos que dependen de la nube.
-    models: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"],
-    defaultModel: "gemini-2.5-flash",
+    // Medido el 2026-11-25 (#353): gemini-2.5-flash-lite y gemini-2.5-pro dan
+    // 404 (retirados); el alias flash-lite-latest responde en ~1,2 s y tiene la
+    // cuota gratuita más holgada, así que es el default.
+    models: ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash"],
+    defaultModel: "gemini-flash-lite-latest",
     keysUrl: "https://aistudio.google.com/app/apikey",
   },
   {
@@ -53,12 +55,18 @@ export interface AiRemoteSettings {
   provider: RemoteProvider;
   /** Modelo elegido por proveedor (si falta, se usa el defaultModel). */
   models: Partial<Record<RemoteProvider, string>>;
+  /**
+   * Sólo el turno de práctica (entender el mensaje y la respuesta de Emma) va a
+   * la nube; todo lo demás sigue local (#348). Opt-in: por defecto apagado.
+   */
+  replyInCloud: boolean;
 }
 
 export const DEFAULT_AI_SETTINGS: AiRemoteSettings = {
   mode: "local",
   provider: "gemini",
   models: {},
+  replyInCloud: false,
 };
 
 /** Estado de configuración de llaves por proveedor (viene del proceso main). */
@@ -90,10 +98,12 @@ export function normalizeSettings(raw: unknown): AiRemoteSettings {
   if (r.models && typeof r.models === "object") {
     for (const p of REMOTE_PROVIDERS) {
       const v = (r.models as Record<string, unknown>)[p.id];
-      if (typeof v === "string" && v.trim()) models[p.id] = v.trim();
+      // Sólo modelos que todavía se ofrecen: uno retirado vuelve al default.
+      if (typeof v === "string" && p.models.includes(v.trim())) models[p.id] = v.trim();
     }
   }
-  return { mode, provider, models };
+  const replyInCloud = (raw as { replyInCloud?: unknown } | null)?.replyInCloud === true;
+  return { mode, provider, models, replyInCloud };
 }
 
 const STORAGE_KEY = "ai_remote_settings";

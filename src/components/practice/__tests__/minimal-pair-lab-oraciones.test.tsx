@@ -29,10 +29,21 @@ describe("MinimalPairLab — oraciones por nivel", () => {
     expect(html).not.toContain("Listen to the word");
   });
 
-  it("resalta la palabra objetivo dentro de la oración mostrada", () => {
+  // Contrato cambiado (#357, T1): en producción la palabra se veía resaltada
+  // ANTES de responder y el ejercicio de escucha se resolvía leyendo. Ahora se
+  // oculta hasta contestar; se revela (con IPA) después.
+  it("oculta la palabra objetivo hasta que el aprendiz responde", () => {
     searchParams = new URLSearchParams("");
     const html = render();
-    expect(html).toMatch(/<strong[^>]*>[^<]*<\/strong>/);
+    expect(html).toContain('data-testid="masked-word"');
+    expect(html).not.toMatch(/<strong[^>]*>[^<]*<\/strong>/);
+  });
+
+  it("«Next» no se puede pulsar mientras se procesa una grabación (T3)", async () => {
+    const fs = await import("node:fs");
+    const src = fs.readFileSync("src/components/practice/minimal-pair-lab.tsx", "utf8");
+    expect(src).toMatch(/onClick=\{next\}\s+disabled=\{busy\}/);
+    expect(src).toMatch(/onBusyChange=\{setBusy\}/);
   });
 
   it("con ?level=A1 usa oraciones cortas aunque el perfil diga B1", () => {
