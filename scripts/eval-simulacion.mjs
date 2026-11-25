@@ -178,6 +178,10 @@ async function openScene(page, scenario) {
   // Sólo en el store aislado: las lecciones de la escena anterior bloquean la
   // siguiente («Finish your pending lessons…»). Nunca toca un store real.
   if (LAUNCH) await page.evaluate(`await window.emmaAPI.storeSet("lessonTodos", {}); return 1;`);
+  // Como un aprendiz real: pasa por el mapa (donde se precalcula la escena
+  // recomendada) y desde ahí abre la escena.
+  await page.evaluate(`location.href="${APP_ORIGIN}/"; return 1;`);
+  await sleep(4000);
   await page.evaluate(`location.href="${APP_ORIGIN}/chat/?scenario=${scenario}"; return 1;`);
   await sleep(5000);
   return page.evaluate(`${HELPERS}
@@ -216,9 +220,12 @@ async function sendTurn(page, text) {
     return {sentAt, doneAt:Date.now(), doneMs:null, firstVisibleMs, reply:""};`);
 }
 
-async function criticalCalls(page, sentAt, doneAt) {
+/** Llamadas del camino crítico del turno, con su vista previa (diagnóstico de rechazos). */
+async function turnCalls(page, sentAt, doneAt) {
   const records = await page.evaluate(`return (globalThis.__emmaTrace?.records?.() ?? []);`);
-  return records.filter((r) => CRITICAL_TAGS.has(r.tag) && r.startedAt >= sentAt - 50 && r.startedAt <= doneAt).length;
+  return records
+    .filter((r) => CRITICAL_TAGS.has(r.tag) && r.startedAt >= sentAt - 50 && r.startedAt <= doneAt)
+    .map((r) => ({ tag: r.tag, ms: r.ms, ok: r.ok, preview: r.preview }));
 }
 
 function plan() {
@@ -253,9 +260,10 @@ async function main() {
         reply: r.reply,
         firstVisibleMs: r.firstVisibleMs,
         doneMs: r.doneMs,
-        criticalCalls: await criticalCalls(page, r.sentAt, r.doneAt),
+        calls: await turnCalls(page, r.sentAt, r.doneAt),
         earlierQuestions: [...earlier],
       });
+      turns[turns.length - 1].criticalCalls = turns[turns.length - 1].calls.length;
       earlier.push(r.reply);
     }
     conversations.push({ scenario, profile, sceneReadyMs: scene.sceneReadyMs, opening: scene.opening, turns });

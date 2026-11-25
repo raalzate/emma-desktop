@@ -16,6 +16,7 @@ import { getSelectedLitertModelFile } from "@/lib/litert-models";
 import { localAvailable, remoteAvailable, remoteGenerateText } from "./providers";
 import { loadAiSettings, modelFor, type AiMode } from "./remote-settings";
 import { maybeTrace } from "./llm-trace";
+import { enforcedMaxTokens } from "./output-budget";
 
 /**
  * Ejecuta un turno en el modelo local (Gemma) con streaming opcional.
@@ -36,7 +37,7 @@ async function runLocalTurn(
       { role: "user" as const, content: args.prompt },
     ],
     onToken,
-    { priority: args.priority, signal: args.signal }
+    { priority: args.priority, signal: args.signal, maxTokens: enforcedMaxTokens(args.tag, args.maxTokens) }
   );
 }
 

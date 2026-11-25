@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { observeTurn } from "../observe-turn-use-case";
 import { createSceneState } from "@/domain/chat/scene-state";
 import type { LlmGenerate } from "@/domain/ai/llm-port";
@@ -112,5 +112,31 @@ describe("observeTurn — LLM juzga, código decide", () => {
       ...base,
     });
     expect(throwingObs.coherence).toBe("clear");
+  });
+});
+
+describe("atajo cuando la red está segura (SC-002 de #323)", () => {
+  // El juez cuesta ~2,7 s en el camino crítico de cada turno. Cuando la red
+  // determinista ya atribuyó el mensaje a un tema pendiente con contenido, o
+  // reconoce un saludo, el modelo no agrega nada: se ahorra la llamada.
+  it("con atribución segura no llama al modelo", async () => {
+    const llm = vi.fn<LlmGenerate>(async () => "{}");
+    const obs = await observeTurn({ llm, ...base, message: "Yesterday I finished the login page and the tests." });
+    expect(llm).not.toHaveBeenCalled();
+    expect(obs).toMatchObject({ answersItem: "yesterday", intent: "in-scene", source: "fast-path" });
+  });
+
+  it("un saludo reconocido tampoco paga la llamada", async () => {
+    const llm = vi.fn<LlmGenerate>(async () => "{}");
+    const obs = await observeTurn({ llm, ...base, message: "Hi Sofia, good morning!" });
+    expect(llm).not.toHaveBeenCalled();
+    expect(obs.intent).toBe("greeting");
+  });
+
+  it("si la red duda (la negativa que rompió la escena), decide el modelo", async () => {
+    const llm = vi.fn<LlmGenerate>(async () => '{"answers":"blockers","negative":true,"kind":"scene","substance":"none"}');
+    const obs = await observeTurn({ llm, ...base, message: "No, I am fine today." });
+    expect(llm).toHaveBeenCalledTimes(1);
+    expect(obs.source).toBe("judge");
   });
 });

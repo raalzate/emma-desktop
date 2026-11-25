@@ -87,3 +87,17 @@ describe("calibración: no perseguir respuestas de stand-up válidas", () => {
     expect(needsElaboration(standupAnswer, "B2")).toBe(true);
   });
 });
+
+describe("el ejemplo de la consigna rota (T13 de #323)", () => {
+  // Medido en el banco: con un único ejemplo literal, la persona repetía
+  // «Which part took you the longest?» turno tras turno.
+  it("turnos distintos traen ejemplos distintos, siempre como línea hablada", () => {
+    const examples = new Set([0, 1, 2, 3].map((t) => buildElaborationCue(t).match(/like "([^"]+)"/)?.[1]));
+    expect(examples.size).toBeGreaterThanOrEqual(3);
+    for (const t of [0, 1, 2, 3]) expect(buildElaborationCue(t)).toMatch(/like\s+"/);
+  });
+
+  it("pide no repetir una pregunta ya hecha", () => {
+    expect(buildElaborationCue(1)).toMatch(/do not repeat a question you already asked/i);
+  });
+});

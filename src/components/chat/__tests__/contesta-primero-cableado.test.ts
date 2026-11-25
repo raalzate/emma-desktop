@@ -13,3 +13,10 @@ describe("contestar primero en use-chat-session", () => {
     expect(call).toMatch(/learnerQuestion: learnerQuestionOf\(clean\)/);
   });
 });
+
+describe("rotación de la consigna de detalle (T13 de #323)", () => {
+  it("la directiva recibe el número de turno", () => {
+    const call = hook.slice(hook.indexOf("buildTurnDirective({"), hook.indexOf("buildTurnDirective({") + 600);
+    expect(call).toMatch(/\n\s+turn,\n/);
+  });
+});

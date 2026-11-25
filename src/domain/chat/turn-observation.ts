@@ -53,7 +53,11 @@ export interface TurnObservation {
    * chequeo gramatical en el motor serializado, vencía su tope y la red
    * respondía siempre) y desde fuera era indistinguible de que no existiera.
    */
-  source: "judge" | "heuristics";
+  /**
+   * Quién etiquetó: el juez LLM, la red determinista como RESPALDO (el juez
+   * falló o venció), o la red como ATAJO porque ya estaba segura (SC-002 de #323).
+   */
+  source: "judge" | "heuristics" | "fast-path";
 }
 
 export interface PendingTopic {
@@ -208,3 +212,15 @@ export const OFF_TOPIC_CUE =
   "What they just said does not really connect to this conversation. Acknowledge it briefly and " +
   'warmly in one short clause, then steer back to the scene in the same line — like "Ha, fair ' +
   'enough — anyway, back to..." Do not lecture them and do not just ignore what they said.';
+
+/**
+ * ¿La red determinista está segura? (SC-002 de #323). Atribuyó el mensaje a un
+ * tema pendiente con contenido sustantivo, o reconoció un saludo o un pedido de
+ * aclaración. En esos casos el juez LLM no agrega nada y se ahorra ~2,7 s del
+ * turno. Una negativa breve, una respuesta sin atribuir o mínima NO es segura:
+ * ahí decide el modelo (el caso que rompió la escena: «No, I am fine today.»).
+ */
+export function isConfidentObservation(obs: TurnObservation): boolean {
+  if (obs.intent === "greeting" || obs.intent === "meta") return true;
+  return obs.intent === "in-scene" && obs.answersItem !== null && obs.substance === "full" && !obs.negative;
+}

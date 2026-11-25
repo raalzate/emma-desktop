@@ -46,6 +46,8 @@ export interface TurnDirectiveInput {
    * ANTES de la orden de contenido. Una reparación (meta) manda sobre ella.
    */
   learnerQuestion?: string | null;
+  /** Número de turno: rota el ejemplo de la consigna de detalle. */
+  turn?: number;
 }
 
 /** Contexto de lo ya sabido, para no repreguntarlo aunque cambie la orden. */
@@ -57,9 +59,6 @@ function knownFacts(state: SceneState | null): string {
 
 import { buildElaborationCue } from "./elaboration";
 
-// Una sola redacción de la orden de profundizar (vivía duplicada aquí y en
-// `elaboration.ts`, y sólo se arreglaba una de las dos copias).
-const ELABORATE_CUE = buildElaborationCue();
 
 export function buildTurnDirective(input: TurnDirectiveInput): string {
   const { state, elaborate, deepen, wrapUp, recastCue, intent = "in-scene", coherence = "clear" } = input;
@@ -69,7 +68,9 @@ export function buildTurnDirective(input: TurnDirectiveInput): string {
     if (coherence === "unclear") return `${knownFacts(state)}${UNCLEAR_CUE}`;
     if (coherence === "off-topic") return `${knownFacts(state)}${OFF_TOPIC_CUE}`;
     if (wrapUp) return `${knownFacts(state)}${WRAP_UP_CUE}`;
-    if (elaborate) return `${knownFacts(state)}${ELABORATE_CUE}`;
+    // Una sola redacción de la orden (vive en `elaboration.ts`); el turno rota
+    // su ejemplo para que la persona no repita la misma pregunta (T13 de #323).
+    if (elaborate) return `${knownFacts(state)}${buildElaborationCue(input.turn ?? 0)}`;
     if (state) return sceneDirective(state, { deepen });
     return "";
   })();

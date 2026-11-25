@@ -18,7 +18,8 @@ import { neutralContinuation } from "@/domain/chat/scene-recovery";
 import { sanitizeReply, hasNonLatinScript } from "@/domain/chat/sanitize-reply";
 import { hasIdentityLeak, removeIdentityLeak } from "@/domain/chat/identity-guard";
 import { isGreeting, stripRepeatedGreeting } from "@/domain/chat/greeting-guard";
-import { stripRepeatedOpener } from "@/domain/chat/repetition-guard";
+import { stripRepeatedOpener, stripRepeatedQuestions } from "@/domain/chat/repetition-guard";
+import { isSubstantive } from "@/domain/chat/scene-state";
 import { polishChatReply } from "@/domain/chat/chat-brevity";
 import { CHAT_MAX_TOKENS } from "@/domain/shared/token-budgets";
 
@@ -128,6 +129,7 @@ function cleanReply(
   previousAssistantTurns: readonly string[],
   learnerGreeted: boolean,
   allowRestate = false,
+  learnerSubstantive = false,
 ): string {
   const sane = sanitizeReply(raw);
   const noLeak = removeIdentityLeak(sane);
@@ -139,8 +141,13 @@ function cleanReply(
     : stripRepeatedOpener(greetingSafe, previousAssistantTurns);
   const polished = polishChatReply(inCharacter, maxSentences);
   if (allowRestate) return polished;
+  // T13 de #323: si el aprendiz CONTESTÓ, repetir una pregunta propia reciente
+  // se lee como no escuchar: se quita esa pregunta y queda la reacción. Si no
+  // contestó («Hi.»), volver a preguntar es lo correcto.
+  const answered = learnerSubstantive ? stripRepeatedQuestions(polished, previousAssistantTurns) : polished;
+  if (!answered) return "";
   const last = previousAssistantTurns[previousAssistantTurns.length - 1]?.trim();
-  return polished === last ? "" : polished;
+  return answered === last ? "" : answered;
 }
 
 /** Nudge correctivo del reintento: la primera generación fue inválida. */
@@ -200,6 +207,7 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
   // El aprendiz saludó en este turno: la persona puede devolver el saludo. Sin
   // esto, responder "hi, good morning" con una pregunta seca era lo normal.
   const learnerGreeted = isGreeting(args.userMessage);
+  const learnerSubstantive = isSubstantive(args.userMessage);
   const clean = (raw: string): string => {
     const cleaned = cleanReply(
       raw,
@@ -208,6 +216,7 @@ export async function runChatTurn(args: RunChatTurnArgs): Promise<string> {
       previousAssistant,
       learnerGreeted,
       args.allowRestate ?? false,
+      learnerSubstantive,
     );
     if (cleaned && args.validateReply && !args.validateReply(cleaned)) return "";
     return cleaned;

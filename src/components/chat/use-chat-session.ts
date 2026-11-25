@@ -401,6 +401,7 @@ export function useChatSession(d: Deps) {
         wrapUp: shouldWrapUp(turn, maxTurns) && !deepen,
         recastCue: buildRecastCue(recast, { deferred: true }),
         learnerQuestion: learnerQuestionOf(clean),
+        turn,
       });
       const reply = await runtime.chatTurn({
         system: system.current,

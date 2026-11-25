@@ -14,6 +14,7 @@ import type { SceneState } from "@/domain/chat/scene-state";
 import {
   buildObservationPrompt,
   fallbackObservation,
+  isConfidentObservation,
   parseObservation,
   resolveCoherence,
   type TurnObservation,
@@ -51,6 +52,9 @@ export async function observeTurn(args: ObserveTurnArgs): Promise<TurnObservatio
   // Sin checklist no hay nada que atribuir: las heurísticas bastan y no se
   // paga una llamada.
   if (!state || state.pending.length === 0) return red();
+  // Atajo (SC-002 de #323): si la red ya está segura, el juez no agrega nada.
+  const quick = red();
+  if (isConfidentObservation(quick)) return { ...quick, source: "fast-path" };
   const prompt = buildObservationPrompt({
     lastAgentLine,
     message,

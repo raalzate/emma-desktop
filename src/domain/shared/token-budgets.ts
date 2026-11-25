@@ -9,7 +9,12 @@
 export const LLM_CONTEXT_WINDOW = 8192;
 export const LLM_DEFAULT_MAX_TOKENS = 500;
 
-export const CHAT_MAX_TOKENS = 512;
+/**
+ * Una respuesta de simulación es de hasta 3 oraciones cortas (~60 tokens). Con
+ * 512 y el tope ignorado en local, un desvío largo se generaba entero para
+ * recortarse después (#323): 160 deja margen sin pagar la divagación.
+ */
+export const CHAT_MAX_TOKENS = 160;
 /** Etiqueta del turno del aprendiz (JSON de una línea): LLM juzga, código decide. */
 export const OBSERVE_MAX_TOKENS = 80;
 export const WELCOME_MAX_TOKENS = 150;
