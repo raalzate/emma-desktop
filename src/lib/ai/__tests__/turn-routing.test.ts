@@ -30,7 +30,7 @@ describe("routeFor", () => {
     expect(routeFor("chat", s)).toBe("remote");
     expect(routeFor("chat-retry", s)).toBe("remote");
     expect(routeFor("observe", s)).toBe("remote");
-    for (const tag of ["grammar", "suggest", "complete-reply", "scene-facts", "lesson", "prewarm", undefined]) {
+    for (const tag of ["grammar", "suggest", "complete-reply", "scene-briefing", "lesson", "prewarm", undefined]) {
       expect(routeFor(tag, s)).toBe("local");
     }
   });
@@ -39,54 +39,19 @@ describe("routeFor", () => {
     expect(routeFor("grammar", { ...local, mode: "remote" })).toBe("remote");
   });
 
-  it("el turno son exactamente chat, chat-retry y observe", () => {
-    expect([...TURN_TAGS].sort()).toEqual(["chat", "chat-retry", "observe"]);
+  // Ampliado en #353 (decisión del usuario): los hechos de la escena también.
+  it("van a la nube el turno y los hechos de la escena, nada más", () => {
+    expect([...TURN_TAGS].sort()).toEqual(["chat", "chat-retry", "observe", "scene-facts"]);
   });
 });
 
-describe("withCloudFallback (FR-003)", () => {
-  it("usa la respuesta de la nube cuando llega", async () => {
-    const { withCloudFallback } = await import("../turn-routing");
-    const out = await withCloudFallback(async () => "cloud", async () => "local");
-    expect(out).toBe("cloud");
-  });
-
-  it("si la nube falla (sin red, sin llave), el turno se genera en local", async () => {
-    const { withCloudFallback } = await import("../turn-routing");
-    const out = await withCloudFallback(
-      async () => {
-        throw new Error("No API key");
-      },
-      async () => "local",
-    );
-    expect(out).toBe("local");
-  });
-
-  it("una cancelación no se reintenta en local", async () => {
-    const { withCloudFallback } = await import("../turn-routing");
-    const ctl = new AbortController();
-    ctl.abort();
-    let usedLocal = false;
-    await expect(
-      withCloudFallback(
-        async () => "cloud",
-        async () => {
-          usedLocal = true;
-          return "local";
-        },
-        ctl.signal,
-      ),
-    ).rejects.toThrow(/abort/i);
-    expect(usedLocal).toBe(false);
-  });
-});
 
 describe("cableado en el adaptador", () => {
   it("el adaptador rutea por tag y usa el respaldo local", async () => {
     const fs = await import("node:fs");
     const src = fs.readFileSync("src/lib/ai/llm-adapter.ts", "utf8");
     expect(src).toMatch(/routeFor\(args\.tag, settings\)/);
-    expect(src).toMatch(/withCloudFallback\(/);
+    expect(src).toMatch(/hedgedTurn\(/);
   });
 });
 
@@ -105,5 +70,83 @@ describe("modelos de Gemini vigentes (#353)", () => {
   it("un modelo guardado que ya no se ofrece vuelve al de por defecto", () => {
     const s = normalizeSettings({ provider: "gemini", models: { gemini: "gemini-2.5-flash-lite" } });
     expect(s.models.gemini).toBeUndefined();
+  });
+});
+
+
+describe("hedgedTurn: nube con respaldo local en carrera (#353)", () => {
+  // Diagnóstico: la cola del banco (p95 ~12 s) era la nube misma (4–6,5 s en
+  // la capa gratuita), no el respaldo. Si la nube no respondió en 1,5 s se
+  // lanza también el modelo local y gana el primero.
+  it("si la nube responde rápido, el local ni arranca", async () => {
+    const { hedgedTurn } = await import("../turn-routing");
+    let localStarted = false;
+    const out = await hedgedTurn(
+      async () => "cloud",
+      async () => {
+        localStarted = true;
+        return "local";
+      },
+      { hedgeAfterMs: 50 },
+    );
+    expect(out).toBe("cloud");
+    expect(localStarted).toBe(false);
+  });
+
+  it("si la nube tarda, arranca el local y gana el primero; el perdedor se cancela", async () => {
+    const { hedgedTurn } = await import("../turn-routing");
+    let localSignal: AbortSignal | undefined;
+    const out = await hedgedTurn(
+      () => new Promise<string>((r) => setTimeout(() => r("cloud"), 200)),
+      (signal) => {
+        localSignal = signal;
+        return new Promise<string>((r) => setTimeout(() => r("local"), 20));
+      },
+      { hedgeAfterMs: 10 },
+    );
+    expect(out).toBe("local");
+    expect(localSignal?.aborted).toBe(false);
+  });
+
+  it("si la nube gana después de arrancar el local, el local se cancela", async () => {
+    const { hedgedTurn } = await import("../turn-routing");
+    let localSignal: AbortSignal | undefined;
+    const out = await hedgedTurn(
+      () => new Promise<string>((r) => setTimeout(() => r("cloud"), 30)),
+      (signal) => {
+        localSignal = signal;
+        return new Promise<string>((r) => setTimeout(() => r("local"), 500));
+      },
+      { hedgeAfterMs: 10 },
+    );
+    expect(out).toBe("cloud");
+    expect(localSignal?.aborted).toBe(true);
+  });
+
+  it("si la nube falla, gana el local aunque no haya pasado el plazo", async () => {
+    const { hedgedTurn } = await import("../turn-routing");
+    const out = await hedgedTurn(
+      async () => {
+        throw new Error("quota");
+      },
+      async () => "local",
+      { hedgeAfterMs: 10_000 },
+    );
+    expect(out).toBe("local");
+  });
+
+  it("si fallan los dos, se propaga el error del local", async () => {
+    const { hedgedTurn } = await import("../turn-routing");
+    await expect(
+      hedgedTurn(
+        async () => {
+          throw new Error("quota");
+        },
+        async () => {
+          throw new Error("engine");
+        },
+        { hedgeAfterMs: 1 },
+      ),
+    ).rejects.toThrow("engine");
   });
 });
