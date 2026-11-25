@@ -185,6 +185,13 @@ async function openScene(page, scenario) {
   // recomendada) y desde ahí abre la escena.
   await page.evaluate(`location.href="${APP_ORIGIN}/"; return 1;`);
   await sleep(4000);
+  // El ajuste vive en el localStorage del renderer: se fija explícito en cada
+  // escena (ya con el origen de la app cargado) para que la medición diga qué midió.
+  await page.evaluate(`
+    const k = "ai_remote_settings";
+    const cur = JSON.parse(localStorage.getItem(k) || "{}");
+    localStorage.setItem(k, JSON.stringify({ ...cur, replyInCloud: ${REPLY_IN_CLOUD} }));
+    return 1;`);
   await page.evaluate(`location.href="${APP_ORIGIN}/chat/?scenario=${scenario}"; return 1;`);
   await sleep(5000);
   return page.evaluate(`${HELPERS}
@@ -249,13 +256,6 @@ async function main() {
     throw new Error(`no hay app con CDP en :${PORT}. Usá --launch o abrí Electron con --remote-debugging-port=${PORT}.`);
   }
   const page = await connect();
-  // El ajuste vive en el localStorage del renderer: se fija explícito en cada
-  // corrida para que la medición diga qué se midió.
-  await page.evaluate(`
-    const k = "ai_remote_settings";
-    const cur = JSON.parse(localStorage.getItem(k) || "{}");
-    localStorage.setItem(k, JSON.stringify({ ...cur, replyInCloud: ${REPLY_IN_CLOUD} }));
-    return 1;`);
   const conversations = [];
   for (const { scenario, profile } of plan()) {
     process.stdout.write(`▶ ${scenario}:${profile} … `);
