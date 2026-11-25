@@ -104,7 +104,16 @@ function SlotVerdicts({ diagnosis, reveal }: { diagnosis: AnswerDiagnosis; revea
  * IPA, traducción, porqué, ejemplo). Es el puente al español del Artículo 9:
  * se pide con un botón y llega como contenido de Emma, no como copy de la UI.
  */
-function ExplainWithEmma({ state, runtime }: { state: DrillState; runtime: EmmaRuntime }) {
+function ExplainWithEmma({
+  state,
+  runtime,
+  onBusyChange,
+}: {
+  state: DrillState;
+  runtime: EmmaRuntime;
+  /** #357: mientras Emma explica, «Next» queda deshabilitado. */
+  onBusyChange?: (busy: boolean) => void;
+}) {
   const item = state.exercise.items[state.index];
   // Lo que el aprendiz contestó: los huecos del diagnóstico, en orden.
   const given = (state.lastDiagnosis?.slots ?? []).map((s) => s.given).join(" ");
@@ -119,8 +128,10 @@ function ExplainWithEmma({ state, runtime }: { state: DrillState; runtime: EmmaR
 
   async function explain() {
     setStatus("loading");
+    onBusyChange?.(true);
     const result = await explainExerciseItem({ llm: runtime.llm, exercise: state.exercise, item, given });
     setExplanation(result);
+    onBusyChange?.(false);
     setStatus(result ? "done" : "error");
   }
 
@@ -167,7 +178,15 @@ function ExplainWithEmma({ state, runtime }: { state: DrillState; runtime: EmmaR
   );
 }
 
-function FeedbackPanel({ state, runtime }: { state: DrillState; runtime: EmmaRuntime }) {
+function FeedbackPanel({
+  state,
+  runtime,
+  onBusyChange,
+}: {
+  state: DrillState;
+  runtime: EmmaRuntime;
+  onBusyChange?: (busy: boolean) => void;
+}) {
   const diagnosis = state.lastDiagnosis;
   if (!diagnosis) return null;
   const item = state.exercise.items[state.index];
@@ -209,7 +228,7 @@ function FeedbackPanel({ state, runtime }: { state: DrillState; runtime: EmmaRun
         </p>
       )}
       {item.noteEs && <p className="text-muted-foreground">{item.noteEs}</p>}
-      <ExplainWithEmma state={state} runtime={runtime} />
+      <ExplainWithEmma state={state} runtime={runtime} onBusyChange={onBusyChange} />
     </AnswerFeedback>
   );
 }
@@ -367,6 +386,8 @@ function ExerciseRunner({ exercise, runtime, onExit, onChange }: RunnerProps) {
   const [state, setState] = useState<DrillState>(() => startDrill(exercise));
   const [draft, setDraft] = useState("");
   const [chosen, setChosen] = useState<string | null>(null);
+  // #357: «Next» espera a que «Explain with Emma» termine.
+  const [explaining, setExplaining] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const item = state.exercise.items[state.index];
@@ -503,7 +524,7 @@ function ExerciseRunner({ exercise, runtime, onExit, onChange }: RunnerProps) {
           />
         )}
 
-        <FeedbackPanel state={state} runtime={runtime} />
+        <FeedbackPanel state={state} runtime={runtime} onBusyChange={setExplaining} />
 
         <div className="flex flex-wrap gap-2">
           {state.phase === "answering" && !optionMode && (
@@ -529,7 +550,7 @@ function ExerciseRunner({ exercise, runtime, onExit, onChange }: RunnerProps) {
             </Button>
           )}
           {state.phase === "reviewing" && (
-            <Button title={state.index + 1 < total ? "Pasa al siguiente ítem" : "Muestra el resumen de la sesión"} onClick={next} className="gap-1" autoFocus>
+            <Button title={explaining ? "Espera a que Emma termine de explicar" : state.index + 1 < total ? "Pasa al siguiente ítem" : "Muestra el resumen de la sesión"} onClick={next} disabled={explaining} className="gap-1" autoFocus>
               {state.index + 1 < total ? "Next" : "See summary"}
               <ArrowRight className="h-4 w-4" />
             </Button>

@@ -196,7 +196,8 @@ describe("análisis enriquecido tras responder (Explain with Emma)", () => {
     const src = source("exercise-drill.tsx");
     expect(src).toContain("explainExerciseItem({");
     expect(src).toContain("Explain with Emma");
-    expect(src).toContain("<FeedbackPanel state={state} runtime={runtime} />");
+    // #357: además avisa cuando Emma está explicando, para deshabilitar «Next».
+    expect(src).toContain("<FeedbackPanel state={state} runtime={runtime} onBusyChange={setExplaining} />");
     expect(src).toContain("explanation.translationEs");
     expect(src).toContain("explanation.whyEs");
     expect(src).toContain("explanation.exampleEn");

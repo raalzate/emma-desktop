@@ -57,3 +57,12 @@ describe("RoundSummary (T4)", () => {
     expect((html.match(/title="/g) ?? []).length).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe("ejercicios: Next espera a Explain with Emma (#357)", () => {
+  it("el Next del drill se deshabilita mientras Emma explica", async () => {
+    const fs = await import("node:fs");
+    const src = fs.readFileSync("src/components/practice/exercise-drill.tsx", "utf8");
+    expect(src).toMatch(/onClick=\{next\} disabled=\{explaining\}/);
+    expect(src).toMatch(/onBusyChange=\{setExplaining\}/);
+  });
+});
