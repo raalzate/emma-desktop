@@ -89,3 +89,21 @@ describe("cableado en el adaptador", () => {
     expect(src).toMatch(/withCloudFallback\(/);
   });
 });
+
+describe("modelos de Gemini vigentes (#353)", () => {
+  // Medido el 2026-11-25: gemini-2.5-flash-lite y gemini-2.5-pro responden 404
+  // (retirados); gemini-flash-lite-latest responde en ~1,2 s.
+  it("la lista no ofrece modelos retirados y el default es el alias rápido", async () => {
+    const { providerInfo } = await import("../remote-settings");
+    const g = providerInfo("gemini");
+    expect(g.models).not.toContain("gemini-2.5-flash-lite");
+    expect(g.models).not.toContain("gemini-2.5-pro");
+    expect(g.defaultModel).toBe("gemini-flash-lite-latest");
+    expect(g.models).toContain(g.defaultModel);
+  });
+
+  it("un modelo guardado que ya no se ofrece vuelve al de por defecto", () => {
+    const s = normalizeSettings({ provider: "gemini", models: { gemini: "gemini-2.5-flash-lite" } });
+    expect(s.models.gemini).toBeUndefined();
+  });
+});

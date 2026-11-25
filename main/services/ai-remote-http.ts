@@ -131,7 +131,7 @@ export function describeRemoteError(provider: RemoteProvider, status: number, bo
   const name = LABEL[provider];
   if (looksLikeBadKey(status, body)) return `${name} rejected the API key. Check it in Settings or paste a new one.`;
   if (status === 429) {
-    const lite = provider === 'gemini' ? ' Try the gemini-2.5-flash-lite model, which has a larger free quota, or' : '';
+    const lite = provider === 'gemini' ? ' Try the gemini-flash-lite-latest model, which has a larger free quota, or' : '';
     return `${name} usage limit reached (free tier quota).${lite} wait a minute and try again.`;
   }
   if (status >= 500) return `${name} is temporarily unavailable. Please try again in a moment.`;

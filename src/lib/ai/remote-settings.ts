@@ -27,9 +27,11 @@ export const REMOTE_PROVIDERS: RemoteProviderInfo[] = [
   {
     id: "gemini",
     label: "Google Gemini",
-    // flash-lite: cuota gratuita más holgada para equipos que dependen de la nube.
-    models: ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"],
-    defaultModel: "gemini-2.5-flash",
+    // Medido el 2026-11-25 (#353): gemini-2.5-flash-lite y gemini-2.5-pro dan
+    // 404 (retirados); el alias flash-lite-latest responde en ~1,2 s y tiene la
+    // cuota gratuita más holgada, así que es el default.
+    models: ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash"],
+    defaultModel: "gemini-flash-lite-latest",
     keysUrl: "https://aistudio.google.com/app/apikey",
   },
   {
@@ -96,7 +98,8 @@ export function normalizeSettings(raw: unknown): AiRemoteSettings {
   if (r.models && typeof r.models === "object") {
     for (const p of REMOTE_PROVIDERS) {
       const v = (r.models as Record<string, unknown>)[p.id];
-      if (typeof v === "string" && v.trim()) models[p.id] = v.trim();
+      // Sólo modelos que todavía se ofrecen: uno retirado vuelve al default.
+      if (typeof v === "string" && p.models.includes(v.trim())) models[p.id] = v.trim();
     }
   }
   const replyInCloud = (raw as { replyInCloud?: unknown } | null)?.replyInCloud === true;
