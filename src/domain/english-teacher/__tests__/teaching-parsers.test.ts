@@ -180,3 +180,22 @@ describe("parsePhonetics", () => {
     expect(parsePhonetics("")).toEqual([]);
   });
 });
+
+describe("parseGrammarPoints verifica el tiempo verbal (incidente 2026-11-25)", () => {
+  it("la salida de producción («Presente simple» con be + -ing) sale como presente continuo", async () => {
+    const { parseGrammarPoints } = await import("../teaching-parsers");
+    const raw = [
+      "STRUCTURE: Presente simple (tag question implied)",
+      "TENSE: Presente simple",
+      "PATTERN: Subject + verb + object + (tag question implied)",
+      "EXAMPLE: You are connecting the front and back end with the API, right?",
+      "EXPLANATION: Se usa para confirmar información.",
+      "AFFIRMATIVE: You [main:are] connecting the front and back end with the API.",
+      "NEGATIVE: You [main:are] not connecting the front and back end with the API.",
+      "QUESTION: You [main:are] connecting the front and back end with the API, right?",
+    ].join("\n");
+    const [card] = parseGrammarPoints(raw);
+    expect(card.tense).toBe("presente continuo");
+    expect(card.label).toBe("Presente continuo (tag question implied)");
+  });
+});

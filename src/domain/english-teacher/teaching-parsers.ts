@@ -17,6 +17,7 @@ import type {
   VerbRole,
 } from "@/domain/english-teacher/teaching-models";
 import { isCoherentTrio } from "@/domain/english-teacher/grammar-trio-check";
+import { reconcileTense } from "@/domain/english-teacher/verb-tense";
 
 // Marcadores de lista que el modelo puede emitir en vez de `REPLY:`; separadores de nota.
 const LIST_MARKER = /^\s*(?:[-*•]|\d+[.)])\s+/;
@@ -148,7 +149,12 @@ export function parseGrammarPoints(raw: string): GrammarStructure[] {
     const examples = completeExamples(forms.get(point)!);
     if (examples) point.examples = examples;
   }
-  return points.filter((p) => p.label).slice(0, MAX_GRAMMAR_POINTS);
+  // El tiempo verbal del modelo se verifica contra la forma real del ejemplo
+  // (incidente 2026-11-25: «Presente simple» sobre «You are connecting…»).
+  return points
+    .filter((p) => p.label)
+    .slice(0, MAX_GRAMMAR_POINTS)
+    .map(reconcileTense);
 }
 
 function splitReply(body: string): ReplySuggestion | null {
