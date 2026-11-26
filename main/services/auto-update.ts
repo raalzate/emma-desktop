@@ -30,7 +30,17 @@ export type UpdateStatus =
   | { state: 'ready'; version: string }
   | { state: 'error' };
 
+// Último estado emitido: el chequeo de arranque llega a los 15 s y la vista
+// que lo muestra puede montarse después (#383).
+let lastStatus: UpdateStatus | null = null;
+
+/** El último estado emitido, para la vista que se monta tarde. */
+export function lastUpdateStatus(): UpdateStatus | null {
+  return lastStatus;
+}
+
 function broadcast(status: UpdateStatus): void {
+  lastStatus = status;
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send('update-status', status);
   }

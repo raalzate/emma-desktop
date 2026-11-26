@@ -62,6 +62,8 @@ export interface EmmaApi {
   updatesInstall(): Promise<void>;
   updatesOpenDownload(): Promise<void>;
   updatesCurrentVersion(): Promise<string>;
+  /** Último estado emitido por el main (#383); se valida con parseUpdateStatus. */
+  updatesLastStatus(): Promise<unknown>;
   onUpdateStatus(callback: (status: unknown) => void): () => void;
 
   storeGet(key: string): Promise<Record<string, unknown>>;

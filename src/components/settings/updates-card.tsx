@@ -14,23 +14,18 @@ import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { parseUpdateStatus, type UpdateStatus } from "@/domain/updates/update-status";
 import { getEmmaApi } from "./emma-api";
+import { useUpdateStatus } from "./use-update-status";
 
 export function UpdatesCard() {
   const api = getEmmaApi();
   const [version, setVersion] = useState<string>("");
-  const [status, setStatus] = useState<UpdateStatus | null>(null);
+  // Último estado del main + eventos en vivo, validados (#383).
+  const status = useUpdateStatus();
 
   useEffect(() => {
     if (!api) return;
     void api.updatesCurrentVersion().then(setVersion).catch(() => {});
-    // Basura por el canal ⇒ null ⇒ se ignora (guarda de dominio).
-    const off = api.onUpdateStatus((raw) => {
-      const parsed = parseUpdateStatus(raw);
-      if (parsed) setStatus(parsed);
-    });
-    return off;
   }, [api]);
 
   const busy = status?.state === "checking" || status?.state === "downloading";

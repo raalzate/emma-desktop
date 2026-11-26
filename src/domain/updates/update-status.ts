@@ -45,3 +45,14 @@ export function parseUpdateStatus(value: unknown): UpdateStatus | null {
       return null;
   }
 }
+
+/**
+ * Aviso fuera de Ajustes (#383): el chequeo de arranque llegaba cuando la
+ * tarjeta de Ajustes no estaba montada y nadie se enteraba. Sólo una versión
+ * disponible o descargada merece interrumpir.
+ */
+export function updateNoticeOf(status: UpdateStatus | null): { version: string; ready: boolean } | null {
+  if (status?.state === "available") return { version: status.version, ready: false };
+  if (status?.state === "ready") return { version: status.version, ready: true };
+  return null;
+}
