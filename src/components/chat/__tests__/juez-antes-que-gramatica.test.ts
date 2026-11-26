@@ -1,5 +1,8 @@
 /**
- * Freno: el juez del turno se espera ANTES de encolar el chequeo gramatical.
+ * Freno: el juez del turno se encola ANTES que el chequeo gramatical.
+ *
+ * Desde #386 el juez corre después de responder (juez tardío), pero sigue
+ * delante de la gramática en la cola del motor: el turno siguiente lo espera.
  *
  * El incidente: el motor local procesa UNA generación a la vez. Con la
  * gramática (360 tokens) encolada primero, el juez (80 tokens) vencía su tope
@@ -22,8 +25,9 @@ describe("orden del turno en use-chat-session", () => {
     "utf8",
   );
 
-  it("el juez (observeTurn) se espera antes de encolar la gramática", () => {
-    const juez = src.indexOf("await runtime.observeTurn(");
+  it("el juez (observeTurn) se encola antes que la gramática y el turno siguiente lo espera", () => {
+    expect(src, "el turno debe esperar al juez del turno anterior").toMatch(/await lateJudge\.current/);
+    const juez = src.search(/runtime\s*\.observeTurn\(/);
     const gramatica = src.indexOf("bufferGrammar(clean");
     expect(juez, "send debe esperar al juez del turno").toBeGreaterThan(-1);
     expect(gramatica, "send debe encolar el chequeo gramatical").toBeGreaterThan(-1);

@@ -4,11 +4,23 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-11-26 (macOS local y CI de `main` en `2f1e03d`, #369/#370)
+- **Fecha del último gate completo:** 2026-11-26 (macOS local, rama `perf/observe-despues` sobre `main` en `da39e5c`)
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.13.0 (2026-11-26, marcada Latest, 3 instaladores; build verde
+- **Último release publicado:** v0.13.2 (2026-11-26, Latest): primer release con el feed de
+  electron-updater (#378; hasta v0.13.1 nunca se publicó), instalador de Windows sin espacios
+  (#382) y escena de otro nivel con aviso (#376). Prueba de punta a punta con la 0.13.1
+  instalada: el chequeo de arranque detecta la 0.13.2, pero los canales `updates-*` nunca se
+  habían registrado (#383).
+- **v0.13.3 (borrador, feed verificado):** canales de actualización registrados y aviso «EMMA X
+  is available» en la barra lateral (#384). Empaquetado sin verificar contra la versión siguiente.
+- **Velocidad con IA local (#386, A-B-B-A, 80 turnos por variante, producción):** el juez del
+  turno corre después de responder: mediana 4,8 → 3,9 s, p95 8,6 → 6,8 s, turnos ≤ 4 s
+  31 → 55 %; re-preguntas 3 → 4 de 80, 100 % preguntas contestadas en ambas. Meta de 4 s
+  cumplida en la mediana, no en el p95.
+- **v0.13.1 (borrador):** respaldo local en carrera para el turno en la nube (#373).
+- **v0.13.0 (2026-11-26, publicada, 3 instaladores; build verde
   en las tres plataformas al primer intento): tiempo verbal verificado en «Teach me» (#355),
   práctica de pronunciación y chat flotante con EMMA (#357), unidades sólo del nivel del
   aprendiz, respuestas de la conversación en la nube opcionales (#348; Gemini

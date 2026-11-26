@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { observeTurn } from "../observe-turn-use-case";
+import { observeTurn, quickObservation } from "../observe-turn-use-case";
 import { createSceneState } from "@/domain/chat/scene-state";
 import type { LlmGenerate } from "@/domain/ai/llm-port";
 
@@ -138,5 +138,21 @@ describe("atajo cuando la red está segura (SC-002 de #323)", () => {
     const obs = await observeTurn({ llm, ...base, message: "No, I am fine today." });
     expect(llm).toHaveBeenCalledTimes(1);
     expect(obs.source).toBe("judge");
+  });
+});
+
+describe("quickObservation — la red sin modelo, para responder sin esperar al juez", () => {
+  it("no llama al modelo y aplica la rúbrica de coherencia", () => {
+    const state = createSceneState("daily_standup");
+    const obs = quickObservation({
+      state,
+      lastAgentLine: "What did you work on yesterday?",
+      message: "Hello!",
+      level: "A1",
+      previousWasClarifying: true,
+    });
+    expect(obs.intent).toBe("greeting");
+    expect(obs.coherence).not.toBe("unclear");
+    expect(["fast-path", "heuristics"]).toContain(obs.source);
   });
 });
