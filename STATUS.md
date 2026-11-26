@@ -8,13 +8,17 @@ verificado con un comando**; lo que se supone va en "deuda conocida".
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.13.2 (2026-11-26, Latest): primer release con el feed de
+- **Último release publicado:** v0.13.4 (2026-11-26, Latest): respuesta local en 3,9 s de mediana (#387).
+- **v0.13.2 (2026-11-26, publicada):** primer release con el feed de
   electron-updater (#378; hasta v0.13.1 nunca se publicó), instalador de Windows sin espacios
   (#382) y escena de otro nivel con aviso (#376). Prueba de punta a punta con la 0.13.1
   instalada: el chequeo de arranque detecta la 0.13.2, pero los canales `updates-*` nunca se
   habían registrado (#383).
-- **v0.13.3 (borrador, feed verificado):** canales de actualización registrados y aviso «EMMA X
-  is available» en la barra lateral (#384). Empaquetado sin verificar contra la versión siguiente.
+- **Auto-update de punta a punta (0.13.3 instalada contra la 0.13.4 publicada):** detecta la
+  versión nueva, `updatesCurrentVersion`/`updatesLastStatus`/`updatesCheck` responden y el aviso
+  «EMMA 0.13.4 is available» aparece en la barra lateral; el aviso abría Ajustes en la primera
+  pestaña en vez de System (corregido en 0.13.5, #388). Descargar/instalar en Windows y Linux
+  sin verificar empaquetado.
 - **Velocidad con IA local (#386, A-B-B-A, 80 turnos por variante, producción):** el juez del
   turno corre después de responder: mediana 4,8 → 3,9 s, p95 8,6 → 6,8 s, turnos ≤ 4 s
   31 → 55 %; re-preguntas 3 → 4 de 80, 100 % preguntas contestadas en ambas. Meta de 4 s
