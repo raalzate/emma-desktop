@@ -4,11 +4,20 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-11-25 (macOS local y CI de `main` en `59d979b`, #345/#346)
+- **Fecha del último gate completo:** 2026-11-26 (macOS local y CI de `main` en `2f1e03d`, #369/#370)
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.12.0 (2026-11-25, marcada Latest, 3 instaladores): simulación
+- **Último release publicado:** v0.13.0 (2026-11-26, marcada Latest, 3 instaladores; build verde
+  en las tres plataformas al primer intento): tiempo verbal verificado en «Teach me» (#355),
+  práctica de pronunciación y chat flotante con EMMA (#357), unidades sólo del nivel del
+  aprendiz, respuestas de la conversación en la nube opcionales (#348; Gemini
+  flash-lite-latest por defecto: 2.5-flash-lite y 2.5-pro fueron retirados) y fuentes en el
+  repo (#368: el build ya no descarga de Google). Banco contra el build de producción
+  (`--prod`): escena lista ≤ 5 s, 0 recuperaciones, 2 % re-preguntas, 100 % preguntas
+  contestadas; respuesta completa con IA local 4,9 s p50 / 7,4 s p95 (meta 4 s, no
+  alcanzada; con la nube p50 2,1 s). Notas en `docs/releases/0.13.0.md`.
+- **v0.12.0 (2026-11-25, publicada):** (2026-11-25, marcada Latest, 3 instaladores): simulación
   productiva (#323). Turno de ≤ 2 llamadas al LLM (sin juez LLM, gramática después de responder),
   respuesta visible en streaming, contesta las preguntas del aprendiz, escena precalculada desde el
   mapa y reanudación con el mismo caso. Banco de 20 conversaciones (`pnpm eval:simulacion`): 0
