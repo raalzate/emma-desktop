@@ -11,7 +11,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import type { EmmaRuntime } from "@/interface/emma-runtime";
 import type { UserProfile } from "@/domain/profile/user-profile";
 import type { ChatSettings } from "@/domain/chat-settings/chat-settings";
-import { scenariosForLevel } from "@/domain/scenarios/scenario-catalog";
+import { getScenario, scenariosForLevel } from "@/domain/scenarios/scenario-catalog";
 import type { Scenario } from "@/domain/scenarios/scenario";
 import type { ChatConversation } from "@/domain/chat/chat-conversation";
 import { deriveTitle, stripForStorage } from "@/domain/chat/chat-conversation";
@@ -78,7 +78,9 @@ export function ChatView({ runtime, profile, settings, initialScenarioType }: Pr
 
   const openChat = useCallback(
     (c: ChatConversation) => {
-      const found = scenarios.find((s) => s.scenarioType === c.scenarioType) ?? scenarios[0];
+      // Un chat guardado abre SU escena aunque ya no sea del nivel (p. ej. archivada).
+      const found =
+        scenarios.find((s) => s.scenarioType === c.scenarioType) ?? getScenario(c.scenarioType) ?? scenarios[0];
       setScenario(found);
       // Archivada = nivel superado: se abre en solo lectura (modo escena completada).
       setRestore(c.archived ? { ...c, completed: true } : c);

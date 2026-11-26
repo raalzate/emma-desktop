@@ -21,6 +21,15 @@ Mecanismo: <el comando que ahora falla si alguien lo repite — o "ninguno ejecu
 
 ---
 
+### GOTCHA: la app nunca se actualizó sola — el release no publicaba `latest.yml` (#377)
+
+Síntoma: de v0.10.0 a v0.13.1 los releases traían sólo dmg/exe/AppImage; ninguna instalación encontró una versión nueva.
+Causa:   electron-updater lee `latest*.yml` del release; el workflow subía sólo los instaladores y el chequeo terminaba en `error`, que la UI muestra discreto.
+Regla:   el artefacto y el release incluyen `latest*.yml` y `*.blockmap`; un formato nuevo se suma con su feed.
+Mecanismo: `src/lib/__tests__/release-publica-feed-update.test.ts` (falla si el workflow deja de subirlos).
+
+---
+
 ### GOTCHA: `pnpm gate` rojo en Windows con el código sano (#260)
 
 Síntoma: en Windows typecheck, tests, build y smoke fallaban al instante y sin salida; el
