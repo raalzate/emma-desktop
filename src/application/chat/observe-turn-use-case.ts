@@ -39,6 +39,17 @@ export interface ObserveTurnArgs {
   previousWasClarifying?: boolean;
 }
 
+/**
+ * La red determinista sola, sin modelo: con ella sale la respuesta y el juez
+ * corre después (ver domain/chat/late-observation). Misma rúbrica de coherencia.
+ */
+export function quickObservation(args: Omit<ObserveTurnArgs, "llm" | "timeoutMs">): TurnObservation {
+  const { state, lastAgentLine, message, previousWasClarifying = false } = args;
+  const obs = fallbackObservation({ message, state, lastAgentLine });
+  const withCoherence = { ...obs, coherence: resolveCoherence(obs.coherence, previousWasClarifying) };
+  return isConfidentObservation(withCoherence) ? { ...withCoherence, source: "fast-path" } : withCoherence;
+}
+
 export async function observeTurn(args: ObserveTurnArgs): Promise<TurnObservation> {
   const { llm, state, lastAgentLine, message, level, previousWasClarifying = false } = args;
   // La rúbrica de coherencia (H3) se aplica al final, sobre CUALQUIER camino

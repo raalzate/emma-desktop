@@ -39,6 +39,7 @@ import { takePrefetchedScene } from "./scene-prefetch";
 import { chooseSituation, rememberSituation } from "./situation-rotation";
 import { requiresVoice } from "@/domain/chat/voice-requirement";
 import { buildTurnDirective } from "@/domain/chat/turn-directive";
+import { applyLateObservation } from "@/domain/chat/late-observation";
 import { buildSuggestionContext } from "@/domain/coaching/suggestion-context";
 import { personaFor } from "@/domain/personas/protopersona";
 import type { ChatTurn, SilentError } from "@/domain/chat/simulation-session";
@@ -166,6 +167,8 @@ export function useChatSession(d: Deps) {
   // H3/FR-004: si el turno anterior ya pidió aclaración ("unclear"), el
   // siguiente veredicto unclear se degrada a clear — no dos turnos seguidos.
   const previousWasClarifying = useRef(false);
+  // Juez del turno anterior, que corre después de responder (ver send).
+  const lateJudge = useRef<Promise<void>>(Promise.resolve());
   // Objetivos cubiertos de la escena, para que la UI muestre el avance.
   const [sceneGoals, setSceneGoals] = useState<{ done: number; total: number } | null>(null);
   // Lección de cierre ya entregada (guardada con la conversación). Al reabrir
@@ -330,29 +333,21 @@ export function useChatSession(d: Deps) {
       setBusy(true);
       const lastAgentLine =
         [...prior].reverse().find((m) => m.role === "assistant")?.content ?? "";
-      // Observe — el JUEZ del turno: una clasificación corta del LLM etiqueta el
-      // mensaje (qué tema contesta, si es negación, si es meta, cuánta sustancia
-      // trae) y el código decide con eso. Los jueces regex quedaron como red
-      // dentro del caso de uso: entender inglés con listas de palabras fue la
-      // causa raíz de cuatro incidentes seguidos («No, I am fine today.» se
-      // perdía por no tener la palabra exacta en la lista).
-      // El juez corre ANTES de encolar el chequeo gramatical: el motor local
-      // procesa UNA generación a la vez, y con la gramática (360 tokens) por
-      // delante el juez vencía su tope de 4s y caía a la red en todos los
-      // turnos — la arquitectura instalada sin correr nunca, y en silencio.
-      const observation = await runtime.observeTurn({
+      // Observe en dos tiempos: la respuesta sale con la red determinista
+      // (sin modelo) y el JUEZ LLM corre DESPUÉS de responder; lo que detecte y
+      // la red no se aplica antes del turno siguiente (domain/chat/late-observation).
+      // Con el juez delante, el 43 % de los turnos tardaba 5,6 s contra 3,4 s.
+      // Primero se espera al juez del turno anterior: el estado debe estar al día.
+      await lateJudge.current;
+      const observeArgs = {
         state: sceneState.current,
         lastAgentLine,
         message: clean,
         level,
         previousWasClarifying: previousWasClarifying.current,
-      });
+      };
+      const observation = runtime.quickObservation(observeArgs);
       previousWasClarifying.current = observation.coherence === "unclear";
-      if (observation.source === "heuristics" && process.env.NODE_ENV !== "production") {
-        // Visible en la consola de dev: si esto aparece en cada turno, el juez
-        // no está corriendo y hay que mirar la cola del motor.
-        console.warn("[escena] turno etiquetado por la red determinista", observation);
-      }
       const intent = observation.intent;
       const contributes = intent === "in-scene";
       // Elaboración: sólo sobre una respuesta que contesta con POCO (juicio del
@@ -430,6 +425,21 @@ export function useChatSession(d: Deps) {
       setMessages((m) => [...m, { role: "assistant", content: reply, at: Date.now() }]);
       setStreaming("");
       setBusy(false);
+      // Juez tardío: sólo si la red no estaba segura; va antes que la gramática
+      // en la cola del motor para que el próximo turno lo encuentre resuelto.
+      if (observation.source !== "fast-path") {
+        lateJudge.current = runtime
+          .observeTurn(observeArgs)
+          .then((judged) => {
+            if (judged.source === "heuristics" && process.env.NODE_ENV !== "production") {
+              // Si aparece en cada turno, el juez no está corriendo: mirar la cola del motor.
+              console.warn("[escena] el juez tardío cayó a la red determinista", judged);
+            }
+            sceneState.current = applyLateObservation(sceneState.current, judged, clean);
+            setSceneGoals(sceneProgress(sceneState.current));
+          })
+          .catch(() => {});
+      }
       // Gramática DESPUÉS de la respuesta (T9 de #323): registra los errores de
       // la sesión y deja el recast listo para el turno siguiente.
       void bufferGrammar(clean, turn).then((errs) => {

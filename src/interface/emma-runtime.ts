@@ -25,7 +25,7 @@ import type { PracticeRecommendation } from "@/domain/tutor/practice-recommender
 import { isCefrLevel } from "@/domain/cefr/cefr-ladder";
 import { runChatTurn } from "@/application/chat/run-chat-turn-use-case";
 import { runKickoff } from "@/application/chat/simulation-kickoff-use-case";
-import { observeTurn, type ObserveTurnArgs } from "@/application/chat/observe-turn-use-case";
+import { observeTurn, quickObservation, type ObserveTurnArgs } from "@/application/chat/observe-turn-use-case";
 import { teach, type TeachArgs } from "@/application/english-teacher/teach-use-case";
 import { suggestReplies } from "@/application/coaching/suggest-replies-use-case";
 import { completePartialReply } from "@/application/coaching/complete-partial-reply-use-case";
@@ -95,6 +95,7 @@ export interface EmmaRuntime {
   kickoff(system: string, sessionId?: string, learnerName?: string): Promise<string>;
   /** Observa el turno del aprendiz: el LLM etiqueta, el código decide. */
   observeTurn(a: Omit<ObserveTurnArgs, "llm">): ReturnType<typeof observeTurn>;
+  quickObservation: typeof quickObservation;
   /** Juez de escena: ¿la línea de la persona respeta los hechos y su rol? (fail-open). */
   /**
    * Contrato de escena: hechos fijos EN (guardrail del system) + narrativa ES
@@ -235,6 +236,7 @@ export async function createEmmaRuntime(deps: EmmaRuntimeDeps = {}): Promise<Emm
     kickoff: (system, sessionId, learnerName) =>
       runKickoff({ llm, system, sessionId, learnerName }),
     observeTurn: (a) => observeTurn({ llm, ...a }),
+    quickObservation,
     sceneContract: (a) => createSceneContract({ llm, ...a }),
     sceneFacts: (a) => createSceneFacts({ llm, ...a }),
     sceneNarrative: async (a) =>
