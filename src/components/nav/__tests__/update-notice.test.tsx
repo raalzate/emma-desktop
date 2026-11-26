@@ -19,10 +19,11 @@ async function render(status: UpdateStatus | null): Promise<string> {
 }
 
 describe("UpdateNotice", () => {
-  it("con una versión disponible, avisa en inglés y enlaza a Ajustes", async () => {
+  it("con una versión disponible, avisa en inglés y abre la pestaña System de Ajustes", async () => {
     const html = await render({ state: "available", version: "0.13.2", action: "manual" });
     expect(html).toContain("EMMA 0.13.2 is available");
-    expect(html).toMatch(/href="\/settings\/?"/);
+    // La tarjeta Updates vive en System: sin la pestaña, Ajustes abre en «Emma (tutor)».
+    expect(html).toMatch(/href="\/settings\/?\?tab=system"/);
     expect(html).toContain('title="Hay una versión nueva de EMMA (0.13.2)');
   });
 

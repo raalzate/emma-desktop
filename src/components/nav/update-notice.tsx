@@ -16,7 +16,8 @@ export function UpdateNotice() {
   if (!notice) return null;
   return (
     <Link
-      href="/settings"
+      // La tarjeta Updates vive en la pestaña System (verificado con la 0.13.3 instalada).
+      href="/settings/?tab=system"
       title={
         notice.ready
           ? `La versión ${notice.version} ya está descargada: reinicia EMMA desde Ajustes para instalarla`
