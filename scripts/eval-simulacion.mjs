@@ -260,8 +260,8 @@ async function sendTurn(page, text) {
 async function turnCalls(page, sentAt, doneAt) {
   const records = await page.evaluate(`return (globalThis.__emmaTrace?.records?.() ?? []);`);
   return records
-    .filter((r) => CRITICAL_TAGS.has(r.tag) && r.startedAt >= sentAt - 50 && r.startedAt <= doneAt)
-    .map((r) => ({ tag: r.tag, ms: r.ms, ok: r.ok, preview: r.preview }));
+    .filter((r) => r.startedAt >= sentAt - 15000 && r.startedAt <= doneAt)
+    .map((r) => ({ tag: r.tag, ms: r.ms, ok: r.ok, preview: r.preview, error: r.error, startedAt: r.startedAt, critical: CRITICAL_TAGS.has(r.tag) && r.startedAt >= sentAt - 50 }));
 }
 
 function plan() {
@@ -307,7 +307,7 @@ async function main() {
         calls: await turnCalls(page, r.sentAt, r.doneAt),
         earlierQuestions: [...earlier],
       });
-      turns[turns.length - 1].criticalCalls = turns[turns.length - 1].calls.length;
+      turns[turns.length - 1].criticalCalls = turns[turns.length - 1].calls.filter((c) => c.critical).length;
       earlier.push(r.reply);
     }
     conversations.push({ scenario, profile, sceneReadyMs: scene.sceneReadyMs, opening: scene.opening, turns });

@@ -15,9 +15,9 @@ import { isAbortError } from "./generation-queue";
 import { getSelectedLitertModelFile } from "@/lib/litert-models";
 import { localAvailable, remoteAvailable, remoteGenerateText } from "./providers";
 import { loadAiSettings, modelFor, type AiMode } from "./remote-settings";
-import { maybeTrace } from "./llm-trace";
+import { globalTraceBuffer, maybeTrace } from "./llm-trace";
 import { enforcedMaxTokens } from "./output-budget";
-import { routeFor, withCloudFallback } from "./turn-routing";
+import { HEDGE_AFTER_MS, hedgedTurn, routeFor } from "./turn-routing";
 
 /**
  * Ejecuta un turno en el modelo local (Gemma) con streaming opcional.
@@ -62,13 +62,25 @@ function createRoutedLlm(modeOverride?: AiMode): LlmGenerate {
     const mode = modeOverride ?? settings.mode;
 
     // #348: con «respuestas en la nube», sólo el turno de práctica sale del
-    // equipo; si la nube falla, el turno se genera en local.
+    // equipo. #353: si la nube tarda o falla, el modelo local corre en carrera.
     if (!modeOverride && mode !== "remote" && routeFor(args.tag, settings) === "remote" && remoteAvailable()) {
       return (
-        await withCloudFallback(
+        await hedgedTurn(
           () => runRemoteTurn(system, prompt),
-          () => runLocalTurn(args, onToken),
-          args.signal,
+          (signal) => {
+            // Diagnóstico (#353): queda en la traza cuándo corrió el respaldo local.
+            globalTraceBuffer().push({
+              tag: `${args.tag}:hedge-local`,
+              startedAt: Date.now(),
+              ms: 0,
+              promptChars: prompt.length,
+              ok: true,
+              preview: "",
+            });
+            // Sin streaming: si al final gana la nube, el texto no parpadea.
+            return runLocalTurn({ ...args, signal }, undefined);
+          },
+          { hedgeAfterMs: HEDGE_AFTER_MS, signal: args.signal },
         )
       ).trim();
     }
