@@ -433,7 +433,7 @@ export function useChatSession(d: Deps) {
           .then((judged) => {
             if (judged.source === "heuristics" && process.env.NODE_ENV !== "production") {
               // Si aparece en cada turno, el juez no está corriendo: mirar la cola del motor.
-              console.warn("[escena] el juez tardío cayó a la red determinista", judged);
+              console.warn("[scene] late judge fell back to heuristics", judged);
             }
             sceneState.current = applyLateObservation(sceneState.current, judged, clean);
             setSceneGoals(sceneProgress(sceneState.current));
