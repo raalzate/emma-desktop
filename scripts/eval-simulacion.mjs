@@ -54,6 +54,8 @@ const REPLY_IN_CLOUD = Boolean(arg("reply-in-cloud", false));
  * producción son ~0–10 s. Es el modo que vale para /release.
  */
 const PROD = Boolean(arg("prod", false));
+/** Tope de una llamada al renderer: más que el peor turno legítimo (≤ 180 s). */
+const EVALUATE_TIMEOUT_MS = 300_000;
 
 const NO_THROTTLE = [
   "--disable-renderer-backgrounding",
@@ -164,10 +166,18 @@ async function connect() {
       pending.delete(d.id);
     }
   });
-  const evaluate = (body) =>
+  // Tope por llamada: una evaluación que no vuelve (la página navegó o se
+  // trabó) colgaba la corrida entera; ahora la conversación se descarta.
+  const evaluate = (body, timeoutMs = EVALUATE_TIMEOUT_MS) =>
     new Promise((resolve, reject) => {
       id += 1;
+      const myId = id;
+      const timer = setTimeout(() => {
+        pending.delete(myId);
+        reject(new Error(`la página no respondió en ${Math.round(timeoutMs / 1000)} s`));
+      }, timeoutMs);
       pending.set(id, (d) => {
+        clearTimeout(timer);
         if (d.result?.exceptionDetails) reject(new Error(d.result.exceptionDetails.exception?.description ?? "error en la página"));
         else resolve(d.result?.result?.value);
       });
@@ -291,8 +301,10 @@ async function main() {
     await sleep(15000); // modelo precalentado, como al abrir la app
   }
   const conversations = [];
+  const abandoned = [];
   for (const { scenario, profile } of plan()) {
     process.stdout.write(`▶ ${scenario}:${profile} … `);
+    try {
     const scene = await openScene(page, scenario);
     const earlier = scene.opening ? [scene.opening] : [];
     const turns = [];
@@ -312,6 +324,13 @@ async function main() {
     }
     conversations.push({ scenario, profile, sceneReadyMs: scene.sceneReadyMs, opening: scene.opening, turns });
     console.log(`${turns.length} turnos`);
+    } catch (err) {
+      // Conversación descartada (queda declarada en el reporte); se reconecta y sigue.
+      abandoned.push({ scenario, profile, error: err.message });
+      console.log(`DESCARTADA: ${err.message}`);
+      page.close();
+      page = await connect();
+    }
   }
   page.close();
   const summary = summarize(conversations);
@@ -319,8 +338,11 @@ async function main() {
   const md = toMarkdown(summary, { label: LABEL, date: date.slice(0, 16).replace("T", " "), engine: `${REPLY_IN_CLOUD ? "turno en la nube + resto local" : "Gemma local"} (${PROD ? "producción" : "dev"})` });
   fs.mkdirSync(OUT, { recursive: true });
   const stamp = date.replace(/[:.]/g, "-");
-  fs.writeFileSync(path.join(OUT, `simulacion-${stamp}.json`), JSON.stringify({ label: LABEL, date, summary, conversations }, null, 2));
-  fs.writeFileSync(path.join(OUT, `simulacion-${stamp}.md`), md);
+  fs.writeFileSync(path.join(OUT, `simulacion-${stamp}.json`), JSON.stringify({ label: LABEL, date, summary, conversations, abandoned }, null, 2));
+  const mdFull = abandoned.length
+    ? `${md}\n**Descartadas (${abandoned.length}):** ${abandoned.map((a) => `${a.scenario}:${a.profile} (${a.error})`).join("; ")}\n`
+    : md;
+  fs.writeFileSync(path.join(OUT, `simulacion-${stamp}.md`), mdFull);
   console.log(`\n${md}\nReporte: ${path.relative(REPO_ROOT, path.join(OUT, `simulacion-${stamp}.md`))}`);
   if (STRICT && Object.values(summary.pass).some((p) => !p)) process.exitCode = 1;
 }
