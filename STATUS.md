@@ -4,11 +4,25 @@ Lo imprime el hook `SessionStart`. Sirve para no releer el repo entero para resp
 "¿esto anda?". Se actualiza cuando cambia el veredicto, no en cada commit. **Sólo va lo
 verificado con un comando**; lo que se supone va en "deuda conocida".
 
-- **Fecha del último gate completo:** 2026-11-26 (macOS local y CI de `main` en `2f1e03d`, #369/#370)
+- **Fecha del último gate completo:** 2026-11-26 (macOS local y CI de `main` en `da39e5c`, #384)
 - **Rama:** `main`
 - **Veredicto:** VERDE (`pnpm gate`)
 - **Forja:** https://github.com/raalzate/emma-desktop — `main` protegida (PR + check `gate`, aplica a admins)
-- **Último release publicado:** v0.13.0 (2026-11-26, marcada Latest, 3 instaladores; build verde
+- **Último release publicado:** v0.13.2 (2026-11-26, marcada Latest): primer release con el feed
+  de electron-updater (`latest*.yml` + `.blockmap`, #378; hasta v0.13.1 nunca se publicó y la app
+  no podía encontrar versiones nuevas) e instalador de Windows sin espacios (#382, el `url` del
+  feed apuntaba a un asset inexistente; en v0.13.2 se renombró por API). Escena de otro nivel
+  avisa en vez de abrir otra (#376, verificado en la app). Prueba de punta a punta con la 0.13.1
+  instalada (perfil aislado): el chequeo de arranque detecta la 0.13.2 (`available`, `manual` en
+  macOS), pero los canales `updates-*` nunca se habían registrado (#383).
+- **v0.13.3 (2026-11-26, borrador con 3 instaladores y feed verificado: cada `latest*.yml` apunta
+  a un asset existente):** canales de actualización registrados, último estado guardado en el
+  main y aviso «EMMA X is available» en la barra lateral (#384). La verificación empaquetada del
+  aviso y los botones queda para la versión siguiente (empaquetar en local lo bloquea el arnés).
+- **v0.13.1 (borrador, sin publicar):** respaldo local en carrera para el turno en la nube (#373):
+  A-B-B-A de 100 turnos por variante, máx 50,4 → 9,1 s, p95 12,5 → 8,1 s, mediana +0,7 s; la
+  variante a 3 s se descartó. La v0.13.2 la incluye.
+- **v0.13.0 (2026-11-26, publicada, 3 instaladores; build verde
   en las tres plataformas al primer intento): tiempo verbal verificado en «Teach me» (#355),
   práctica de pronunciación y chat flotante con EMMA (#357), unidades sólo del nivel del
   aprendiz, respuestas de la conversación en la nube opcionales (#348; Gemini
