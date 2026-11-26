@@ -134,10 +134,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: installers-${{ matrix.platform }}
+          # latest*.yml + .blockmap: el feed de electron-updater (#377). Sin ellos
+          # la app nunca encuentra la versión nueva.
           path: |
             dist/*.dmg
             dist/*.exe
             dist/*.AppImage
+            dist/latest*.yml
+            dist/*.blockmap
           if-no-files-found: warn
           retention-days: 30
 
@@ -190,10 +194,14 @@ jobs:
           generate_release_notes: ${{ steps.notes.outputs.auto == 'true' }}
           # Sólo los formatos que electron-builder produce con la config actual
           # (mac: dmg · win: nsis/exe · linux: AppImage). Agregar un patrón acá
-          # implica agregar su target en package.json → build.
+          # implica agregar su target en package.json → build. Los latest*.yml y
+          # .blockmap son el feed del auto-update (#377; freno:
+          # src/lib/__tests__/release-publica-feed-update.test.ts).
           files: |
             installers/*.dmg
             installers/*.exe
             installers/*.AppImage
+            installers/latest*.yml
+            installers/*.blockmap
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
