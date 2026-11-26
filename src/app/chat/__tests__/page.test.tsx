@@ -51,6 +51,13 @@ vi.mock("@/components/lessons/use-lesson-todos", () => ({
   useLessonTodos: () => ({ todos: mockPendingTodos, pending: mockPendingTodos }),
 }));
 
+// Las escenas s1..s3 son ficticias: el nivel lo resuelve el dominio (#375),
+// que aquí se fija para probar sólo el gate.
+let mockRequest: { kind: string; scenario?: { title: string } } = { kind: "ok", scenario: { title: "Job Interview" } };
+vi.mock("@/domain/scenarios/scenario-request", () => ({
+  resolveScenarioRequest: () => mockRequest,
+}));
+
 vi.mock("@/components/chat/chat-view", () => ({
   ChatView: () => createElement("div", null, "CHAT_VIEW_MARKER"),
 }));
@@ -87,5 +94,15 @@ describe("ChatPage — gate de la entrada por deep-link (FR-006, #198)", { timeo
     expect(html).not.toContain("CHAT_VIEW_MARKER");
     expect(html).toContain("Finish your pending lessons to unlock the next scene");
     expect(html).toMatch(/href="\/practice\/?"/);
+  });
+
+  it("una escena de otro nivel avisa en vez de abrir otra en silencio (#375)", async () => {
+    mockPendingTodos = [];
+    mockRequest = { kind: "other-level", scenario: { title: "Job Interview" } };
+    const html = await render();
+    mockRequest = { kind: "ok", scenario: { title: "Job Interview" } };
+    expect(html).not.toContain("CHAT_VIEW_MARKER");
+    expect(html).toContain("isn’t part of level B1");
+    expect(html).toContain("Go to my scenes");
   });
 });
