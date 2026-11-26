@@ -61,8 +61,10 @@ gh release view v<version> --json isDraft,assets \
   --jq '{draft: .isDraft, assets: [.assets[].name]}'
 ```
 
-Esperado: `EMMA-<version>-arm64.dmg`, `EMMA.Setup.<version>.exe`,
-`EMMA-<version>.AppImage`. Falta uno → mirá el job del OS que falló con
+Esperado: `EMMA-<version>-arm64.dmg`, `EMMA-Setup-<version>.exe`,
+`EMMA-<version>.AppImage`, más `latest.yml`, `latest-mac.yml`, `latest-linux.yml`
+y los `.blockmap` (feed del auto-update: el `url` de cada yml debe coincidir con
+el nombre de un asset). Falta uno → mirá el job del OS que falló con
 `gh run view <run-id> --log-failed`; NO publiques un release incompleto.
 
 ## 4 · Entrega
