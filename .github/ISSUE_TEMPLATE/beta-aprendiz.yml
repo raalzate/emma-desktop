@@ -1,0 +1,81 @@
+name: Beta — sesión de un aprendiz
+description: Lo que vivió un aprendiz real en una sesión con EMMA (lo que el banco automático no mide).
+title: "beta: <nivel> — <escena o práctica>"
+labels: ["beta"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Una issue por sesión (20–30 min). Sin datos personales: nada de nombres, correos ni audios.
+  - type: input
+    id: version
+    attributes:
+      label: Versión de EMMA
+      description: Ajustes → abajo de todo (p. ej. 0.13.1).
+    validations:
+      required: true
+  - type: dropdown
+    id: equipo
+    attributes:
+      label: Sistema y motor de IA
+      options:
+        - macOS · IA local
+        - macOS · respuestas en la nube
+        - Windows · IA local
+        - Windows · respuestas en la nube
+        - Linux · IA local
+        - Linux · respuestas en la nube
+    validations:
+      required: true
+  - type: dropdown
+    id: nivel
+    attributes:
+      label: Nivel del aprendiz en la app
+      options: [A1, A2, B1, B2, C1]
+    validations:
+      required: true
+  - type: textarea
+    id: hizo
+    attributes:
+      label: Qué hizo
+      description: Escenas, ejercicios, pronunciación, shadowing, chat con EMMA…
+    validations:
+      required: true
+  - type: dropdown
+    id: entendio
+    attributes:
+      label: ¿Entendió lo que EMMA le decía?
+      options: [Casi todo, Más de la mitad, Menos de la mitad, Casi nada]
+    validations:
+      required: true
+  - type: dropdown
+    id: espera
+    attributes:
+      label: ¿Las esperas por la respuesta le molestaron?
+      options: [No las notó, Algo, Bastante, Abandonó por eso]
+    validations:
+      required: true
+  - type: dropdown
+    id: nivel-ok
+    attributes:
+      label: ¿La dificultad era la adecuada para su nivel?
+      options: [Adecuada, Muy fácil, Muy difícil]
+    validations:
+      required: true
+  - type: dropdown
+    id: volveria
+    attributes:
+      label: ¿Volvería a usarla mañana?
+      options: [Sí, Tal vez, No]
+    validations:
+      required: true
+  - type: textarea
+    id: fallas
+    attributes:
+      label: Fallas vistas
+      description: Voz o micrófono que no anda, pantallas trabadas, respuestas sin sentido, textos en el idioma equivocado. Qué pasó y en qué pantalla.
+  - type: textarea
+    id: cita
+    attributes:
+      label: Lo que dijo el aprendiz
+      description: Una o dos frases textuales, sin nombres.
