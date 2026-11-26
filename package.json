@@ -148,6 +148,9 @@
         "!**/node_modules/onnxruntime-node/bin/napi-v3/{linux,darwin}/**"
       ]
     },
+    "nsis": {
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
     "linux": {
       "target": "AppImage",
       "icon": "assets/icon.png",

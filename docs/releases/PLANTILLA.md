@@ -21,7 +21,7 @@ Qué cambia para quien usa la app — funcionalidades, no implementación:
 | SO | Archivo | Cómo abrir la primera vez |
 |---|---|---|
 | macOS (Apple Silicon) | `EMMA-<versión>-arm64.dmg` | clic derecho → Abrir (la firma es ad-hoc: doble clic muestra «no se puede verificar») |
-| Windows | `EMMA.Setup.<versión>.exe` | SmartScreen: «Más información» → «Ejecutar de todas formas» |
+| Windows | `EMMA-Setup-<versión>.exe` | SmartScreen: «Más información» → «Ejecutar de todas formas» |
 | Linux | `EMMA-<versión>.AppImage` | `chmod +x` al archivo y ejecutarlo |
 
 ### Requisitos

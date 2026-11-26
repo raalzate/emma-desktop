@@ -24,4 +24,13 @@ describe("release-build.yml publica el feed de actualización", () => {
     expect(workflow).toMatch(/^\s+installers\/latest\*\.yml$/m);
     expect(workflow).toMatch(/^\s+installers\/\*\.blockmap$/m);
   });
+
+  // #381: el nombre por defecto del NSIS es «EMMA Setup X.exe». latest.yml lo
+  // escribe con guiones y GitHub lo sube con puntos: la descarga del update
+  // en Windows daba 404. Sin espacios, el archivo se llama igual en los dos.
+  it("el instalador de Windows se nombra sin espacios, igual que en latest.yml", () => {
+    const pkg = JSON.parse(fs.readFileSync(path.join(process.cwd(), "package.json"), "utf8"));
+    const name: unknown = pkg.build?.nsis?.artifactName;
+    expect(name).toBe("${productName}-Setup-${version}.${ext}");
+  });
 });

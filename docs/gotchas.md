@@ -26,6 +26,7 @@ Mecanismo: <el comando que ahora falla si alguien lo repite — o "ninguno ejecu
 Síntoma: de v0.10.0 a v0.13.1 los releases traían sólo dmg/exe/AppImage; ninguna instalación encontró una versión nueva.
 Causa:   electron-updater lee `latest*.yml` del release; el workflow subía sólo los instaladores y el chequeo terminaba en `error`, que la UI muestra discreto.
 Regla:   el artefacto y el release incluyen `latest*.yml` y `*.blockmap`; un formato nuevo se suma con su feed.
+         Ningún instalador lleva espacios en el nombre (#381): `latest.yml` los escribe con guiones y GitHub los sube con puntos, y el `url` del feed quedaba apuntando a un asset inexistente.
 Mecanismo: `src/lib/__tests__/release-publica-feed-update.test.ts` (falla si el workflow deja de subirlos).
 
 ---

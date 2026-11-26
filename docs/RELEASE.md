@@ -28,7 +28,7 @@ binario de Electron).
 | SO | Formato | Sale de |
 |---|---|---|
 | macOS | `EMMA-<versión>-arm64.dmg` | `macos-latest` |
-| Windows | `EMMA.Setup.<versión>.exe` (NSIS) | `windows-latest` |
+| Windows | `EMMA-Setup-<versión>.exe` (NSIS; hasta v0.13.1 era `EMMA.Setup.<versión>.exe`) | `windows-latest` |
 | Linux | `EMMA-<versión>.AppImage` | `ubuntu-latest` |
 
 Siempre quedan como artefactos del run (30 días). Con tag, además se adjuntan
