@@ -44,6 +44,7 @@ contextBridge.exposeInMainWorld('emmaAPI', {
   updatesInstall: (): Promise<void> => ipcRenderer.invoke('updates-install'),
   updatesOpenDownload: (): Promise<void> => ipcRenderer.invoke('updates-open-download'),
   updatesCurrentVersion: (): Promise<string> => ipcRenderer.invoke('updates-current-version'),
+  updatesLastStatus: (): Promise<unknown> => ipcRenderer.invoke('updates-last-status'),
   onUpdateStatus: (callback: (status: unknown) => void) => {
     const listener = (_e: any, status: unknown) => callback(status);
     ipcRenderer.on('update-status', listener);

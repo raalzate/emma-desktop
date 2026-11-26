@@ -31,6 +31,15 @@ Mecanismo: `src/lib/__tests__/release-publica-feed-update.test.ts` (falla si el 
 
 ---
 
+### GOTCHA: «Check for updates» nunca funcionó — los canales IPC no estaban registrados (#383)
+
+Síntoma: en la 0.13.1 instalada, `updatesCurrentVersion()` → «No handler registered for 'updates-current-version'»; buscar, descargar e instalar fallaban igual.
+Causa:   #96 importó las funciones en `main/ipc.ts` pero no llamó a `ipcMain.handle`; preload y main estaban bien por separado. Además el chequeo de arranque sólo lo escuchaba Ajustes, que casi nunca está abierto a los 15 s.
+Regla:   todo canal que invoca el preload se registra en el main; un estado que llega del main antes de que la vista monte se guarda y se pide al montar.
+Mecanismo: `main/__tests__/canales-ipc-registrados.test.ts` (compara los `invoke` del preload con los `handle` del main); `src/components/nav/__tests__/update-notice.test.tsx`.
+
+---
+
 ### GOTCHA: `pnpm gate` rojo en Windows con el código sano (#260)
 
 Síntoma: en Windows typecheck, tests, build y smoke fallaban al instante y sin salida; el

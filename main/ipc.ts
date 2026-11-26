@@ -16,6 +16,7 @@ import {
   currentVersion,
   downloadUpdate,
   installUpdate,
+  lastUpdateStatus,
   openDownloadPage,
 } from './services/auto-update';
 import { storeGet, storeSet } from './services/store';
@@ -89,6 +90,16 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('audio-clip-list', async () => audio.list());
   ipcMain.handle('audio-usage', async () => audio.usage());
   ipcMain.handle('mic-access-status', async () => audio.micStatus());
+
+  // --- Actualizaciones (spec #137; registradas recién en #383) ---
+  // Sin argumentos: no hay entrada del renderer que validar. La instalación
+  // sólo ocurre cuando el usuario pulsa reiniciar.
+  ipcMain.handle('updates-check', async () => checkForUpdates());
+  ipcMain.handle('updates-download', async () => downloadUpdate());
+  ipcMain.handle('updates-install', async () => installUpdate());
+  ipcMain.handle('updates-open-download', async () => openDownloadPage());
+  ipcMain.handle('updates-current-version', async () => currentVersion());
+  ipcMain.handle('updates-last-status', async () => lastUpdateStatus());
 
   // --- Portapapeles ---
   ipcMain.handle('copy-to-clipboard', async (_e, text: string) => {
